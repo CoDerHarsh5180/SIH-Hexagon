@@ -6,6 +6,9 @@ import YourDocsPage from './pages/UserPages/your-docs/page'
 import CustomDocsApplyPage from './pages/UserPages/custom-docs-apply/page'
 import TrackDocDetailPage from './pages/UserPages/track-docs/page'
 import PendingDocsPage from './pages/UserPages/pending-docs/page'
+import ListOfApprovalsPage from './pages/UserPages/list-of-approvals/page'
+import AskForApprovalPage from './pages/UserPages/ask-for-approvals/page'
+import EnterpriseProfilePage from './pages/UserPages/profile-page/page'
 import './App.css'
 
 function App() {
@@ -14,7 +17,7 @@ function App() {
   return (
     <>
       <UserLayout>
-        <PendingDocsPage />
+        <AskForApprovalPage />
       </UserLayout>
     </>
   )

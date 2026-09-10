@@ -3,7 +3,7 @@
 /* Light Mode Defaults */
 :root {
   /* Classic deep India jersey blue */
-  --theme-india-blue: #004BA0;
+  --theme-india-blue: #3da000;
 
   --theme-background: #ffffff;
   --theme-foreground: #000000;
@@ -13,11 +13,11 @@
 /* Dark Mode Overrides */
 .dark {
   /* High-contrast electric sky blue (reminiscent of the T20 / ODI training jersey) */
-  --theme-india-blue: #38bdf8;
+  --theme-india-blue: #33a429;
 
-  --theme-background: #000000;
+  --theme-background: #1c1c1c;
   --theme-foreground: #ffffff;
-  --theme-border: #262626;
+  --theme-border: #3a445a;
 }
 
 @theme {
