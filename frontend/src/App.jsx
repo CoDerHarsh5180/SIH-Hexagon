@@ -5,7 +5,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import UserLayout from './layouts/UserLayout/page';
 import LocalAuthLayout from './layouts/LocalAuthLayout/page';
 import MainAuthLayout from './layouts/MainAuthLayout/page';
-
+import border from './assets/border.png'
 // Auth Pages
 import { LoginPage } from './pages/Authentication/LoginPage';
 import { RegisterPage } from './pages/Authentication/RegisterPage';
@@ -42,12 +42,16 @@ import MainAuthProfilePage from './pages/MainAuthPages/ProfilePage/page';
 // Common Pages
 import NotificationsPage from './pages/CommonPages/NotificationsPage';
 import NotFoundPage from './pages/CommonPages/NotFoundPage';
+import BackgroundFlagDecor from './components/common/BackgroundFlagDecor';
 
 import './App.css';
 
 function App() {
   return (
     <BrowserRouter>
+      {/* Background Indian Tricolor Corner Ribbons */}
+      <BackgroundFlagDecor />
+
       <Routes>
         {/* Default Landing / Auth Redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
