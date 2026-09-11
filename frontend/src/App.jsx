@@ -10,6 +10,9 @@ import ListOfApprovalsPage from './pages/UserPages/list-of-approvals/page'
 import AskForApprovalPage from './pages/UserPages/ask-for-approvals/page'
 import EnterpriseProfilePage from './pages/UserPages/profile-page/page'
 import LocalAuthAllRequestsPage from './pages/LocalAuthPages/all-requests/page'
+import { AuthLayout } from './layouts/AuthLayout/page'
+import { RegisterPage } from './pages/Authentication/RegisterPage'
+import { LoginPage } from './pages/Authentication/LoginPage'
 import './App.css'
 
 function App() {
@@ -17,9 +20,9 @@ function App() {
 
   return (
     <>
-      <LocalAuthLayout>
-        <LocalAuthAllRequestsPage />
-      </LocalAuthLayout>
+    
+        <RegisterPage />
+      
     </>
   )
 }
