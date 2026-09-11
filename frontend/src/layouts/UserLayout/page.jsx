@@ -8,6 +8,7 @@ const primaryNavLinks = [
   { id: 'dashboard', label: 'Dashboard', path: '/user/dashboard' },
   { id: 'approvals', label: 'Know Your Approval', path: '/user/approvals' },
   { id: 'track', label: 'Track Documents', path: '/user/track' },
+  {id:'your-docs', label: 'Your Docs', path: '/user/your-docs'}
 ];
 
 // Secondary links grouped under 'More' dropdown

@@ -13,6 +13,10 @@ import LocalAuthAllRequestsPage from './pages/LocalAuthPages/all-requests/page'
 import { AuthLayout } from './layouts/AuthLayout/page'
 import { RegisterPage } from './pages/Authentication/RegisterPage'
 import { LoginPage } from './pages/Authentication/LoginPage'
+import LocalAuthHistoryPage from './pages/LocalAuthPages/HistoryPage/page'
+import MainAuthCatalogPage from './pages/MainAuthPages/MainAuthCatlogPage/page'
+import MainAuthDocDetailsPage from './pages/MainAuthPages/DocsDetaills/MainAuthDocDetailPage'
+import MainAuthCreationPage from './pages/MainAuthPages/AddNewDoc/MainAuthCreationPage'
 import './App.css'
 
 function App() {
@@ -20,8 +24,11 @@ function App() {
 
   return (
     <>
+    <MainAuthLayout>
+      <MainAuthCreationPage />
+    </MainAuthLayout>
     
-        <RegisterPage />
+      
       
     </>
   )
