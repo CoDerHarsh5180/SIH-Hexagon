@@ -9,6 +9,7 @@ import PendingDocsPage from './pages/UserPages/pending-docs/page'
 import ListOfApprovalsPage from './pages/UserPages/list-of-approvals/page'
 import AskForApprovalPage from './pages/UserPages/ask-for-approvals/page'
 import EnterpriseProfilePage from './pages/UserPages/profile-page/page'
+import LocalAuthAllRequestsPage from './pages/LocalAuthPages/all-requests/page'
 import './App.css'
 
 function App() {
@@ -16,9 +17,9 @@ function App() {
 
   return (
     <>
-      <UserLayout>
-        <AskForApprovalPage />
-      </UserLayout>
+      <LocalAuthLayout>
+        <LocalAuthAllRequestsPage />
+      </LocalAuthLayout>
     </>
   )
 }

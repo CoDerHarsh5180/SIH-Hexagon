@@ -37,15 +37,15 @@ const NavActions = ({
       <button
         onClick={() => onNavClick(notificationPath)}
         className={`relative p-2 rounded-full text-foreground hover:bg-border transition-colors focus:outline-none ${
-          currentPath === notificationPath ? 'text-india-blue' : ''
+          currentPath === notificationPath ? 'text-india-orange' : ''
         }`}
         aria-label={notificationLabel}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-india-blue opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-india-blue" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-india-orange opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-india-orange" />
           </span>
         )}
       </button>
@@ -63,7 +63,7 @@ const NavActions = ({
       <button
         onClick={() => onNavClick(profilePath)}
         className={`relative rounded-full p-0.5 transition-all focus:outline-none ${
-          currentPath === profilePath ? 'ring-2 ring-india-blue' : 'hover:ring-1 hover:ring-border'
+          currentPath === profilePath ? 'ring-2 ring-india-orange' : 'hover:ring-1 hover:ring-border'
         }`}
         aria-label={avatarAlt}
       >

@@ -45,7 +45,7 @@ const MoreDropdown = ({ currentPath, onNavClick }) => {
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className={`relative px-3 py-2 text-sm font-medium flex items-center gap-1 transition-colors ${
-          isMoreActive || isOpen ? 'text-india-blue' : 'text-foreground hover:text-india-blue'
+          isMoreActive || isOpen ? 'text-india-orange' : 'text-foreground hover:text-india-orange'
         }`}
       >
         <span>More</span>
@@ -53,7 +53,7 @@ const MoreDropdown = ({ currentPath, onNavClick }) => {
         {isMoreActive && (
           <motion.div
             layoutId="activeUserNav"
-            className="absolute bottom-0 left-0 right-0 h-0.5 bg-india-blue"
+            className="absolute bottom-0 left-0 right-0 h-0.5 bg-india-orange"
             initial={false}
             transition={{ type: 'spring', stiffness: 500, damping: 30 }}
           />
@@ -75,8 +75,8 @@ const MoreDropdown = ({ currentPath, onNavClick }) => {
                 onClick={() => { onNavClick(item.path); setIsOpen(false); }}
                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                   currentPath === item.path
-                    ? 'text-india-blue font-semibold bg-india-blue/5'
-                    : 'text-foreground hover:bg-border hover:text-india-blue'
+                    ? 'text-india-orange font-semibold bg-india-orange/5'
+                    : 'text-foreground hover:bg-border hover:text-india-orange'
                 }`}
               >
                 {item.label}
@@ -100,8 +100,8 @@ const MobileMoreAccordion = ({ currentPath, onNavClick }) => {
         onClick={() => setIsOpen((prev) => !prev)}
         className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-base font-medium transition-colors ${
           isMoreActive
-            ? 'bg-border text-india-blue font-semibold'
-            : 'text-foreground hover:bg-border hover:text-india-blue'
+            ? 'bg-border text-india-orange font-semibold'
+            : 'text-foreground hover:bg-border hover:text-india-orange'
         }`}
       >
         <span>More</span>
@@ -123,13 +123,13 @@ const MobileMoreAccordion = ({ currentPath, onNavClick }) => {
                 onClick={() => onNavClick(item.path)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors ${
                   currentPath === item.path
-                    ? 'bg-border text-india-blue font-semibold'
-                    : 'text-foreground hover:bg-border hover:text-india-blue'
+                    ? 'bg-border text-india-orange font-semibold'
+                    : 'text-foreground hover:bg-border hover:text-india-orange'
                 }`}
               >
                 <span>{item.label}</span>
                 {currentPath === item.path && (
-                  <span className="w-2 h-2 rounded-full bg-india-blue" />
+                  <span className="w-2 h-2 rounded-full bg-india-orange" />
                 )}
               </button>
             ))}
@@ -184,7 +184,7 @@ export const UserLayout = ({ children }) => {
         >
           {children || (
             <div className="p-4 border border-border rounded-lg">
-              Active: <span className="font-bold text-india-blue">{currentPath}</span>
+              Active: <span className="font-bold text-india-orange">{currentPath}</span>
             </div>
           )}
         </motion.div>

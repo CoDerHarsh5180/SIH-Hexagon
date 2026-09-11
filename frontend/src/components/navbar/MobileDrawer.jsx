@@ -27,12 +27,12 @@ const MobileDrawer = ({ isOpen, links, currentPath, onNavClick, children }) => (
             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md text-base font-medium transition-colors ${
               currentPath === link.path
                 ? 'bg-border text-india-blue font-semibold'
-                : 'text-foreground hover:bg-border hover:text-india-blue'
+                : 'text-foreground hover:bg-border hover:text-india-orange'
             }`}
           >
             <span>{link.label}</span>
             {currentPath === link.path && (
-              <span className="w-2 h-2 rounded-full bg-india-blue" />
+              <span className="w-2 h-2 rounded-full bg-india-orange" />
             )}
           </button>
         ))}

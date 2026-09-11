@@ -1,20 +1,107 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { PageHeader, Modal } from '../../../components/ui';
+import { PageHeader, Modal, AIAdvisorPanel } from '../../../components/ui';
 import { Check } from 'lucide-react';
 
-// Mock Data
+// ─────────────────────────────────────────────
+// Mock data
+// ─────────────────────────────────────────────
 const initialApprovalsList = [
-  { id: 'appr-01', docName: 'Consent to Establish (CTE) - Pollution Board', authority: 'Maharashtra Pollution Control Board (MPCB)', fee: 15000, alreadyHave: false, uploadedFile: null, checkedForApply: false, aiReason: 'Because your factory falls in Orange Category with connected power above 100 HP, MPCB permission is mandatory before civil work or machinery fitting starts.' },
-  { id: 'appr-02', docName: 'Provisional Fire Safety NOC', authority: 'Maharashtra Fire Services / MIDC Fire Wing', fee: 7500, alreadyHave: false, uploadedFile: null, checkedForApply: false, aiReason: 'Your factory has a built shed area over 20,000 sq ft. Fire department must verify emergency gates, fire hydrants, and clear passage for fire trucks.' },
-  { id: 'appr-03', docName: 'Factory Building Plan Approval', authority: 'Town Planning & Municipal Corporation', fee: 20000, alreadyHave: false, uploadedFile: null, checkedForApply: false, aiReason: 'Required because you are constructing an industrial shed. Municipal engineers must check structural stability and roadside open space.' },
-  { id: 'appr-04', docName: 'FSSAI State Manufacturing License', authority: 'Food Safety and Standards Authority of India', fee: 5000, alreadyHave: false, uploadedFile: null, checkedForApply: false, aiReason: 'Since your planned business is Food Processing, manufacturing license is required before selling food products in the market.' },
-  { id: 'appr-05', docName: 'Factory Registration & License (Form 1)', authority: 'Directorate of Industrial Safety & Health (DISH)', fee: 4500, alreadyHave: false, uploadedFile: null, checkedForApply: false, aiReason: 'Because you employ more than 10 workers using electrical power, DISH approval ensures working condition safety.' },
+  {
+    id: 'appr-01',
+    docName: 'Consent to Establish (CTE) — Pollution Board',
+    authority: 'Maharashtra Pollution Control Board (MPCB)',
+    fee: 15000,
+    alreadyHave: false,
+    uploadedFile: null,
+    checkedForApply: false,
+    tag: 'warning',
+    aiReason: 'Because your factory falls in Orange Category with connected power above 100 HP, MPCB permission is mandatory before civil work or machinery fitting starts.',
+    aiPoints: [
+      'Submit Form CTE-1 on the MPCB online portal',
+      'Attach factory layout, process flow, and effluent details',
+      'Field inspection will be scheduled after document review',
+      'Issued before any civil construction begins',
+    ],
+  },
+  {
+    id: 'appr-02',
+    docName: 'Provisional Fire Safety NOC',
+    authority: 'Maharashtra Fire Services / MIDC Fire Wing',
+    fee: 7500,
+    alreadyHave: false,
+    uploadedFile: null,
+    checkedForApply: false,
+    tag: 'info',
+    aiReason: 'Your factory has a built shed area over 20,000 sq ft. Fire department must verify emergency gates, fire hydrants, and clear passage for fire trucks.',
+    aiPoints: [
+      'Submit building plan + fire hydrant layout to Fire Wing',
+      'Minimum 2 fire extinguishers per 100 sq ft mandatory',
+      'Emergency exit width must be at least 90 cm',
+      'Provisional NOC valid during construction phase only',
+    ],
+  },
+  {
+    id: 'appr-03',
+    docName: 'Factory Building Plan Approval',
+    authority: 'Town Planning & Municipal Corporation',
+    fee: 20000,
+    alreadyHave: false,
+    uploadedFile: null,
+    checkedForApply: false,
+    tag: 'info',
+    aiReason: 'Required because you are constructing an industrial shed. Municipal engineers must check structural stability and roadside open space norms.',
+    aiPoints: [
+      'Drawings must be signed by a Licensed Structural Engineer',
+      'Submit FSI/FAR calculations with plot area certificate',
+      'Open space setbacks (as per DP/TP rules) must be marked',
+      'Online through Municipal Corporation portal or MIDC if in MIDC zone',
+    ],
+  },
+  {
+    id: 'appr-04',
+    docName: 'FSSAI State Manufacturing License',
+    authority: 'Food Safety and Standards Authority of India',
+    fee: 5000,
+    alreadyHave: false,
+    uploadedFile: null,
+    checkedForApply: false,
+    tag: 'info',
+    aiReason: 'Since your planned business is Food Processing, a manufacturing license is required before selling food products in the market.',
+    aiPoints: [
+      'Apply on FoSCoS portal (foscos.fssai.gov.in)',
+      'Hygienic layout plan, water test report, and pest control plan required',
+      'State license covers turnover up to ₹20 Cr/year',
+      'Valid for 1–5 years, renewable online',
+    ],
+  },
+  {
+    id: 'appr-05',
+    docName: 'Factory Registration & License (Form 1)',
+    authority: 'Directorate of Industrial Safety & Health (DISH)',
+    fee: 4500,
+    alreadyHave: false,
+    uploadedFile: null,
+    checkedForApply: false,
+    tag: 'info',
+    aiReason: 'Because you employ more than 10 workers using electrical power, DISH approval ensures working condition safety under the Factories Act, 1948.',
+    aiPoints: [
+      'Submit Form 1 to DISH before machinery energization',
+      'Inspector will verify machine guarding, emergency stop systems',
+      'License fee is based on number of workers and power load',
+      'Must display license prominently inside the factory gate',
+    ],
+  },
 ];
+
+// ─────────────────────────────────────────────
+// Page Component
+// ─────────────────────────────────────────────
+const MAX_HISTORY = 3;
 
 export const ListOfApprovalsPage = () => {
   const [approvals, setApprovals] = useState(initialApprovalsList);
-  const [selectedDocId, setSelectedDocId] = useState('appr-01');
+  const [activeInsight, setActiveInsight] = useState(null);
+  const [insightHistory, setInsightHistory] = useState([]);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [utrNumber, setUtrNumber] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -23,138 +110,192 @@ export const ListOfApprovalsPage = () => {
     setApprovals((prev) =>
       prev.map((item) =>
         item.id === id
-          ? { ...item, [field]: !item[field], ...(field === 'alreadyHave' && !item.alreadyHave ? { checkedForApply: false } : {}) }
+          ? {
+              ...item,
+              [field]: !item[field],
+              ...(field === 'alreadyHave' && !item.alreadyHave ? { checkedForApply: false } : {}),
+            }
           : item
       )
     );
 
   const handleFileUpload = (id, fileName) =>
-    setApprovals((prev) => prev.map((item) => (item.id === id ? { ...item, uploadedFile: fileName } : item)));
+    setApprovals((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, uploadedFile: fileName } : item))
+    );
 
-  const activeDocument = approvals.find((item) => item.id === selectedDocId);
+  // Build and fire an insight for a clicked document row
+  const handleRowClick = (doc) => {
+    const insight = {
+      field: 'doc',
+      value: doc.id,
+      title: doc.docName,
+      body: doc.aiReason,
+      tag: doc.tag,
+      points: [
+        ...doc.aiPoints,
+        `Issuing Authority: ${doc.authority}`,
+        `Government Fee: ₹${doc.fee.toLocaleString('en-IN')}`,
+      ],
+    };
+    setInsightHistory((prev) =>
+      activeInsight ? [activeInsight, ...prev].slice(0, MAX_HISTORY) : prev
+    );
+    setActiveInsight(insight);
+  };
+
   const applyItems = approvals.filter((item) => item.checkedForApply && !item.alreadyHave);
   const totalAmount = applyItems.reduce((acc, curr) => acc + curr.fee, 0);
 
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
-    if (!utrNumber.trim()) { alert('Please enter your Transaction Reference Number'); return; }
+    if (!utrNumber.trim()) {
+      alert('Please enter your Transaction Reference Number');
+      return;
+    }
     setPaymentSuccess(true);
-    setTimeout(() => { setPaymentSuccess(false); setIsPaymentOpen(false); setUtrNumber(''); alert('Applications successfully submitted.'); }, 2000);
+    setTimeout(() => {
+      setPaymentSuccess(false);
+      setIsPaymentOpen(false);
+      setUtrNumber('');
+      alert('Applications successfully submitted.');
+    }, 2000);
   };
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-5 sm:space-y-6">
       <PageHeader
         title="Required Approvals & Clearances"
-        subtitle="Click any row to view why it is required. Check items to apply, or submit PDFs if already obtained."
+        subtitle="Click any row to get AI explanation of why it's required. Check items to apply, or submit PDFs if already obtained."
       />
 
-      {/* Approvals List */}
-      <div className="space-y-2">
-        {approvals.map((doc) => (
-          <div
-            key={doc.id}
-            onClick={() => setSelectedDocId(doc.id)}
-            className={`border rounded-xl bg-background transition-colors cursor-pointer p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-              doc.id === selectedDocId
-                ? 'border-india-blue shadow-sm shadow-india-blue/10'
-                : 'border-border hover:border-foreground/20'
-            }`}
-          >
-            <div className="flex items-start gap-3 min-w-0">
-              <input
-                type="checkbox"
-                checked={doc.checkedForApply}
-                disabled={doc.alreadyHave}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => { e.stopPropagation(); toggleField(doc.id, 'checkedForApply'); }}
-                className="mt-1 h-4 w-4 rounded border-border text-india-blue focus:ring-india-blue cursor-pointer disabled:opacity-30"
-              />
-              <div className="min-w-0">
-                <span className={`text-sm font-bold block break-words leading-snug ${doc.alreadyHave ? 'line-through text-foreground/40' : 'text-foreground'}`}>
-                  {doc.docName}
-                </span>
-                <p className="text-xs text-foreground/50 mt-0.5">{doc.authority}</p>
-              </div>
-            </div>
+      {/* Two-column: list (2/3 left) + AI panel (1/3 right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-            <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 pl-7 sm:pl-0 pt-2 sm:pt-0 border-t sm:border-0 border-border">
-              <div className="text-left sm:text-right font-mono">
-                <span className="text-[10px] text-foreground/40 block font-sans">Govt Fee</span>
-                <span className={`text-sm font-bold ${doc.alreadyHave ? 'line-through text-foreground/40' : 'text-foreground'}`}>
-                  ₹{doc.fee.toLocaleString('en-IN')}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); toggleField(doc.id, 'alreadyHave'); }}
-                  className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
-                    doc.alreadyHave
-                      ? 'border-india-blue/30 bg-india-blue/10 text-india-blue'
-                      : 'border-border text-foreground/50 hover:border-foreground/30'
-                  }`}
-                >
-                  {doc.alreadyHave ? '✓ Have it' : 'Already have?'}
-                </button>
-                {doc.alreadyHave && (
-                  <label
+        {/* ── LIST (left 2/3) ── */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-2">
+            {approvals.map((doc) => (
+              <div
+                key={doc.id}
+                onClick={() => handleRowClick(doc)}
+                className={`border rounded-xl bg-background transition-colors cursor-pointer p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                  activeInsight?.value === doc.id
+                    ? 'border-india-blue shadow-sm shadow-india-blue/10'
+                    : 'border-border hover:border-foreground/20'
+                }`}
+              >
+                <div className="flex items-start gap-3 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={doc.checkedForApply}
+                    disabled={doc.alreadyHave}
                     onClick={(e) => e.stopPropagation()}
-                    className="px-2.5 py-1 rounded-lg bg-border text-foreground/60 hover:bg-foreground/10 text-xs font-medium cursor-pointer transition-colors"
-                  >
-                    <span>{doc.uploadedFile ? '📎 Attached' : 'Submit PDF'}</span>
-                    <input type="file" accept="application/pdf" className="hidden" onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(doc.id, e.target.files[0].name); }} />
-                  </label>
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleField(doc.id, 'checkedForApply');
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-border text-india-blue focus:ring-india-blue cursor-pointer disabled:opacity-30"
+                  />
+                  <div className="min-w-0">
+                    <span
+                      className={`text-sm font-bold block break-words leading-snug ${
+                        doc.alreadyHave ? 'line-through text-foreground/40' : 'text-foreground'
+                      }`}
+                    >
+                      {doc.docName}
+                    </span>
+                    <p className="text-xs text-foreground/50 mt-0.5">{doc.authority}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 pl-7 sm:pl-0 pt-2 sm:pt-0 border-t sm:border-0 border-border">
+                  <div className="text-left sm:text-right font-mono">
+                    <span className="text-[10px] text-foreground/40 block font-sans">Govt Fee</span>
+                    <span
+                      className={`text-sm font-bold ${
+                        doc.alreadyHave ? 'line-through text-foreground/40' : 'text-foreground'
+                      }`}
+                    >
+                      ₹{doc.fee.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleField(doc.id, 'alreadyHave');
+                      }}
+                      className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
+                        doc.alreadyHave
+                          ? 'border-india-blue/30 bg-india-blue/10 text-india-blue'
+                          : 'border-border text-foreground/50 hover:border-foreground/30'
+                      }`}
+                    >
+                      {doc.alreadyHave ? '✓ Have it' : 'Already have?'}
+                    </button>
+                    {doc.alreadyHave && (
+                      <label
+                        onClick={(e) => e.stopPropagation()}
+                        className="px-2.5 py-1 rounded-lg bg-border text-foreground/60 hover:bg-foreground/10 text-xs font-medium cursor-pointer transition-colors"
+                      >
+                        <span>{doc.uploadedFile ? '📎 Attached' : 'Submit PDF'}</span>
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files?.[0])
+                              handleFileUpload(doc.id, e.target.files[0].name);
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {doc.uploadedFile && (
+                  <div className="pl-7 text-[11px] text-india-blue font-mono flex items-center gap-1">
+                    <Check className="w-3 h-3" /> {doc.uploadedFile}
+                  </div>
                 )}
               </div>
-            </div>
-            {doc.uploadedFile && (
-              <div className="pl-7 text-[11px] text-india-blue font-mono flex items-center gap-1">
-                <Check className="w-3 h-3" /> {doc.uploadedFile}
-              </div>
-            )}
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Action Bar */}
-      <div className="border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <span className="text-xs text-foreground/50 block">Selected for Application</span>
-          <p className="text-sm font-bold text-foreground mt-0.5">
-            {applyItems.length} papers &bull; Total:{' '}
-            <strong className="text-india-blue font-mono text-base">₹{totalAmount.toLocaleString('en-IN')}</strong>
-          </p>
-        </div>
-        <button
-          disabled={applyItems.length === 0}
-          onClick={() => setIsPaymentOpen(true)}
-          className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-india-blue text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-        >
-          Apply Now ({applyItems.length})
-        </button>
-      </div>
-
-      {/* Details Panel */}
-      <div className="border border-border rounded-xl p-4 sm:p-6 space-y-3">
-        <h2 className="text-base font-bold text-foreground border-b border-border pb-3">
-          Document Requirement Details
-        </h2>
-        {activeDocument ? (
-          <motion.div key={activeDocument.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          {/* Action Bar */}
+          <div className="border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <span className="text-[11px] font-bold text-foreground/40 uppercase tracking-wider block">Selected Document</span>
-              <h3 className="text-sm sm:text-base font-bold text-foreground mt-0.5">{activeDocument.docName}</h3>
-              <p className="text-xs text-foreground/50">{activeDocument.authority}</p>
+              <span className="text-xs text-foreground/50 block">Selected for Application</span>
+              <p className="text-sm font-bold text-foreground mt-0.5">
+                {applyItems.length} papers &bull; Total:{' '}
+                <strong className="text-india-blue font-mono text-base">
+                  ₹{totalAmount.toLocaleString('en-IN')}
+                </strong>
+              </p>
             </div>
-            <div className="border border-border rounded-lg p-3.5">
-              <span className="text-xs font-bold text-india-blue block mb-1">Why is this required?</span>
-              <p className="text-xs text-foreground/80 leading-relaxed">{activeDocument.aiReason}</p>
-            </div>
-          </motion.div>
-        ) : (
-          <p className="text-xs text-foreground/40">Click any item to view its requirement here.</p>
-        )}
+            <button
+              disabled={applyItems.length === 0}
+              onClick={() => setIsPaymentOpen(true)}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-india-blue text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Apply Now ({applyItems.length})
+            </button>
+          </div>
+        </div>
+
+        {/* ── AI PANEL (right 1/3) ── */}
+        <div className="lg:col-span-1">
+          <AIAdvisorPanel
+            insight={activeInsight}
+            history={insightHistory}
+            subtitle="Click any document row"
+            idleTitle="Select a document"
+            idleBody="Click any row in the list to get an AI explanation of why that clearance is required for your enterprise."
+          />
+        </div>
+
       </div>
 
       {/* Payment Modal */}
@@ -177,7 +318,9 @@ export const ListOfApprovalsPage = () => {
           <form onSubmit={handlePaymentSubmit} className="space-y-4 text-xs">
             <div className="p-3 rounded-lg border border-border flex justify-between items-center">
               <span className="text-foreground/60">Total Amount:</span>
-              <span className="font-mono font-bold text-lg text-india-blue">₹{totalAmount.toLocaleString('en-IN')}</span>
+              <span className="font-mono font-bold text-lg text-india-blue">
+                ₹{totalAmount.toLocaleString('en-IN')}
+              </span>
             </div>
 
             {/* QR placeholder */}
@@ -192,7 +335,9 @@ export const ListOfApprovalsPage = () => {
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-foreground/60 mb-1.5">UPI / Transaction Reference (UTR)</label>
+              <label className="block text-[11px] font-bold text-foreground/60 mb-1.5">
+                UPI / Transaction Reference (UTR)
+              </label>
               <input
                 type="text"
                 required
@@ -204,10 +349,17 @@ export const ListOfApprovalsPage = () => {
             </div>
 
             <div className="pt-2 border-t border-border flex flex-col-reverse sm:flex-row justify-end gap-2">
-              <button type="button" onClick={() => setIsPaymentOpen(false)} className="w-full sm:w-auto px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border cursor-pointer text-center">
+              <button
+                type="button"
+                onClick={() => setIsPaymentOpen(false)}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border cursor-pointer text-center"
+              >
                 Cancel
               </button>
-              <button type="submit" className="w-full sm:w-auto px-5 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer text-center">
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-5 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer text-center"
+              >
                 Verify & Apply
               </button>
             </div>

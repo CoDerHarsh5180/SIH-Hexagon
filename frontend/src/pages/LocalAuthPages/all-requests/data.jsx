@@ -1,0 +1,68 @@
+export const initialRequestsData = [
+  {
+    requestId: 'REQ-2026-0819',
+    appliedDate: '2026-09-02',
+    requestedDocName: 'Consent to Establish (CTE) - Orange Category',
+    enterprise: {
+      name: 'Sahyadri Agro Foods Private Limited',
+      type: 'Food Factory',
+      ownerName: 'Rajesh V. Deshmukh',
+      mobile: '+91 98230 45892',
+      email: 'contact@sahyadriagrofoods.com',
+      plotLocation: 'Plot D-42/B, MIDC Shendra Phase 2',
+      district: 'Aurangabad',
+    },
+    userDocs: [
+      { id: 'd-1', title: 'Factory Site Layout Plan.pdf', size: '3.4 MB', fileUrl: '#' },
+      { id: 'd-2', title: 'ETP Waste Water Design Report.pdf', size: '2.1 MB', fileUrl: '#' },
+      { id: 'd-3', title: 'MIDC Land Possession Letter.pdf', size: '1.2 MB', fileUrl: '#' },
+      { id: 'd-4', title: 'Electricity Load Sanction Receipt.pdf', size: '820 KB', fileUrl: '#' },
+    ],
+    status: 'PENDING_REVIEW', // 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
+    signedDocId: null,
+    rejectionReason: null,
+  },
+  {
+    requestId: 'REQ-2026-0744',
+    appliedDate: '2026-08-28',
+    requestedDocName: 'Provisional Fire Safety NOC',
+    enterprise: {
+      name: 'Marathwada Precision Auto Components',
+      type: 'Engineering & Metal Foundry',
+      ownerName: 'Sunil G. Shinde',
+      mobile: '+91 94221 88201',
+      email: 'info@marathwada-auto.com',
+      plotLocation: 'Plot B-12, Waluj Industrial Area',
+      district: 'Aurangabad',
+    },
+    userDocs: [
+      { id: 'd-11', title: 'Building Floor Elevation Blueprints.pdf', size: '5.2 MB', fileUrl: '#' },
+      { id: 'd-12', title: 'Fire Hydrant & Pipeline Scheme.pdf', size: '1.8 MB', fileUrl: '#' },
+      { id: 'd-13', title: 'Factory Inspectorate Form 1 Copy.pdf', size: '940 KB', fileUrl: '#' },
+    ],
+    status: 'PENDING_REVIEW',
+    signedDocId: null,
+    rejectionReason: null,
+  },
+  {
+    requestId: 'REQ-2026-0691',
+    appliedDate: '2026-08-20',
+    requestedDocName: 'Factory Building Plan Approval',
+    enterprise: {
+      name: 'Godavari Cold Chain & Pack House',
+      type: 'Cold Storage & Agro Warehouse',
+      ownerName: 'Pooja R. Patil',
+      mobile: '+91 97654 32110',
+      email: 'patil@godavaricold.in',
+      plotLocation: 'Gat No 104, Paithan Road',
+      district: 'Aurangabad',
+    },
+    userDocs: [
+      { id: 'd-21', title: '7_12 Land Extract & Mutation Entry.pdf', size: '1.1 MB', fileUrl: '#' },
+      { id: 'd-22', title: 'Structural Safety Certificate by Architect.pdf', size: '2.4 MB', fileUrl: '#' },
+    ],
+    status: 'PENDING_REVIEW',
+    signedDocId: null,
+    rejectionReason: null,
+  },
+];

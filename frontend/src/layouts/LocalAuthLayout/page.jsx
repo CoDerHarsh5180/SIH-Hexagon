@@ -6,6 +6,7 @@ import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 const localAuthNavLinks = [
   { id: 'requests', label: 'Requests', path: '/local-auth/requests' },
   { id: 'history', label: 'History', path: '/local-auth/history' },
+  { id: 'complaints', label: 'Complaints', path: '/local-auth/complaints' },
 ];
 
 // Local Authority officer metadata
