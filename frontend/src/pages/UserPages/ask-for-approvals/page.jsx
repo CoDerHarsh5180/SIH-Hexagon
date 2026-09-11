@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader, AIAdvisorPanel } from '../../../components/ui';
 import { Bot, Check, Sparkles, Clock } from 'lucide-react';
@@ -487,6 +488,7 @@ const YesNoToggle = ({ value, onChange }) => (
 const MAX_HISTORY = 3;
 
 export const AskForApprovalPage = () => {
+  const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(1);
   const [formData, setFormData] = useState({
     stage: 'pre-construction',
@@ -530,7 +532,7 @@ export const AskForApprovalPage = () => {
   };
 
   const handleFinishAndSubmit = () => {
-    alert('Information saved! Forwarding data to rules engine to generate required clearances list.');
+    navigate('/user/approvals/list');
   };
 
   // Shorthand for field-level insight (text input labels)

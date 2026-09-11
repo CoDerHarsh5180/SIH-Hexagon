@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -13,6 +14,7 @@ import { initialDocData } from './mockSingleDocData';
 import { EditDocModal } from './EditDocModal';
 
 export const MainAuthDocDetailsPage = () => {
+  const navigate = useNavigate();
   const [doc, setDoc] = useState(initialDocData);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
@@ -39,7 +41,10 @@ export const MainAuthDocDetailsPage = () => {
       {/* Top Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-border pb-6">
         <div className="space-y-1.5">
-          <button className="flex items-center text-xs text-foreground/60 hover:text-india-blue transition-colors cursor-pointer mb-2">
+          <button 
+            onClick={() => navigate('/main-auth/our-docs')}
+            className="flex items-center text-xs text-foreground/60 hover:text-india-blue transition-colors cursor-pointer mb-2"
+          >
             <ArrowLeft className="w-3 h-3 mr-1" /> Back to Catalog
           </button>
           <div className="flex items-center space-x-2">

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Search, PlusCircle, Filter } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, PlusCircle, Filter, FileText } from 'lucide-react';
 import { mainAuthDocsData } from './mockMainAuthDocs';
 import { ManagedDocCard } from './ManagedDocCard';
 
 export const MainAuthCatalogPage = () => {
+  const navigate = useNavigate();
   const [docs, setDocs] = useState(mainAuthDocsData);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'PAUSED', 'DRAFT'
@@ -17,12 +19,11 @@ export const MainAuthCatalogPage = () => {
   });
 
   const handleDocClick = (doc) => {
-    // This will navigate to the individual document details page you requested next
-    alert(`Navigating to detailed settings for: ${doc.name}`);
+    navigate(`/main-auth/our-docs/${doc.id}`);
   };
 
   const handleAddNewDoc = () => {
-    alert('Opening form to create a new Government Clearance or Scheme...');
+    navigate('/main-auth/add-new');
   };
 
   return (

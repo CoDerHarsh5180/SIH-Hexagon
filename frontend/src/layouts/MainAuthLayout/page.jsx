@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 
@@ -18,14 +18,20 @@ const mockMainAuthData = {
 };
 
 export const MainAuthLayout = ({ children }) => {
-  const [currentPath, setCurrentPath] = useState('/main-auth/dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
+
+  const handleNavClick = (path) => {
+    navigate(path);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
       <Navbar
         badge="Main Authority"
         currentPath={currentPath}
-        onNavClick={setCurrentPath}
+        onNavClick={handleNavClick}
         notificationPath="/main-auth/notifications"
         profilePath="/main-auth/profile"
         unreadCount={mockMainAuthData.unreadNotifications}
@@ -37,14 +43,14 @@ export const MainAuthLayout = ({ children }) => {
             isOpen={isOpen}
             links={mainAuthNavLinks}
             currentPath={currentPath}
-            onNavClick={onNavClick}
+            onNavClick={handleNavClick}
           />
         )}
       >
         <NavLinks
           links={mainAuthNavLinks}
           currentPath={currentPath}
-          onNavClick={setCurrentPath}
+          onNavClick={handleNavClick}
           layoutId="activeMainAuthNav"
         />
       </Navbar>
@@ -57,7 +63,7 @@ export const MainAuthLayout = ({ children }) => {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}
         >
-          {children}
+          {children || <Outlet />}
         </motion.div>
       </main>
     </div>

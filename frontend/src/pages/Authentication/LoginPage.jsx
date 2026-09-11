@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../layouts/AuthLayout/page';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
@@ -21,6 +22,7 @@ const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
 );
 
 export const LoginPage = ({ onNavigateToRegister }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,8 +39,24 @@ export const LoginPage = ({ onNavigateToRegister }) => {
     setTimeout(() => {
       console.log('[API MOCK] Logging in:', formData);
       setIsSubmitting(false);
-      alert('Login successful! Redirecting to dashboard...');
-    }, 700);
+      // Route based on role hint or default to user portal
+      const emailLower = formData.email.toLowerCase();
+      if (emailLower.includes('local')) {
+        navigate('/local-auth/requests');
+      } else if (emailLower.includes('main') || emailLower.includes('admin') || emailLower.includes('mpcb')) {
+        navigate('/main-auth/dashboard');
+      } else {
+        navigate('/user/dashboard');
+      }
+    }, 600);
+  };
+
+  const handleGoToRegister = () => {
+    if (onNavigateToRegister) {
+      onNavigateToRegister();
+    } else {
+      navigate('/register');
+    }
   };
 
   return (
@@ -105,7 +123,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
         Don&apos;t have an account yet?{' '}
         <button 
           type="button" 
-          onClick={onNavigateToRegister} 
+          onClick={handleGoToRegister} 
           className="text-india-blue font-semibold hover:underline cursor-pointer"
         >
           Register here

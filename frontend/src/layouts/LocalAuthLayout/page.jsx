@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 
@@ -17,14 +17,20 @@ const mockLocalAuthData = {
 };
 
 export const LocalAuthLayout = ({ children }) => {
-  const [currentPath, setCurrentPath] = useState('/local-auth/requests');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
+
+  const handleNavClick = (path) => {
+    navigate(path);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
       <Navbar
         badge="Local Authority"
         currentPath={currentPath}
-        onNavClick={setCurrentPath}
+        onNavClick={handleNavClick}
         notificationPath="/local-auth/notifications"
         profilePath="/local-auth/profile"
         unreadCount={mockLocalAuthData.unreadNotifications}
@@ -36,14 +42,14 @@ export const LocalAuthLayout = ({ children }) => {
             isOpen={isOpen}
             links={localAuthNavLinks}
             currentPath={currentPath}
-            onNavClick={onNavClick}
+            onNavClick={handleNavClick}
           />
         )}
       >
         <NavLinks
           links={localAuthNavLinks}
           currentPath={currentPath}
-          onNavClick={setCurrentPath}
+          onNavClick={handleNavClick}
           layoutId="activeLocalAuthNav"
         />
       </Navbar>
@@ -56,11 +62,7 @@ export const LocalAuthLayout = ({ children }) => {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}
         >
-          {children || (
-            <div className="p-4 sm:p-6 border border-border rounded-lg bg-background">
-              Active Authority View: <span className="font-bold text-india-blue">{currentPath}</span>
-            </div>
-          )}
+          {children || <Outlet />}
         </motion.div>
       </main>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 import { ChevronDown } from 'lucide-react';
@@ -8,7 +9,7 @@ const primaryNavLinks = [
   { id: 'dashboard', label: 'Dashboard', path: '/user/dashboard' },
   { id: 'approvals', label: 'Know Your Approval', path: '/user/approvals' },
   { id: 'track', label: 'Track Documents', path: '/user/track' },
-  {id:'your-docs', label: 'Your Docs', path: '/user/your-docs'}
+  { id: 'your-docs', label: 'Your Docs', path: '/user/your-docs' }
 ];
 
 // Secondary links grouped under 'More' dropdown
@@ -142,13 +143,19 @@ const MobileMoreAccordion = ({ currentPath, onNavClick }) => {
 };
 
 export const UserLayout = ({ children }) => {
-  const [currentPath, setCurrentPath] = useState('/user/dashboard');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
+
+  const handleNavClick = (path) => {
+    navigate(path);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
       <Navbar
         currentPath={currentPath}
-        onNavClick={setCurrentPath}
+        onNavClick={handleNavClick}
         notificationPath="/user/notifications"
         profilePath="/user/profile"
         unreadCount={mockUserData.unreadNotifications}
@@ -160,19 +167,19 @@ export const UserLayout = ({ children }) => {
             isOpen={isOpen}
             links={primaryNavLinks}
             currentPath={currentPath}
-            onNavClick={onNavClick}
+            onNavClick={handleNavClick}
           >
-            <MobileMoreAccordion currentPath={currentPath} onNavClick={onNavClick} />
+            <MobileMoreAccordion currentPath={currentPath} onNavClick={handleNavClick} />
           </MobileDrawer>
         )}
       >
         <NavLinks
           links={primaryNavLinks}
           currentPath={currentPath}
-          onNavClick={setCurrentPath}
+          onNavClick={handleNavClick}
           layoutId="activeUserNav"
         />
-        <MoreDropdown currentPath={currentPath} onNavClick={setCurrentPath} />
+        <MoreDropdown currentPath={currentPath} onNavClick={handleNavClick} />
       </Navbar>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -183,11 +190,7 @@ export const UserLayout = ({ children }) => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
         >
-          {children || (
-            <div className="p-4 border border-border rounded-lg">
-              Active: <span className="font-bold text-india-orange">{currentPath}</span>
-            </div>
-          )}
+          {children || <Outlet />}
         </motion.div>
       </main>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthLayout } from '../../layouts/AuthLayout/page';
 import { districtsInState, authorityBodies, mockAuthApi } from './authMockData';
@@ -35,6 +36,7 @@ const SelectGroup = ({ label, options, required, ...props }) => (
 
 // --- MAIN PAGE ---
 export const RegisterPage = ({ onNavigateToLogin }) => {
+  const navigate = useNavigate();
   const [role, setRole] = useState('USER');
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +50,14 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
   });
 
   const updateForm = (field) => (e) => setFormData({ ...formData, [field]: e.target.value });
+
+  const handleGoToLogin = () => {
+    if (onNavigateToLogin) {
+      onNavigateToLogin();
+    } else {
+      navigate('/login');
+    }
+  };
 
   const handleInitiateRegistration = (e) => {
     e.preventDefault();
@@ -71,7 +81,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
       mockAuthApi.verifyOtpAndRegister({ ...formData, role });
       setIsSubmitting(false);
       alert('Account verified and registered successfully!');
-      if (onNavigateToLogin) onNavigateToLogin();
+      handleGoToLogin();
     }, 800);
   };
 
@@ -173,7 +183,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
       {/* Switch to Login */}
       <div className="text-center pt-2 border-t border-border text-xs text-foreground/70">
-        Already registered? <button type="button" onClick={onNavigateToLogin} className="text-india-blue font-semibold hover:underline cursor-pointer">Sign In</button>
+        Already registered? <button type="button" onClick={handleGoToLogin} className="text-india-blue font-semibold hover:underline cursor-pointer">Sign In</button>
       </div>
     </AuthLayout>
   );
