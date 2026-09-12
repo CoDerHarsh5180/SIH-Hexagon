@@ -18,14 +18,29 @@ import {
 
 export const LandingNavbar = () => {
   const navigate = useNavigate();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('docflow_theme');
+      if (saved) return saved === 'dark';
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
 
   useEffect(() => {
-    // Check initial dark mode from html class
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
+    const saved = localStorage.getItem('docflow_theme');
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    } else if (saved === 'light') {
+      document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
+    } else {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    }
   }, []);
 
   const toggleDarkMode = () => {
@@ -33,8 +48,10 @@ export const LandingNavbar = () => {
     setIsDarkMode(nextMode);
     if (nextMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('docflow_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('docflow_theme', 'light');
     }
   };
 
@@ -149,7 +166,7 @@ export const LandingNavbar = () => {
           <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-[#3a445a] pl-2 sm:pl-3">
             {/* Notification Bell */}
             <button 
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/user/notifications')}
               className="relative p-2 text-slate-500 dark:text-slate-400 hover:text-[#1E3A6E] dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" 
               title="Notifications"
             >
@@ -190,8 +207,8 @@ export const LandingNavbar = () => {
                   </div>
                   
                   <button
-                    onClick={() => navigate('/login')}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#303030] transition-colors flex items-start gap-2.5 text-slate-700 dark:text-slate-200"
+                    onClick={() => { navigate('/user/dashboard'); setIsLoginDropdownOpen(false); }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#303030] transition-colors flex items-start gap-2.5 text-slate-700 dark:text-slate-200 cursor-pointer"
                   >
                     <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
                       <Briefcase className="w-4 h-4" />
@@ -203,8 +220,8 @@ export const LandingNavbar = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/login')}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#303030] transition-colors flex items-start gap-2.5 text-slate-700 dark:text-slate-200"
+                    onClick={() => { navigate('/local-auth/requests'); setIsLoginDropdownOpen(false); }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#303030] transition-colors flex items-start gap-2.5 text-slate-700 dark:text-slate-200 cursor-pointer"
                   >
                     <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0">
                       <ShieldCheck className="w-4 h-4" />
@@ -216,8 +233,8 @@ export const LandingNavbar = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate('/login')}
-                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#303030] transition-colors flex items-start gap-2.5 text-slate-700 dark:text-slate-200"
+                    onClick={() => { navigate('/main-auth/dashboard'); setIsLoginDropdownOpen(false); }}
+                    className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-[#303030] transition-colors flex items-start gap-2.5 text-slate-700 dark:text-slate-200 cursor-pointer"
                   >
                     <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-[#ff7700] shrink-0">
                       <Building2 className="w-4 h-4" />
@@ -230,14 +247,14 @@ export const LandingNavbar = () => {
 
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 mt-1 flex justify-between px-2">
                     <button
-                      onClick={() => navigate('/register')}
-                      className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                      onClick={() => { navigate('/register'); setIsLoginDropdownOpen(false); }}
+                      className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
                     >
                       New Registration →
                     </button>
                     <button
-                      onClick={() => navigate('/login')}
-                      className="text-[#1E3A6E] dark:text-slate-300 font-bold hover:underline"
+                      onClick={() => { navigate('/login'); setIsLoginDropdownOpen(false); }}
+                      className="text-[#1E3A6E] dark:text-slate-300 font-bold hover:underline cursor-pointer"
                     >
                       Sign In
                     </button>
@@ -291,7 +308,24 @@ export const LandingNavbar = () => {
           >
             Departmental Directory
           </button>
-          <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
+            <p className="text-[10px] uppercase font-bold text-slate-400">Direct Authority Portals</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { navigate('/local-auth/requests'); setIsMobileMenuOpen(false); }}
+                className="py-1.5 px-2 text-left text-xs rounded-lg bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-200"
+              >
+                Local Authority
+              </button>
+              <button
+                onClick={() => { navigate('/main-auth/dashboard'); setIsMobileMenuOpen(false); }}
+                className="py-1.5 px-2 text-left text-xs rounded-lg bg-slate-100 dark:bg-slate-800 font-medium text-slate-700 dark:text-slate-200"
+              >
+                Main Authority
+              </button>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex gap-2">
             <button
               onClick={() => { navigate('/register'); setIsMobileMenuOpen(false); }}
               className="flex-1 py-2 text-center text-xs font-bold rounded-lg bg-[#ff7700] text-white"

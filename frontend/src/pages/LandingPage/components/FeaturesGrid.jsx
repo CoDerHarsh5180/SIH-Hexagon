@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Network, 
   Lock, 
@@ -13,6 +14,19 @@ import {
 import { PLATFORM_FEATURES } from '../data/landingData';
 
 export const FeaturesGrid = () => {
+  const navigate = useNavigate();
+
+  const getFeatureRoute = (idx) => {
+    switch (idx) {
+      case 0: return '/user/approvals';        // Automated Rule Engine -> KYA Wizard
+      case 1: return '/user/your-docs';         // Bank-Grade Document Vault -> Your Docs
+      case 2: return '/user/track';             // Parallel Inter-Agency Scrutiny -> Tracking
+      case 3: return '/user/gov-benefits';      // Section 19 Deemed Approval -> Subsidies & Benefits
+      case 4: return '/user/complain';          // 1-Click RTS Grievance -> Complain Portal
+      case 5: return '/local-auth/requests';    // Dual Desks -> Officer Queue
+      default: return '/user/dashboard';
+    }
+  };
   const getFeatureIcon = (iconName) => {
     switch (iconName) {
       case 'Network':
@@ -68,23 +82,31 @@ export const FeaturesGrid = () => {
           {PLATFORM_FEATURES.map((feature, idx) => (
             <div
               key={idx}
-              className="bg-slate-50 dark:bg-[#222222] p-6 rounded-2xl border border-slate-200 dark:border-[#333333] shadow-xs hover:border-[#1E3A6E]/40 dark:hover:border-emerald-500/40 hover:bg-white dark:hover:bg-[#282828] transition-all duration-200 group"
+              onClick={() => navigate(getFeatureRoute(idx))}
+              className="bg-slate-50 dark:bg-[#222222] p-6 rounded-2xl border border-slate-200 dark:border-[#333333] shadow-xs hover:border-[#1E3A6E]/40 dark:hover:border-emerald-500/40 hover:bg-white dark:hover:bg-[#282828] transition-all duration-200 group cursor-pointer flex flex-col justify-between"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-11 h-11 rounded-xl bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-slate-800 flex items-center justify-center transition-colors ${getHoverBg(feature.iconName)}`}>
-                  {getFeatureIcon(feature.iconName)}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-11 h-11 rounded-xl bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-slate-800 flex items-center justify-center transition-colors ${getHoverBg(feature.iconName)}`}>
+                    {getFeatureIcon(feature.iconName)}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1a1a1a] px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-800">
+                    {feature.tag}
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-white dark:bg-[#1a1a1a] px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-800">
-                  {feature.tag}
-                </span>
+
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2 group-hover:text-[#1E3A6E] dark:group-hover:text-emerald-400 transition-colors">
+                  {feature.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
+                  {feature.desc}
+                </p>
               </div>
 
-              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                {feature.desc}
-              </p>
+              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-xs font-semibold text-[#1E3A6E] dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
+                <span>Explore Capability</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
             </div>
           ))}
         </div>

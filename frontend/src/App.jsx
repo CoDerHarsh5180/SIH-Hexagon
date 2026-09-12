@@ -46,79 +46,68 @@ import { MainAuthAllRequestsPage } from './pages/MainAuthPages/AllRequestsPage/p
 import NotificationsPage from './pages/CommonPages/NotificationsPage';
 import NotFoundPage from './pages/CommonPages/NotFoundPage';
 import BackgroundFlagDecor from './components/common/BackgroundFlagDecor';
-import { AuthProvider } from './context/AuthContext';
-
-import ProtectedRoute from './components/common/ProtectedRoute';
 
 import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        {/* Background Indian Tricolor Corner Ribbons */}
-        <BackgroundFlagDecor />
+    <BrowserRouter>
+      {/* Background Indian Tricolor Corner Ribbons */}
+      <BackgroundFlagDecor />
 
-        <Routes>
-          {/* Flagship Landing Page */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+      <Routes>
+        {/* Flagship Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-          {/* ── USER PORTAL ROUTES (PROTECTED: USER) ── */}
-          <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
-            <Route path="/user" element={<UserLayout />}>
-              <Route index element={<Navigate to="/user/dashboard" replace />} />
-              <Route path="dashboard" element={<UserDashboardPage />} />
-              <Route path="approvals" element={<AskForApprovalPage />} />
-              <Route path="approvals/list" element={<ListOfApprovalsPage />} />
-              <Route path="track" element={<TrackDocDetailPage />} />
-              <Route path="track/:id" element={<TrackDocDetailPage />} />
-              <Route path="your-docs" element={<YourDocsPage />} />
-              <Route path="pending-docs" element={<PendingDocsPage />} />
-              <Route path="custom-docs-apply" element={<CustomDocsApplyPage />} />
-              <Route path="profile" element={<EnterpriseProfilePage />} />
-              <Route path="query" element={<QueryPage />} />
-              <Route path="complain" element={<ComplainPage />} />
-              <Route path="feedback" element={<FeedbackPage />} />
-              <Route path="gov-benefits" element={<GovBenefitsPage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-            </Route>
-          </Route>
+        {/* ── USER PORTAL ROUTES ── */}
+        <Route path="/user" element={<UserLayout />}>
+          <Route index element={<Navigate to="/user/dashboard" replace />} />
+          <Route path="dashboard" element={<UserDashboardPage />} />
+          <Route path="approvals" element={<AskForApprovalPage />} />
+          <Route path="approvals/list" element={<ListOfApprovalsPage />} />
+          <Route path="track" element={<TrackDocDetailPage />} />
+          <Route path="track/:id" element={<TrackDocDetailPage />} />
+          <Route path="your-docs" element={<YourDocsPage />} />
+          <Route path="pending-docs" element={<PendingDocsPage />} />
+          <Route path="custom-docs-apply" element={<CustomDocsApplyPage />} />
+          <Route path="profile" element={<EnterpriseProfilePage />} />
+          <Route path="query" element={<QueryPage />} />
+          <Route path="complain" element={<ComplainPage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="gov-benefits" element={<GovBenefitsPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+        </Route>
 
-          {/* ── LOCAL AUTHORITY PORTAL ROUTES (PROTECTED: LOCAL_AUTH / MUNICIPAL_AUTH) ── */}
-          <Route element={<ProtectedRoute allowedRoles={['LOCAL_AUTH', 'MUNICIPAL_AUTH']} />}>
-            <Route path="/local-auth" element={<LocalAuthLayout />}>
-              <Route index element={<Navigate to="/local-auth/requests" replace />} />
-              <Route path="requests" element={<LocalAuthAllRequestsPage />} />
-              <Route path="history" element={<LocalAuthHistoryPage />} />
-              <Route path="complaints" element={<LocalAuthComplaintsPage />} />
-              <Route path="profile" element={<LocalAuthProfilePage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-            </Route>
-          </Route>
+        {/* ── LOCAL AUTHORITY PORTAL ROUTES ── */}
+        <Route path="/local-auth" element={<LocalAuthLayout />}>
+          <Route index element={<Navigate to="/local-auth/requests" replace />} />
+          <Route path="requests" element={<LocalAuthAllRequestsPage />} />
+          <Route path="history" element={<LocalAuthHistoryPage />} />
+          <Route path="complaints" element={<LocalAuthComplaintsPage />} />
+          <Route path="profile" element={<LocalAuthProfilePage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+        </Route>
 
-          {/* ── MAIN AUTHORITY PORTAL ROUTES (PROTECTED: MAIN_AUTH / MUNICIPAL_AUTH) ── */}
-          <Route element={<ProtectedRoute allowedRoles={['MAIN_AUTH', 'MUNICIPAL_AUTH']} />}>
-            <Route path="/main-auth" element={<MainAuthLayout />}>
-              <Route index element={<Navigate to="/main-auth/dashboard" replace />} />
-              <Route path="dashboard" element={<MainAuthDashboardPage />} />
-              <Route path="requests" element={<MainAuthAllRequestsPage />} />
-              <Route path="our-docs" element={<MainAuthCatalogPage />} />
-              <Route path="our-docs/:id" element={<MainAuthDocDetailsPage />} />
-              <Route path="add-new" element={<MainAuthCreationPage />} />
-              <Route path="complaints" element={<MainAuthComplaintsPage />} />
-              <Route path="local-auths" element={<LocalAuthsPage />} />
-              <Route path="profile" element={<MainAuthProfilePage />} />
-              <Route path="notifications" element={<NotificationsPage />} />
-            </Route>
-          </Route>
+        {/* ── MAIN AUTHORITY PORTAL ROUTES ── */}
+        <Route path="/main-auth" element={<MainAuthLayout />}>
+          <Route index element={<Navigate to="/main-auth/dashboard" replace />} />
+          <Route path="dashboard" element={<MainAuthDashboardPage />} />
+          <Route path="requests" element={<MainAuthAllRequestsPage />} />
+          <Route path="our-docs" element={<MainAuthCatalogPage />} />
+          <Route path="our-docs/:id" element={<MainAuthDocDetailsPage />} />
+          <Route path="add-new" element={<MainAuthCreationPage />} />
+          <Route path="complaints" element={<MainAuthComplaintsPage />} />
+          <Route path="local-auths" element={<LocalAuthsPage />} />
+          <Route path="profile" element={<MainAuthProfilePage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+        </Route>
 
-          {/* 404 Fallback */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        {/* 404 Fallback */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

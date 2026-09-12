@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   Flame, 
@@ -7,11 +8,13 @@ import {
   Utensils, 
   ShieldCheck,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  ArrowRight
 } from 'lucide-react';
 import { INTEGRATED_DEPARTMENTS } from '../data/landingData';
 
 export const DepartmentsSection = () => {
+  const navigate = useNavigate();
   const getDeptIcon = (iconName) => {
     switch (iconName) {
       case 'Leaf':
@@ -59,13 +62,14 @@ export const DepartmentsSection = () => {
           {INTEGRATED_DEPARTMENTS.map((dept, idx) => (
             <div
               key={idx}
-              className="bg-white dark:bg-[#222222] p-5 rounded-2xl border border-slate-200 dark:border-[#333333] shadow-xs flex flex-col items-center text-center hover:border-[#1E3A6E] dark:hover:border-emerald-500 transition-all duration-200 group"
+              onClick={() => navigate('/user/approvals/list', { state: { filterDept: dept.code } })}
+              className="bg-white dark:bg-[#222222] p-5 rounded-2xl border border-slate-200 dark:border-[#333333] shadow-xs flex flex-col items-center text-center hover:border-[#1E3A6E] dark:hover:border-emerald-500 hover:shadow-md transition-all duration-200 group cursor-pointer"
             >
               <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 {getDeptIcon(dept.iconName)}
               </div>
 
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#1E3A6E] dark:group-hover:text-emerald-400 transition-colors">
                 {dept.code}
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 h-8">

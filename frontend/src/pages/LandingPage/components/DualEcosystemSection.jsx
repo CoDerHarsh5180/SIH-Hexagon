@@ -12,7 +12,8 @@ import {
   ExternalLink,
   Users,
   Eye,
-  Building2
+  Building2,
+  ArrowRight
 } from 'lucide-react';
 
 export const DualEcosystemSection = () => {
@@ -43,14 +44,15 @@ export const DualEcosystemSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Card: For Entrepreneurs & Investors */}
           <div className="bg-white dark:bg-[#222222] rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-lg overflow-hidden flex flex-col transition-all">
-            <div className="bg-[#1E3A6E] dark:bg-emerald-800 text-white p-4.5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-                <h3 className="text-sm font-bold">
-                  For Entrepreneurs &amp; Investors (Live Clearance Pipeline)
+            <div className="bg-[#1E3A6E] dark:bg-emerald-800 text-white p-3.5 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+                <h3 className="text-xs sm:text-sm font-bold leading-tight">
+                  <span className="hidden sm:inline">For Entrepreneurs & Investors (Live Clearance Pipeline)</span>
+                  <span className="sm:hidden">Enterprise Clearance Pipeline</span>
                 </h3>
               </div>
-              <span className="text-[11px] font-semibold bg-white/10 px-2 py-0.5 rounded">
+              <span className="text-[10px] sm:text-[11px] font-semibold bg-white/10 px-2 py-0.5 rounded self-start sm:self-auto shrink-0">
                 Applicant Console
               </span>
             </div>
@@ -157,19 +159,30 @@ export const DualEcosystemSection = () => {
                   <span className="truncate">1-Click Grievance</span>
                 </button>
               </div>
+
+              <div className="pt-2 text-center">
+                <button
+                  onClick={() => navigate('/user/dashboard')}
+                  className="text-xs font-bold text-[#1E3A6E] dark:text-emerald-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Launch Full Enterprise Applicant Console</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Right Card: For Government Officers */}
           <div className="bg-white dark:bg-[#222222] rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-lg overflow-hidden flex flex-col transition-all">
-            <div className="bg-[#0B192C] text-white p-4.5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-[#ff7700]"></span>
-                <h3 className="text-sm font-bold">
-                  For Government Officers (Real-time Scrutiny Console)
+            <div className="bg-[#0B192C] text-white p-3.5 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-3 h-3 rounded-full bg-[#ff7700] shrink-0"></span>
+                <h3 className="text-xs sm:text-sm font-bold leading-tight">
+                  <span className="hidden sm:inline">For Government Officers (Real-time Scrutiny Console)</span>
+                  <span className="sm:hidden">Officer Scrutiny Console</span>
                 </h3>
               </div>
-              <span className="text-[11px] font-semibold bg-white/10 px-2 py-0.5 rounded text-[#ff7700]">
+              <span className="text-[10px] sm:text-[11px] font-semibold bg-white/10 px-2 py-0.5 rounded text-[#ff7700] self-start sm:self-auto shrink-0">
                 Statutory Board
               </span>
             </div>
@@ -260,14 +273,21 @@ export const DualEcosystemSection = () => {
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <Video className="w-4 h-4 text-[#1E3A6E] dark:text-blue-400" />
-                  Collectorate VC Channel
-                </span>
-                <span className="text-[#1E3A6E] dark:text-emerald-400 font-bold">
-                  Encrypted Officer Node
-                </span>
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                <button
+                  onClick={() => navigate('/local-auth/requests')}
+                  className="font-bold text-[#1E3A6E] dark:text-blue-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Local Authority Queue</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => navigate('/main-auth/dashboard')}
+                  className="font-bold text-[#ff7700] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Apex Directorate (Main)</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
               </div>
             </div>
           </div>

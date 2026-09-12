@@ -72,7 +72,16 @@ export const LandingFooter = () => {
                   onClick={() => navigate('/local-auth/requests')} 
                   className="hover:text-white transition-colors cursor-pointer text-left"
                 >
-                  District Collectorates Desk
+                  District Collectorates Desk (Local Auth)
+                </button>
+              </li>
+              <li>
+                <button 
+                  onClick={() => navigate('/main-auth/dashboard')} 
+                  className="hover:text-white transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <span>Apex Governance Directorate</span>
+                  <span className="text-[9px] bg-slate-800 text-[#ff7700] px-1.5 py-0.2 rounded font-bold">Main Auth</span>
                 </button>
               </li>
             </ul>
@@ -109,9 +118,12 @@ export const LandingFooter = () => {
                 </button>
               </li>
               <li>
-                <span className="text-slate-500 cursor-not-allowed">
-                  Cyber Security Audit Mandate (2026)
-                </span>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="hover:text-white transition-colors cursor-pointer text-left text-emerald-400 font-semibold"
+                >
+                  Enterprise Registration (Instant OTP)
+                </button>
               </li>
             </ul>
           </div>

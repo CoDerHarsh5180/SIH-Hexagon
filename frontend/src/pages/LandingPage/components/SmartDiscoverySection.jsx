@@ -148,7 +148,7 @@ export const SmartDiscoverySection = () => {
             <span className="text-[11px] text-slate-500">Live dynamic recalculation</span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-nowrap sm:flex-wrap gap-2 overflow-x-auto pb-1 scrollbar-none">
             {KYA_SIMULATOR_PRESETS.map((preset) => (
               <button
                 key={preset.id}

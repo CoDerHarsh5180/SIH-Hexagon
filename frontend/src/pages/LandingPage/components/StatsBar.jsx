@@ -28,7 +28,7 @@ export const StatsBar = () => {
   };
 
   return (
-    <section className="py-10 bg-white dark:bg-[#181818] border-b border-slate-200 dark:border-[#3a445a] transition-colors duration-300">
+    <section className="py-10 bg-white dark:bg-[#181818] border-b border-slate-200 dark:border-[#3a445a] transition-colors duration-300 relative z-10">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {PLATFORM_STATS.map((stat, idx) => (

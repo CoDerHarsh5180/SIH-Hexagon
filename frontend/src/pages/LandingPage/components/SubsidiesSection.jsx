@@ -142,7 +142,7 @@ export const SubsidiesSection = () => {
             </div>
 
             {/* Output Metric Cards */}
-            <div className="lg:col-span-6 grid grid-cols-3 gap-3">
+            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 dark:bg-[#1a1a1a] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center">
                 <span className="text-[10px] uppercase font-semibold text-slate-500 block">Capital Subsidy</span>
                 <span className="text-sm sm:text-base font-extrabold text-emerald-600 dark:text-emerald-400 block mt-1 font-mono">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -9,24 +9,74 @@ import {
   Clock, 
   QrCode, 
   Shield, 
-  FileText,
-  ExternalLink,
-  ChevronRight,
-  TrendingUp,
-  Flame,
-  Check
+  FileText, 
+  ExternalLink, 
+  ChevronRight, 
+  ChevronDown,
+  TrendingUp, 
+  Flame, 
+  Check,
+  X,
+  Building2
 } from 'lucide-react';
 import { POPULAR_DISTRICTS, POPULAR_CLEARANCES, LIVE_DOSSIER_MOCK } from '../data/landingData';
+import borderImg from '../../../assets/border.png';
 
 export const HeroSection = ({ onSelectClearanceSearch }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState(false);
+  const [districtFilterSearch, setDistrictFilterSearch] = useState('');
+  const [selectedRegionFilter, setSelectedRegionFilter] = useState('All');
+  const dropdownRef = useRef(null);
+  const filterInputRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDistrictDropdownOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsDistrictDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isDistrictDropdownOpen && filterInputRef.current) {
+      setTimeout(() => filterInputRef.current?.focus(), 80);
+    } else {
+      setDistrictFilterSearch('');
+    }
+  }, [isDistrictDropdownOpen]);
+
+  const selectedDistrictObj = POPULAR_DISTRICTS.find((d) => d.id === selectedDistrict);
+
+  const REGION_TABS = ['All', 'Western Maharashtra', 'Konkan', 'Vidarbha', 'Marathwada', 'North Maharashtra'];
+
+  const filteredDistricts = POPULAR_DISTRICTS.filter((d) => {
+    const matchesRegion = selectedRegionFilter === 'All' || d.region === selectedRegionFilter;
+    const query = districtFilterSearch.toLowerCase().trim();
+    if (!query) return matchesRegion;
+    const matchesName = d.name.toLowerCase().includes(query);
+    const matchesCity = d.city ? d.city.toLowerCase().includes(query) : false;
+    const matchesClusters = d.clusters ? d.clusters.some((c) => c.toLowerCase().includes(query)) : false;
+    return matchesRegion && (matchesName || matchesCity || matchesClusters);
+  });
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim() || selectedDistrict) {
-      navigate('/user/approvals');
+      navigate('/user/approvals/list', { state: { searchQuery, selectedDistrict } });
     } else {
       navigate('/user/approvals');
     }
@@ -40,25 +90,38 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
   };
 
   return (
-    <section className="relative bg-gradient-to-b from-white via-slate-50 to-slate-100/50 dark:from-[#1c1c1c] dark:via-[#181818] dark:to-[#141414] pt-8 pb-16 border-b border-slate-200 dark:border-[#3a445a] overflow-hidden transition-colors duration-300">
-      {/* Background Decorative Gradients */}
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 dark:bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-10 w-80 h-80 bg-[#ff7700]/5 rounded-full blur-3xl pointer-events-none" />
+    <section className="relative z-20 bg-gradient-to-b from-white via-slate-50 to-slate-100/50 dark:from-[#1c1c1c] dark:via-[#181818] dark:to-[#141414] pt-8 pb-16 border-b border-slate-200 dark:border-[#3a445a] transition-colors duration-300">
+      {/* Background Decorative Layer (Clipped to Hero Boundary) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {/* Background Decorative Gradients */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 dark:bg-emerald-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-10 w-80 h-80 bg-[#ff7700]/5 rounded-full blur-3xl" />
+
+        {/* Top-Left Indian Tricolor Corner Ribbon Accent */}
+        <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 md:-top-8 md:-left-8 select-none">
+          <img
+            src={borderImg}
+            alt=""
+            aria-hidden="true"
+            className="w-40 sm:w-56 md:w-72 lg:w-88 h-auto object-contain transform -scale-x-100 rotate-12 opacity-35 dark:opacity-20 filter drop-shadow-xs"
+          />
+        </div>
+      </div>
 
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Live Policy Pill */}
-        <div className="inline-flex items-center gap-2 bg-white dark:bg-[#252525] border border-slate-200 dark:border-[#3a445a] shadow-xs rounded-full px-3.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 mb-6 transition-all hover:border-[#1E3A6E]/30">
+        <div className="inline-flex flex-wrap items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#252525] border border-slate-200 dark:border-[#3a445a] shadow-xs rounded-full px-3 sm:px-3.5 py-1 text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 mb-6 transition-all hover:border-[#1E3A6E]/30">
           <span className="inline-block w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
           <span className="font-semibold text-[#1E3A6E] dark:text-emerald-400">Maharashtra Industrial Policy 2024–2029</span>
-          <span className="text-slate-300 dark:text-slate-600">•</span>
-          <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1">
+          <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
+          <span className="text-slate-600 dark:text-slate-300 hidden sm:flex items-center gap-1">
             Section 19 Deemed SLA Enforced
           </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           {/* Hero Left Content */}
-          <div className="lg:col-span-7 flex flex-col gap-5">
+          <div className="lg:col-span-7 flex flex-col gap-5 relative z-30">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
               Every Industrial Clearance, Subsidy & Permit —{' '}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E3A6E] via-emerald-700 to-[#ff7700] dark:from-emerald-400 dark:via-blue-400 dark:to-[#ff7700]">
@@ -94,7 +157,7 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
             </div>
 
             {/* District & Clearance Instant Search Bar */}
-            <form onSubmit={handleSearchSubmit} className="mt-3 bg-white dark:bg-[#252525] p-2 rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-lg flex flex-col sm:flex-row items-stretch gap-2">
+            <form onSubmit={handleSearchSubmit} className="mt-3 bg-white dark:bg-[#252525] p-2 rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-lg flex flex-col sm:flex-row items-stretch gap-2 relative z-30">
               <div className="flex items-center gap-2 flex-grow px-3 py-2">
                 <Search className="w-5 h-5 text-slate-400 shrink-0" />
                 <input
@@ -106,21 +169,210 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                 />
               </div>
 
-              <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 px-3 py-2 sm:w-64">
-                <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                <select
-                  value={selectedDistrict}
-                  onChange={(e) => setSelectedDistrict(e.target.value)}
-                  aria-label="Select Industrial District Hub"
-                  className="w-full bg-transparent border-0 focus:outline-none p-0 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer"
+              {/* Custom Modern District Dropdown */}
+              <div className="relative border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 px-3 py-1.5 sm:w-80" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsDistrictDropdownOpen(!isDistrictDropdownOpen)}
+                  className="w-full h-full flex items-center justify-between gap-2 text-left focus:outline-none cursor-pointer group py-1"
                 >
-                  <option value="" className="dark:bg-[#252525]">Select District Hub</option>
-                  {POPULAR_DISTRICTS.map((d) => (
-                    <option key={d.id} value={d.id} className="dark:bg-[#252525]">
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition-all ${
+                      selectedDistrictObj 
+                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60 shadow-xs' 
+                        : 'bg-blue-50 text-[#1E3A6E] border-blue-100 dark:bg-[#202836] dark:text-blue-300 dark:border-slate-700'
+                    }`}>
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-400 tracking-wider leading-none mb-0.5 flex items-center gap-1">
+                        <span>District Hub</span>
+                        {selectedDistrictObj && (
+                          <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold">• ACTIVE</span>
+                        )}
+                      </p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
+                        {selectedDistrictObj ? (selectedDistrictObj.city || selectedDistrictObj.name.split('(')[0].trim()) : 'Select District Hub'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {selectedDistrict && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDistrict('');
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            setSelectedDistrict('');
+                          }
+                        }}
+                        title="Clear district selection"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isDistrictDropdownOpen ? 'rotate-180 text-[#1E3A6E] dark:text-emerald-400' : 'group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+                  </div>
+                </button>
+
+                {/* Dropdown Floating Menu */}
+                {isDistrictDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2.5 w-84 sm:w-[420px] max-w-[92vw] bg-white dark:bg-[#1e232d] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-slate-900/30 dark:shadow-black/80 p-3 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-slate-900/5 dark:ring-white/10">
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-[#1E3A6E] dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Maharashtra Industrial Hubs
+                        </span>
+                        <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded-full">
+                          {filteredDistricts.length}
+                        </span>
+                      </div>
+                      {selectedDistrict && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDistrict('')}
+                          className="text-[11px] text-[#ff7700] hover:text-[#d45d00] hover:underline font-semibold cursor-pointer"
+                        >
+                          Clear Selection
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Instant Search Filter Input */}
+                    <div className="relative flex items-center bg-slate-50 dark:bg-[#151921] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 mb-2 focus-within:ring-2 focus-within:ring-[#1E3A6E]/20 dark:focus-within:ring-emerald-500/20 focus-within:border-[#1E3A6E] dark:focus-within:border-emerald-500 transition-all">
+                      <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-2" />
+                      <input
+                        ref={filterInputRef}
+                        type="text"
+                        value={districtFilterSearch}
+                        onChange={(e) => setDistrictFilterSearch(e.target.value)}
+                        placeholder="Search city or MIDC zone (e.g., Chakan, Taloja)..."
+                        className="w-full bg-transparent border-0 focus:outline-none p-0 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                      />
+                      {districtFilterSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setDistrictFilterSearch('')}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Region Filter Chips */}
+                    <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-2 scrollbar-none">
+                      {REGION_TABS.map((tab) => {
+                        const isActive = selectedRegionFilter === tab;
+                        const shortLabel = 
+                          tab === 'Western Maharashtra' ? 'Western MH' :
+                          tab === 'North Maharashtra' ? 'North MH' : tab;
+                        return (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => setSelectedRegionFilter(tab)}
+                            className={`text-[10px] font-semibold px-2 py-1 rounded-lg shrink-0 transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-[#1E3A6E] dark:bg-emerald-600 text-white shadow-xs'
+                                : 'bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {shortLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Districts List */}
+                    <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                      {filteredDistricts.length === 0 ? (
+                        <div className="py-6 text-center text-slate-400 dark:text-slate-500">
+                          <Building2 className="w-7 h-7 mx-auto mb-1.5 opacity-40" />
+                          <p className="text-xs font-semibold">No industrial hubs found</p>
+                          <p className="text-[10px] mt-0.5">Try searching another MIDC zone or select "All"</p>
+                        </div>
+                      ) : (
+                        filteredDistricts.map((district) => {
+                          const isSelected = selectedDistrict === district.id;
+                          const [cityName, subAreas] = district.name.split('(');
+                          const subAreaClean = subAreas ? subAreas.replace(')', '') : '';
+                          const clusters = district.clusters || (subAreaClean ? subAreaClean.split('/').map(s => s.trim()) : []);
+
+                          return (
+                            <button
+                              key={district.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedDistrict(district.id);
+                                setIsDistrictDropdownOpen(false);
+                              }}
+                              className={`w-full text-left p-2.5 rounded-xl transition-all flex flex-col gap-1.5 cursor-pointer border ${
+                                isSelected 
+                                  ? 'bg-blue-50/90 dark:bg-emerald-950/50 border-[#1E3A6E]/30 dark:border-emerald-600/50 shadow-xs' 
+                                  : 'hover:bg-slate-50 dark:hover:bg-[#262c38] border-slate-100 dark:border-slate-800/80 bg-white/50 dark:bg-[#1a1f28]/40'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={`text-xs font-bold ${
+                                    isSelected 
+                                      ? 'text-[#1E3A6E] dark:text-emerald-300' 
+                                      : 'text-slate-900 dark:text-white'
+                                  }`}>
+                                    {district.city || cityName.trim()}
+                                  </span>
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                    {district.region}
+                                  </span>
+                                </div>
+
+                                {isSelected && (
+                                  <div className="w-4 h-4 rounded-full bg-[#1E3A6E] dark:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                    <Check className="w-2.5 h-2.5" />
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Cluster tags */}
+                              {clusters.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1">
+                                  {clusters.map((c, idx) => (
+                                    <span 
+                                      key={idx}
+                                      className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                                        isSelected 
+                                          ? 'bg-blue-100/70 dark:bg-emerald-900/60 text-[#1E3A6E] dark:text-emerald-300' 
+                                          : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400'
+                                      }`}
+                                    >
+                                      {c}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Bottom hint */}
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-400 flex items-center justify-between">
+                      <span>💡 Prioritizes MIDC NOCs & Regional SLAs</span>
+                      <span className="font-mono text-[9px] text-slate-400">ESC to close</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button
@@ -149,7 +401,7 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
           </div>
 
           {/* Hero Right Mockup Card: High-Fidelity Active Application Dossier */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 relative z-10">
             <div className="bg-white dark:bg-[#222222] rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-xl p-6 relative overflow-hidden transition-all duration-300">
               {/* Header Details */}
               <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
@@ -202,12 +454,12 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                   ></div>
                 </div>
 
-                <div className="grid grid-cols-5 text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2.5 font-medium">
+                <div className="grid grid-cols-5 text-[9px] sm:text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2.5 font-medium gap-0.5">
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">Filed ✓</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Scrutiny ✓</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Inspect ✓</span>
-                  <span className="text-[#1E3A6E] dark:text-amber-400 font-bold underline">Legal (Active)</span>
-                  <span className="text-slate-400">Issuance</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold"><span className="hidden sm:inline">Scrutiny</span><span className="sm:hidden">Scrut.</span> ✓</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold"><span className="hidden sm:inline">Inspect</span><span className="sm:hidden">Insp.</span> ✓</span>
+                  <span className="text-[#1E3A6E] dark:text-amber-400 font-bold underline"><span className="hidden sm:inline">Legal (Active)</span><span className="sm:hidden">Legal</span></span>
+                  <span className="text-slate-400"><span className="hidden sm:inline">Issuance</span><span className="sm:hidden">Issue</span></span>
                 </div>
               </div>
 

@@ -21,7 +21,7 @@ export const LandingPage = () => {
       {/* 1. Top Navigation */}
       <LandingNavbar />
 
-      <main className="flex-grow">
+      <main className="flex-grow relative z-10">
         {/* 2. Hero Section with Live Dossier */}
         <HeroSection />
 

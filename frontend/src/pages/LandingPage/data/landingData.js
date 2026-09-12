@@ -5,12 +5,16 @@
  */
 
 export const POPULAR_DISTRICTS = [
-  { id: 'pune', name: 'Pune (Chakan / Bhosari / Ranjangaon)', region: 'Western Maharashtra' },
-  { id: 'csn', name: 'Chhatrapati Sambhajinagar (Shendra / Bidkin)', region: 'Marathwada' },
-  { id: 'thane', name: 'Thane (TTC / Turbhe / Belapur / Navi Mumbai)', region: 'Konkan' },
-  { id: 'nagpur', name: 'Nagpur (Butibori / MIHAN SEZ / Hingna)', region: 'Vidarbha' },
-  { id: 'nashik', name: 'Nashik (Satpur / Ambad / Sinnar)', region: 'North Maharashtra' },
-  { id: 'raigad', name: 'Raigad (Taloja / Roha / Patalganga)', region: 'Konkan' },
+  { id: 'pune', name: 'Pune (Chakan / Bhosari / Ranjangaon)', city: 'Pune', clusters: ['Chakan', 'Bhosari', 'Ranjangaon', 'Talegaon'], region: 'Western Maharashtra' },
+  { id: 'csn', name: 'Chhatrapati Sambhajinagar (Shendra / Bidkin)', city: 'Chhatrapati Sambhajinagar', clusters: ['Shendra AURIC', 'Bidkin', 'Waluj'], region: 'Marathwada' },
+  { id: 'thane', name: 'Thane (TTC / Turbhe / Belapur / Navi Mumbai)', city: 'Thane', clusters: ['TTC Ind. Area', 'Turbhe', 'Navi Mumbai'], region: 'Konkan' },
+  { id: 'nagpur', name: 'Nagpur (Butibori / MIHAN SEZ / Hingna)', city: 'Nagpur', clusters: ['Butibori MIDC', 'MIHAN SEZ', 'Hingna'], region: 'Vidarbha' },
+  { id: 'nashik', name: 'Nashik (Satpur / Ambad / Sinnar)', city: 'Nashik', clusters: ['Satpur', 'Ambad', 'Sinnar'], region: 'North Maharashtra' },
+  { id: 'raigad', name: 'Raigad (Taloja / Roha / Patalganga)', city: 'Raigad', clusters: ['Taloja MIDC', 'Roha', 'Patalganga'], region: 'Konkan' },
+  { id: 'kolhapur', name: 'Kolhapur (Shiroli / Gokul Shirgaon / Kagal)', city: 'Kolhapur', clusters: ['Shiroli', 'Gokul Shirgaon', 'Kagal MIDC'], region: 'Western Maharashtra' },
+  { id: 'solapur', name: 'Solapur (Chincholi / Akkalkot Road / Textile)', city: 'Solapur', clusters: ['Chincholi', 'Akkalkot Rd', 'Textile Park'], region: 'Western Maharashtra' },
+  { id: 'palghar', name: 'Palghar (Tarapur / Boisar MIDC)', city: 'Palghar', clusters: ['Tarapur Chemical Zone', 'Boisar MIDC'], region: 'Konkan' },
+  { id: 'amravati', name: 'Amravati (Nandgaon Peth / Textile Zone)', city: 'Amravati', clusters: ['Nandgaon Peth', 'Textile Park'], region: 'Vidarbha' },
 ];
 
 export const POPULAR_CLEARANCES = [

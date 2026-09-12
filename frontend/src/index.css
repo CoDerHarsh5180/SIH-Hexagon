@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Light Mode Defaults */
+:root {
+  /* Classic deep India jersey blue */
+  --theme-india-blue: #3da000;
+  --theme-india-orange: #ff7700;
+  --theme-background: #ffffff;
+  --theme-foreground: #000000;
+  --theme-border: #e5e7eb;
+}
+
+/* Dark Mode Overrides */
+.dark {
+  /* High-contrast electric sky blue (reminiscent of the T20 / ODI training jersey) */
+  --theme-india-blue: #33a429;
+  --theme-india-orange: #ff7700;
+  --theme-background: #1c1c1c;
+  --theme-foreground: #ffffff;
+  --theme-border: #3a445a;
+}
+
+@theme {
+  --color-india-blue: var(--theme-india-blue);
+  --color-background: var(--theme-background);
+  --color-foreground: var(--theme-foreground);
+  --color-border: var(--theme-border);
+  --color-india-orange: var(--theme-india-orange);
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
