@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Modal } from '../../../components/ui';
-import { Check, FileText, Eye, Phone, MapPin } from 'lucide-react';
+import { Check, FileText, Eye, Phone, MapPin, ArrowLeft } from 'lucide-react';
 
 // Mock Data
 const mockTrackingDocument = {
@@ -25,6 +26,37 @@ const mockTrackingDocument = {
   ],
 };
 
+const docMocks = {
+  'APP-MH-2026-89411': {
+    ...mockTrackingDocument,
+    applicationId: 'APP-MH-2026-89411',
+    docName: 'Final Factory Safety NOC',
+    description: 'Mandatory statutory safety clearance before machine energization and electrical inspectorate signoff.',
+    dateApplied: '2026-08-25',
+    estimatedDate: '2026-09-30',
+    currentStatus: 'AWAITING_SUBMISSION',
+  },
+  'APP-MH-2026-89412': mockTrackingDocument,
+  'APP-MH-2026-89413': {
+    ...mockTrackingDocument,
+    applicationId: 'APP-MH-2026-89413',
+    docName: 'Water Supply Connection Sanction',
+    description: 'Utility clearance from MIDC Water Works Division for industrial high-pressure pipeline connection.',
+    dateApplied: '2026-08-15',
+    estimatedDate: '2026-10-05',
+    currentStatus: 'UNDER_REVIEW',
+  },
+  'APP-MH-2026-89414': {
+    ...mockTrackingDocument,
+    applicationId: 'APP-MH-2026-89414',
+    docName: 'Fire Safety NOC Renewal',
+    description: 'Statutory renewal application under Maharashtra Fire Prevention and Life Safety Measures Act.',
+    dateApplied: '2026-09-01',
+    estimatedDate: '2026-11-05',
+    currentStatus: 'RENEWAL_ACTIVE',
+  },
+};
+
 const STEP_STYLES = {
   COMPLETED:   { node: 'bg-india-blue border-india-blue text-white', badge: 'bg-india-blue/10 text-india-blue border-india-blue/20', label: 'Completed' },
   IN_PROGRESS: { node: 'bg-background border-india-blue text-india-blue ring-4 ring-india-blue/20 animate-pulse', badge: 'bg-india-blue/10 text-india-blue border-india-blue/20', label: 'In Progress' },
@@ -32,7 +64,13 @@ const STEP_STYLES = {
 };
 
 export const TrackDocDetailPage = () => {
-  const [docData] = useState(mockTrackingDocument);
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const docData = (id && docMocks[id])
+    ? docMocks[id]
+    : { ...mockTrackingDocument, applicationId: id || mockTrackingDocument.applicationId };
+
   const [selectedAuthContact, setSelectedAuthContact] = useState(null);
 
   const completedCount = docData.pipelineSteps.filter((s) => s.status === 'COMPLETED').length;
@@ -40,13 +78,27 @@ export const TrackDocDetailPage = () => {
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-5">
+      {/* Top Back Navigation Banner */}
+      <div className="flex items-center justify-between gap-3">
+        <button
+          onClick={() => navigate('/user/pending-docs')}
+          className="inline-flex items-center gap-2 text-xs font-semibold text-foreground/70 hover:text-india-blue transition-colors cursor-pointer bg-background border border-border px-3 py-1.5 rounded-lg shadow-xs"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Pending Documents</span>
+        </button>
+        <span className="text-xs font-mono text-foreground/50 hidden sm:inline-block">
+          Tracking ID: <span className="text-india-blue font-bold">{id || docData.applicationId}</span>
+        </span>
+      </div>
+
       {/* Application Header */}
       <div className="border border-border rounded-xl bg-background p-4 sm:p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-border pb-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-xs font-mono font-bold text-india-blue bg-india-blue/10 px-2.5 py-0.5 rounded-full border border-india-blue/20">
-                {docData.applicationId}
+                {id || docData.applicationId}
               </span>
               <span className="text-xs uppercase font-semibold px-2 py-0.5 rounded-full border border-border text-foreground/60">
                 In Review

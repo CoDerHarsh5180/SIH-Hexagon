@@ -5,6 +5,7 @@ import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 // Navigation routes for Main Authority portal
 const mainAuthNavLinks = [
   { id: 'dashboard', label: 'Dashboard', path: '/main-auth/dashboard' },
+  { id: 'requests', label: 'Requests', path: '/main-auth/requests' },
   { id: 'our-docs', label: 'Our Docs', path: '/main-auth/our-docs' },
   { id: 'complaints', label: 'Complaints', path: '/main-auth/complaints' },
   { id: 'local-auths', label: 'Local Auths', path: '/main-auth/local-auths' },

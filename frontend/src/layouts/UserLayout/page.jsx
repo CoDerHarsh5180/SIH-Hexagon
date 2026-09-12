@@ -8,13 +8,13 @@ import { ChevronDown } from 'lucide-react';
 const primaryNavLinks = [
   { id: 'dashboard', label: 'Dashboard', path: '/user/dashboard' },
   { id: 'approvals', label: 'Know Your Approval', path: '/user/approvals' },
-  { id: 'track', label: 'Track Documents', path: '/user/track' },
+  { id: 'pending-docs', label: 'Pending Docs', path: '/user/pending-docs' },
   { id: 'your-docs', label: 'Your Docs', path: '/user/your-docs' }
 ];
 
 // Secondary links grouped under 'More' dropdown
 const moreNavLinks = [
-  { id: 'pending-docs', label: 'Pending Docs', path: '/user/pending-docs' },
+  { id: 'track', label: 'Track Documents', path: '/user/track' },
   { id: 'custom-docs-apply', label: 'Custom Apply', path: '/user/custom-docs-apply' },
   { id: 'query', label: 'Query', path: '/user/query' },
   { id: 'complain', label: 'Complain', path: '/user/complain' },

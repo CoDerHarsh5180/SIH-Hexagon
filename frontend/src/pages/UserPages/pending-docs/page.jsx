@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PageHeader, SearchInput, FilterTabs, Modal, EmptyState } from '../../../components/ui';
 
@@ -6,6 +7,7 @@ import { PageHeader, SearchInput, FilterTabs, Modal, EmptyState } from '../../..
 const initialPendingDocs = [
   {
     id: 'pend-001',
+    applicationId: 'APP-MH-2026-89411',
     name: 'Final Factory Safety NOC',
     authority: 'Directorate of Industrial Safety & Health (DISH)',
     type: 'Safety Clearance',
@@ -14,10 +16,11 @@ const initialPendingDocs = [
     status: 'NOT_SUBMITTED',
     reason: 'Mandatory before machine energization and electrical inspectorate signoff.',
     priority: 'HIGH',
-    actionRoute: '/user/custom-docs-apply',
+    actionRoute: '/user/track/APP-MH-2026-89411',
   },
   {
     id: 'pend-002',
+    applicationId: 'APP-MH-2026-89412',
     name: 'Hazardous Waste Authorization (Form 1)',
     authority: 'Maharashtra Pollution Control Board (MPCB)',
     type: 'Environmental Clearance',
@@ -30,6 +33,7 @@ const initialPendingDocs = [
   },
   {
     id: 'pend-003',
+    applicationId: 'APP-MH-2026-89413',
     name: 'Water Supply Connection Sanction',
     authority: 'MIDC Water Works Division',
     type: 'Utility Clearance',
@@ -42,6 +46,7 @@ const initialPendingDocs = [
   },
   {
     id: 'pend-004',
+    applicationId: 'APP-MH-2026-89414',
     name: 'Fire Safety NOC Renewal',
     authority: 'Department of Fire & Emergency Services',
     type: 'Statutory Renewal',
@@ -50,7 +55,7 @@ const initialPendingDocs = [
     status: 'EXPIRED',
     reason: 'Provisional clearance expires within 60 days. Periodic test log required.',
     priority: 'HIGH',
-    actionRoute: '/user/your-docs',
+    actionRoute: '/user/track/APP-MH-2026-89414',
   },
 ];
 
@@ -75,10 +80,16 @@ const STATUS_BADGE = {
 };
 
 export const PendingDocsPage = () => {
+  const navigate = useNavigate();
   const [pendingDocs] = useState(initialPendingDocs);
   const [filterPriority, setFilterPriority] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocInfo, setSelectedDocInfo] = useState(null);
+
+  const handleOpenTracker = (doc) => {
+    const trackId = doc?.applicationId || doc?.id;
+    navigate(`/user/track/${trackId}`);
+  };
 
   const filteredDocs = pendingDocs.filter((doc) => {
     const matchesPriority = filterPriority === 'ALL' || doc.priority === filterPriority;
@@ -147,8 +158,9 @@ export const PendingDocsPage = () => {
                 <span className="text-xs font-bold text-foreground font-mono">{doc.dueDate}</span>
               </div>
               <button
-                onClick={() => setSelectedDocInfo(doc)}
-                className="px-3 py-1.5 rounded-lg border border-border hover:border-india-blue hover:text-india-blue text-xs font-semibold text-foreground/60 transition-colors cursor-pointer"
+                onClick={() => handleOpenTracker(doc)}
+                className="px-3.5 py-1.5 rounded-lg border border-border hover:border-india-blue hover:text-india-blue hover:bg-india-blue/5 text-xs font-semibold text-foreground/70 transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+                title="View document tracking details"
               >
                 Info →
               </button>
@@ -177,10 +189,14 @@ export const PendingDocsPage = () => {
               Close
             </button>
             <button
-              onClick={() => { const r = selectedDocInfo?.actionRoute; setSelectedDocInfo(null); alert(`Navigating to ${r}`); }}
+              onClick={() => {
+                const target = selectedDocInfo;
+                setSelectedDocInfo(null);
+                if (target) handleOpenTracker(target);
+              }}
               className="px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-semibold hover:opacity-90 cursor-pointer"
             >
-              Take Action
+              Track Status →
             </button>
           </div>
         }

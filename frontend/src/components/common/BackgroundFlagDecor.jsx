@@ -26,12 +26,12 @@ export const BackgroundFlagDecor = ({
 
       {/* Bottom-Right Corner Ribbon */}
       {showBottomRight && (
-        <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 md:-bottom-8 md:-right-8 transition-transform duration-500">
+        <div className="absolute -bottom-6 -right-6 sm:-bottom-8 sm:-right-8 md:-bottom-10 md:-right-10 transition-transform duration-500">
           <img
             src={borderImg}
             alt=""
             aria-hidden="true"
-            className={`w-36 sm:w-56 md:w-72 lg:w-88 h-auto object-contain transform rotate-192 filter drop-shadow-sm ${opacityClass}`}
+            className={`w-36 sm:w-56 md:w-72 lg:w-88 h-auto object-contain transform scale-x-100 -rotate-6 filter drop-shadow-sm ${opacityClass}`}
           />
         </div>
       )}

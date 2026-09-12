@@ -38,6 +38,7 @@ import { MainAuthCreationPage } from './pages/MainAuthPages/AddNewDoc/MainAuthCr
 import LocalAuthsPage from './pages/MainAuthPages/LocalAuthsPage/page';
 import MainAuthComplaintsPage from './pages/MainAuthPages/ComplaintsPage/page';
 import MainAuthProfilePage from './pages/MainAuthPages/ProfilePage/page';
+import { MainAuthAllRequestsPage } from './pages/MainAuthPages/AllRequestsPage/page';
 
 // Common Pages
 import NotificationsPage from './pages/CommonPages/NotificationsPage';
@@ -91,6 +92,7 @@ function App() {
         <Route path="/main-auth" element={<MainAuthLayout />}>
           <Route index element={<Navigate to="/main-auth/dashboard" replace />} />
           <Route path="dashboard" element={<MainAuthDashboardPage />} />
+          <Route path="requests" element={<MainAuthAllRequestsPage />} />
           <Route path="our-docs" element={<MainAuthCatalogPage />} />
           <Route path="our-docs/:id" element={<MainAuthDocDetailsPage />} />
           <Route path="add-new" element={<MainAuthCreationPage />} />
