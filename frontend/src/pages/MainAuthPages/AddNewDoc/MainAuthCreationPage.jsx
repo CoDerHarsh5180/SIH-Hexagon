@@ -2,19 +2,28 @@ import React, { useState } from 'react';
 import { PlusCircle, Award, CheckCircle2 } from 'lucide-react';
 import { AddApprovalDocForm } from './AddApprovalDocForm';
 import { UploadSchemePdfForm } from './UploadSchemePdfForm';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 export const MainAuthCreationPage = () => {
   const [activeTab, setActiveTab] = useState('DOC'); // 'DOC' | 'SCHEME'
   const [successBanner, setSuccessBanner] = useState('');
 
-  const handleDocCreated = (docPayload) => {
-    console.log('[API MOCK] Storing New Approval Clearance:', docPayload);
+  const handleDocCreated = async (docPayload) => {
+    try {
+      await mainAuthService.createMasterDoc(docPayload);
+    } catch (err) {
+      console.warn('Backend createMasterDoc failed, continuing locally:', err.message);
+    }
     setSuccessBanner(`Approval "${docPayload.title}" successfully added with SLA ${docPayload.slaDays} days.`);
     setTimeout(() => setSuccessBanner(''), 4000);
   };
 
-  const handleSchemeCreated = (schemePayload) => {
-    console.log('[API MOCK] Committing Scheme Extract to DB:', schemePayload);
+  const handleSchemeCreated = async (schemePayload) => {
+    try {
+      await mainAuthService.createMasterDoc({ ...schemePayload, type: 'SCHEME' });
+    } catch (err) {
+      console.warn('Backend scheme creation failed, continuing locally:', err.message);
+    }
     setSuccessBanner(`Incentive Scheme "${schemePayload.schemeTitle}" verified by AI and saved to public catalog.`);
     setTimeout(() => setSuccessBanner(''), 4000);
   };

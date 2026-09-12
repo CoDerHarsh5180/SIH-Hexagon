@@ -1,109 +1,41 @@
-/**
- * Authentication & Enterprise Profile Service
- * Manages user authentication, registration, portal switching, and profile data.
- */
-
-import apiClient from './apiClient';
-
-/**
- * @typedef {Object} LoginPayload
- * @property {string} email
- * @property {string} password
- * @property {'USER'|'LOCAL_AUTH'|'MAIN_AUTH'} [portalType='USER']
- */
-
-/**
- * @typedef {Object} RegisterPayload
- * @property {string} fullName
- * @property {string} email
- * @property {string} password
- * @property {string} [phone]
- * @property {string} [companyName]
- * @property {string} [udyamNumber]
- * @property {string} [cinNumber]
- * @property {string} [industryType]
- * @property {string} [scale] - MICRO | SMALL | MEDIUM | LARGE
- * @property {Object} [address]
- * @property {string} [address.street]
- * @property {string} [address.city]
- * @property {string} [address.district]
- * @property {string} [address.state]
- * @property {string} [address.pincode]
- */
+import axiosInstance from '../utils/axiosInstance';
+import { API_PATHS } from '../utils/apiPath';
 
 export const authService = {
-  /**
-   * Log in user or authority officer
-   * @param {LoginPayload} credentials
-   */
   login: async (credentials) => {
-    const response = await apiClient.post('/auth/login', credentials);
-    if (response?.data?.token) {
-      localStorage.setItem('authToken', response.data.token);
-      localStorage.setItem('userRole', response.data.user?.role || 'USER');
-    }
-    return response;
+    return await axiosInstance.post(API_PATHS.AUTH.LOGIN, credentials);
   },
 
-  /**
-   * Register a new industrial user / enterprise
-   * @param {RegisterPayload} payload
-   */
   register: async (payload) => {
-    return apiClient.post('/auth/register', payload);
+    return await axiosInstance.post(API_PATHS.AUTH.REGISTER, payload);
   },
 
-  /**
-   * Log out current user & clear stored credentials
-   */
   logout: async () => {
-    try {
-      await apiClient.post('/auth/logout');
-    } catch {
-      // Ignore network errors during logout
-    } finally {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userRole');
-      sessionStorage.clear();
-    }
+    return await axiosInstance.post(API_PATHS.AUTH.LOGOUT, {});
   },
 
-  /**
-   * Fetch current authenticated user / enterprise profile
-   */
   getProfile: async () => {
-    return apiClient.get('/auth/profile');
+    return await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE);
   },
 
-  /**
-   * Update enterprise profile details
-   * @param {Partial<RegisterPayload>} profileData
-   */
   updateProfile: async (profileData) => {
-    return apiClient.put('/auth/profile', profileData);
+    return await axiosInstance.put(API_PATHS.AUTH.UPDATE_PROFILE, profileData);
   },
 
-  /**
-   * Request password reset link / OTP
-   * @param {{ email: string }} payload
-   */
-  forgotPassword: async (payload) => {
-    return apiClient.post('/auth/forgot-password', payload);
+  forgotPassword: async (email) => {
+    return await axiosInstance.post(API_PATHS.AUTH.FORGOT_PASSWORD, { email });
   },
 
-  /**
-   * Reset password with token/OTP
-   * @param {{ token: string, newPassword: string }} payload
-   */
   resetPassword: async (payload) => {
-    return apiClient.post('/auth/reset-password', payload);
+    return await axiosInstance.post(API_PATHS.AUTH.RESET_PASSWORD, payload);
   },
 
-  /**
-   * Refresh session token
-   */
-  refreshToken: async () => {
-    return apiClient.post('/auth/refresh-token');
+  sendOtp: async (email, role = 'USER') => {
+    return await axiosInstance.post(API_PATHS.AUTH.SEND_OTP, { email, role });
+  },
+
+  verifyOtp: async (email, otp) => {
+    return await axiosInstance.post(API_PATHS.AUTH.VERIFY_OTP, { email, otp });
   },
 };
 

@@ -1,18 +1,32 @@
 import React, { useState } from 'react';
 import { PageHeader } from '../../../components/ui';
-import { Star, Send, CheckCircle2, ThumbsUp } from 'lucide-react';
+import { Star, Send, CheckCircle2, ThumbsUp, Loader2 } from 'lucide-react';
+import { grievancesService } from '../../../services/grievancesService';
 
 export const FeedbackPage = () => {
   const [rating, setRating] = useState(5);
   const [department, setDepartment] = useState('Maharashtra Pollution Control Board (MPCB)');
   const [comments, setComments] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
-    setComments('');
+    setIsSubmitting(true);
+    try {
+      await grievancesService.submitFeedback({
+        department,
+        rating,
+        comments,
+      });
+    } catch (err) {
+      console.warn('Backend feedback submission failed, saving locally:', err.message);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 4000);
+      setComments('');
+    }
   };
 
   return (

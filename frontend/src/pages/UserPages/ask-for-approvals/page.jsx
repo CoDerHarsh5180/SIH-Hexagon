@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader, AIAdvisorPanel } from '../../../components/ui';
 import { Bot, Check, Sparkles, Clock } from 'lucide-react';
+import { approvalsService } from '../../../services/approvalsService';
 // ─────────────────────────────────────────────────────────────
 // INSIGHT DATA
 // INSIGHTS[field][value]  → per-option insight
@@ -482,6 +483,7 @@ const YesNoToggle = ({ value, onChange }) => (
   </div>
 );
 
+
 // ─────────────────────────────────────────────────────────────
 // Main Page
 // ─────────────────────────────────────────────────────────────
@@ -490,6 +492,7 @@ const MAX_HISTORY = 3;
 export const AskForApprovalPage = () => {
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(1);
+  const [evaluating, setEvaluating] = useState(false);
   const [formData, setFormData] = useState({
     stage: 'pre-construction',
     district: 'Pune',
@@ -516,7 +519,6 @@ export const AskForApprovalPage = () => {
 
   // Fire insight without changing formData (for label clicks)
   const showInsight = (field, value) => {
-    // TO INTEGRATE BACKEND: replace getInsight() call with your async fetch here
     const insight = getInsight(field, value);
     if (!insight) return;
     setInsightHistory((prev) =>
@@ -531,8 +533,35 @@ export const AskForApprovalPage = () => {
     showInsight(field, value);
   };
 
-  const handleFinishAndSubmit = () => {
-    navigate('/user/approvals/list');
+  const handleFinishAndSubmit = async () => {
+    setEvaluating(true);
+    const evaluationPayload = {
+      sector: formData.businessType,
+      subSector: formData.subType,
+      enterpriseScale: Number(formData.totalInvestmentCrores) < 1 ? 'MICRO' : Number(formData.totalInvestmentCrores) < 10 ? 'SMALL' : 'MEDIUM',
+      district: formData.district,
+      landType: formData.landType,
+      plotAreaSqM: Number(formData.plotAreaSqMtr) || 0,
+      builtUpAreaSqM: Number(formData.builtUpAreaSqMtr) || 0,
+      connectedPowerLoadKW: Number(formData.connectedPowerKw) || 0,
+      dailyWaterConsumptionKLD: Number(formData.waterRequirementKld) || 0,
+      hasBoiler: formData.hasBoilerOrFurnace === 'Yes',
+      hasDGSet: formData.hasDieselGenerator === 'Yes',
+      generatesHazardousWaste: formData.generatesHazardousWaste === 'Yes',
+      pollutionTier: formData.pollutionTier,
+      totalCapitalInvestmentInr: (Number(formData.totalInvestmentCrores) || 0) * 10000000,
+      workforceCount: Number(formData.proposedWorkers) || 0,
+    };
+
+    try {
+      const res = await approvalsService.evaluateQuestionnaire(evaluationPayload);
+      navigate('/user/approvals/list', { state: { evaluationResult: res.data } });
+    } catch (err) {
+      console.warn('[AskForApproval] Evaluation fallback to client heuristics:', err.message);
+      navigate('/user/approvals/list');
+    } finally {
+      setEvaluating(false);
+    }
   };
 
   // Shorthand for field-level insight (text input labels)
@@ -768,8 +797,9 @@ export const AskForApprovalPage = () => {
 
                 <div className="border border-border rounded-lg overflow-hidden">
                   {[
-                    { field: 'hasDieselGenerator', label: 'Installing a DG set?', hint: 'Requires Chief Electrical Inspector sanction.' },
+                    { field: 'hasDieselGenerator', label: 'Installing a backup DG set?', hint: 'Requires Chief Electrical Inspectorate sanction.' },
                     { field: 'hasBoilerOrFurnace', label: 'Steam boilers or furnace chimneys?', hint: 'Triggers Directorate of Steam Boilers inspection.' },
+                    { field: 'generatesHazardousWaste', label: 'Generates hazardous or chemical waste?', hint: 'Triggers MPCB Form 1 Authorization.' },
                   ].map(({ field, label, hint }, i) => (
                     <div key={field} className={`flex items-center justify-between gap-4 p-3.5 text-xs ${i > 0 ? 'border-t border-border' : ''}`}>
                       <div>
@@ -783,10 +813,30 @@ export const AskForApprovalPage = () => {
                   ))}
                 </div>
 
+                {/* Dynamic Interrelated Question for Boilers */}
+                {formData.hasBoilerOrFurnace === 'Yes' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border border-india-orange/30 bg-india-orange/5 rounded-lg p-3 text-xs space-y-2">
+                    <span className="text-[10px] font-bold text-india-orange uppercase tracking-wider block">Interrelated Safety Compliance: Boilers Act</span>
+                    <p className="text-foreground/70 text-[11px]">
+                      Since your facility involves steam boilers, an on-site hydrostatic pressure test and certified IBR boiler operator are statutory requirements before energization.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Dynamic Interrelated Question for High Connected Power */}
+                {Number(formData.connectedPowerKw) > 70 && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border border-india-blue/30 bg-india-blue/5 rounded-lg p-3 text-xs space-y-1">
+                    <span className="text-[10px] font-bold text-india-blue uppercase tracking-wider block">Interrelated High-Tension (HT) Clearance</span>
+                    <p className="text-foreground/70 text-[11px]">
+                      Connected load ({formData.connectedPowerKw} HP) exceeds 70 HP: MSEDCL dedicated sub-station transformer sanction and CEI earth pit certification are automatically added to your required clearances checklist.
+                    </p>
+                  </motion.div>
+                )}
+
                 <div className="pt-4 border-t border-border flex justify-between gap-2">
                   <button type="button" onClick={() => setCurrentSection(2)} className="px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border cursor-pointer">← Back</button>
-                  <button type="button" onClick={handleFinishAndSubmit} className="px-6 py-2.5 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer">
-                    Generate Approvals Checklist →
+                  <button type="button" disabled={evaluating} onClick={handleFinishAndSubmit} className="px-6 py-2.5 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer disabled:opacity-50">
+                    {evaluating ? 'Analyzing Regulations...' : 'Generate Approvals Checklist →'}
                   </button>
                 </div>
               </motion.div>

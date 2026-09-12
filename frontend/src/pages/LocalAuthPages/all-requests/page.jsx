@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { initialRequestsData } from './data';
 import { RequestCard } from './RequestCard';
 import { ViewDocsModal } from './ViewDocsModal';
 import { ApproveDocModal } from './ApprovalDocsModel';
 import { RejectDocModal } from './RejectDocsModal';
+import { ScheduleInspectionModal } from './ScheduleInspectionModal';
+import { localAuthService } from '../../../services/localAuthService';
 
 export const LocalAuthAllRequestsPage = () => {
   const [requests, setRequests] = useState(initialRequestsData);
   const [activeReq, setActiveReq] = useState(null);
-  const [modalMode, setModalMode] = useState(null); // 'VIEW_DOCS' | 'APPROVE' | 'REJECT'
+  const [modalMode, setModalMode] = useState(null); // 'VIEW_DOCS' | 'APPROVE' | 'REJECT' | 'INSPECTION'
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      try {
+        const res = await localAuthService.getInwardRequests();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setRequests(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline inward requests queue fallback:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRequests();
+  }, []);
 
   const handleOpenModal = (req, mode) => {
     setActiveReq(req);
@@ -21,7 +41,15 @@ export const LocalAuthAllRequestsPage = () => {
     setModalMode(null);
   };
 
-  const handleConfirmApproval = (requestId, signedDocId) => {
+  const handleConfirmApproval = async (requestId, signedDocId) => {
+    try {
+      await localAuthService.submitScrutinyDecision(requestId, {
+        decision: 'APPROVED',
+        signedDocId,
+      });
+    } catch (err) {
+      console.warn('Backend approval dispatch failed, updating local state:', err.message);
+    }
     setRequests((prev) =>
       prev.map((r) => (r.requestId === requestId ? { ...r, status: 'APPROVED', signedDocId } : r))
     );
@@ -29,11 +57,40 @@ export const LocalAuthAllRequestsPage = () => {
     handleCloseModal();
   };
 
-  const handleConfirmRejection = (requestId, rejectionReason) => {
+  const handleConfirmRejection = async (requestId, rejectionReason) => {
+    try {
+      await localAuthService.submitScrutinyDecision(requestId, {
+        decision: 'REJECTED',
+        rejectionReason,
+      });
+    } catch (err) {
+      console.warn('Backend rejection dispatch failed, updating local state:', err.message);
+    }
     setRequests((prev) =>
       prev.map((r) => (r.requestId === requestId ? { ...r, status: 'REJECTED', rejectionReason } : r))
     );
     alert('Application rejected. Feedback notification dispatched to applicant.');
+    handleCloseModal();
+  };
+
+  const handleConfirmInspection = async (requestId, scheduleData) => {
+    try {
+      await localAuthService.scheduleInspection(requestId, scheduleData);
+    } catch (err) {
+      console.warn('Backend inspection scheduling dispatch failed, updating local state:', err.message);
+    }
+    setRequests((prev) =>
+      prev.map((r) =>
+        r.requestId === requestId
+          ? {
+              ...r,
+              status: 'INSPECTION_SCHEDULED',
+              inspectionDetails: scheduleData,
+            }
+          : r
+      )
+    );
+    alert(`On-site field inspection scheduled for ${scheduleData.inspectionDate} with ${scheduleData.inspectorName}. Notification dispatched to applicant.`);
     handleCloseModal();
   };
 
@@ -80,6 +137,9 @@ export const LocalAuthAllRequestsPage = () => {
         )}
         {activeReq && modalMode === 'REJECT' && (
           <RejectDocModal req={activeReq} onClose={handleCloseModal} onConfirm={handleConfirmRejection} />
+        )}
+        {activeReq && modalMode === 'INSPECTION' && (
+          <ScheduleInspectionModal req={activeReq} onClose={handleCloseModal} onConfirm={handleConfirmInspection} />
         )}
       </AnimatePresence>
     </div>

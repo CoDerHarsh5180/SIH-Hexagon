@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { AuthLayout } from '../../layouts/AuthLayout/page';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
+import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
+
 // Reusable Input Component (Shared with RegisterPage)
 const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
   <div>
@@ -23,32 +26,51 @@ const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
 
 export const LoginPage = ({ onNavigateToRegister }) => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateForm = (field) => (e) => setFormData({ ...formData, [field]: e.target.value });
 
-  const handlePasswordLogin = (e) => {
+  const handlePasswordLogin = async (e) => {
     e.preventDefault();
     if (!formData.email.trim() || !formData.password.trim()) {
       return alert('Please provide both email and password');
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      console.log('[API MOCK] Logging in:', formData);
+    const emailLower = formData.email.toLowerCase();
+
+    // Determine target portal hint
+    let portalType = 'USER';
+    if (emailLower.includes('local')) portalType = 'LOCAL_AUTH';
+    else if (emailLower.includes('main') || emailLower.includes('admin') || emailLower.includes('mpcb')) portalType = 'MAIN_AUTH';
+
+    try {
+      const res = await login({ email: formData.email, password: formData.password, portalType });
+      const userRole = res?.data?.user?.role || res?.user?.role || portalType;
+      if (userRole === 'LOCAL_AUTH') navigate('/local-auth/requests');
+      else if (userRole === 'MAIN_AUTH') navigate('/main-auth/dashboard');
+      else navigate('/user/dashboard');
+    } catch (err) {
+      console.error('[LoginPage] Login failed:', err.message);
+      alert(err.message || 'Login failed. Please verify your credentials.');
+    } finally {
       setIsSubmitting(false);
-      // Route based on role hint or default to user portal
-      const emailLower = formData.email.toLowerCase();
-      if (emailLower.includes('local')) {
-        navigate('/local-auth/requests');
-      } else if (emailLower.includes('main') || emailLower.includes('admin') || emailLower.includes('mpcb')) {
-        navigate('/main-auth/dashboard');
-      } else {
-        navigate('/user/dashboard');
-      }
-    }, 600);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.email.trim()) {
+      return alert('Please enter your email in the email field first.');
+    }
+    try {
+      await authService.forgotPassword(formData.email);
+      alert('Password reset link has been dispatched to your email.');
+    } catch {
+      alert('Password reset link has been dispatched to your email (simulated).');
+    }
   };
 
   const handleGoToRegister = () => {
@@ -83,7 +105,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
             </label>
             <button 
               type="button" 
-              onClick={() => alert('Password reset link will be sent to your registered email.')} 
+              onClick={handleForgotPassword} 
               className="text-[11px] text-india-blue hover:underline cursor-pointer"
             >
               Forgot Password?

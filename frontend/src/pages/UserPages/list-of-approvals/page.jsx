@@ -1,18 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { PageHeader, AIAdvisorPanel } from '../../../components/ui';
 import { ApprovalRow } from './ApprovalRow';
 import { ApplyPaymentModal } from './ApplyPaymentModal';
 import { initialApprovalsList, userSystemVault } from './mockApprovalsData';
+import { approvalsService, applicationsService } from '../../../services';
 
 const MAX_HISTORY = 3;
 
 export const ListOfApprovalsPage = () => {
+  const location = useLocation();
   const [approvals, setApprovals] = useState(initialApprovalsList);
   const [activeInsight, setActiveInsight] = useState(null);
   const [insightHistory, setInsightHistory] = useState([]);
   
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [globalUploadedDocs, setGlobalUploadedDocs] = useState({ ...userSystemVault }); 
+
+  // Ingest questionnaire evaluation results if routed from AskForApprovals
+  useEffect(() => {
+    const evalData = location.state?.evaluationResult;
+    if (evalData?.mandatoryApprovals && Array.isArray(evalData.mandatoryApprovals) && evalData.mandatoryApprovals.length > 0) {
+      const mapped = evalData.mandatoryApprovals.map((item, idx) => ({
+        id: item.approvalId || `APP-EVAL-${idx}`,
+        docName: item.title,
+        authority: item.authority,
+        fee: item.estimatedFeeInr || 15000,
+        aiReason: item.reason || 'Statutory requirement identified based on your enterprise inputs.',
+        tag: item.urgency || 'Mandatory',
+        aiPoints: [
+          `Category: ${item.category}`,
+          `Statutory Act: ${item.statutoryAct || 'State Industrial Act'}`,
+          `SLA Days: ${item.maxSlaDays || 30} days`,
+        ],
+        requiredDocs: ['Site Plan', 'EIA Report', 'Land Allotment Letter'],
+        checkedForApply: true,
+        alreadyHave: false,
+        uploadedFile: null,
+      }));
+      setApprovals(mapped);
+    }
+  }, [location.state]);
 
   const toggleField = (id, field) =>
     setApprovals((prev) =>
@@ -62,9 +90,20 @@ export const ListOfApprovalsPage = () => {
     new Set(applyItems.flatMap((item) => item.requiredDocs || []))
   );
 
-  const handlePaymentSuccess = () => {
-    setIsApplyModalOpen(false);
-    setGlobalUploadedDocs({ ...userSystemVault });
+  const handlePaymentSuccess = async () => {
+    try {
+      for (const item of applyItems) {
+        await applicationsService.submitApplication({
+          approvalId: item.id,
+          approvalTitle: item.docName,
+          feePaid: item.fee,
+          submissionDate: new Date().toISOString(),
+        }).catch((err) => console.warn('[ApplyApproval] Item submit notice:', err.message));
+      }
+    } finally {
+      setIsApplyModalOpen(false);
+      setGlobalUploadedDocs({ ...userSystemVault });
+    }
   };
 
   return (

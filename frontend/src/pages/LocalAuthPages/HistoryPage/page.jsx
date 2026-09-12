@@ -1,18 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { FileCheck, XCircle, Clock, Calendar } from 'lucide-react';
 
-import { performanceStats, historyRecords } from './localAuthMockData';
+import { performanceStats as mockStats, historyRecords as mockRecords } from './localAuthMockData';
 import { StatCard } from './StatCard';
 import { AnalyticsPanel } from './AnalyticsPanel';
 import { HistoryRecordCard } from './HistoryRecordCard';
 import { RecordDetailsModal } from './RecordDetailsModal';
+import { localAuthService } from '../../../services/localAuthService';
 
 export const LocalAuthHistoryPage = () => {
+  const [stats, setStats] = useState(mockStats);
+  const [records, setRecords] = useState(mockRecords);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [activeTab, setActiveTab] = useState('ALL');
 
-  const filteredRecords = historyRecords.filter(
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await localAuthService.getHistory();
+        if (res?.data) {
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            setRecords(res.data);
+          } else if (res.data.records) {
+            setRecords(res.data.records);
+            if (res.data.stats) setStats(res.data.stats);
+          }
+        }
+      } catch (err) {
+        console.warn('Using offline local authority history fallback:', err.message);
+      }
+    };
+    fetchHistory();
+  }, []);
+
+  const filteredRecords = records.filter(
     (record) => activeTab === 'ALL' || record.category === activeTab
   );
 
@@ -30,14 +52,14 @@ export const LocalAuthHistoryPage = () => {
 
       {/* Top Number Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard title="Files Signed" value={performanceStats.signed} icon={FileCheck} colorClass="text-india-blue" />
-        <StatCard title="Files Rejected" value={performanceStats.rejected} icon={XCircle} colorClass="text-india-orange" />
-        <StatCard title="Inspections Set" value={performanceStats.inspection} icon={Calendar} colorClass="text-foreground" />
-        <StatCard title="Delayed Files" value={performanceStats.delayed} icon={Clock} colorClass="text-india-orange" />
+        <StatCard title="Files Signed" value={stats.signed} icon={FileCheck} colorClass="text-india-blue" />
+        <StatCard title="Files Rejected" value={stats.rejected} icon={XCircle} colorClass="text-india-orange" />
+        <StatCard title="Inspections Set" value={stats.inspection} icon={Calendar} colorClass="text-foreground" />
+        <StatCard title="Delayed Files" value={stats.delayed} icon={Clock} colorClass="text-india-orange" />
       </div>
 
       {/* Graph / Analytics Section */}
-      <AnalyticsPanel stats={performanceStats} />
+      <AnalyticsPanel stats={stats} />
 
       {/* History List Section */}
       <div className="border border-border rounded-xl p-4 sm:p-6 bg-background space-y-4">

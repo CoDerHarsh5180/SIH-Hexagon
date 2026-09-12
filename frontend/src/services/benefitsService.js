@@ -1,55 +1,21 @@
-/**
- * Government Benefits & Incentive Schemes Service
- * Manages industrial subsidies, capital investment incentives, and MSME benefit schemes.
- */
-
-import apiClient from './apiClient';
-
-/**
- * @typedef {Object} BenefitScheme
- * @property {string} id
- * @property {string} title
- * @property {string} department - 'Ministry of MSME' | 'DPIIT' | 'State Industries Dept'
- * @property {'CAPITAL_SUBSIDY'|'INTEREST_SUBVENTION'|'STAMP_DUTY_EXEMPTION'|'GREEN_INCENTIVE'} type
- * @property {string} maxBenefitAmount - E.g. '₹ 50,00,000'
- * @property {string[]} eligibleSectors
- * @property {string} deadline
- * @property {string} description
- * @property {string[]} qualifyingCriteria
- */
+import axiosInstance from '../utils/axiosInstance';
+import { API_PATHS } from '../utils/apiPath';
 
 export const benefitsService = {
-  /**
-   * Fetch all government benefit & subsidy schemes
-   * @param {{ sector?: string, type?: string, search?: string }} [params]
-   */
-  getBenefitSchemes: async (params = {}) => {
-    return apiClient.get('/benefits/schemes', params);
+  getSchemes: async (params = {}) => {
+    return await axiosInstance.get(API_PATHS.GOV_BENEFITS.GET_SCHEMES, { params });
   },
 
-  /**
-   * Get single scheme details
-   * @param {string} schemeId
-   */
-  getSchemeById: async (schemeId) => {
-    return apiClient.get(`/benefits/schemes/${schemeId}`);
+  getSchemeById: async (id) => {
+    return await axiosInstance.get(API_PATHS.GOV_BENEFITS.GET_SCHEME_BY_ID(id));
   },
 
-  /**
-   * Check eligibility for a specific scheme based on user enterprise profile
-   * @param {string} schemeId
-   */
-  checkEligibility: async (schemeId) => {
-    return apiClient.post(`/benefits/schemes/${schemeId}/check-eligibility`);
+  checkEligibility: async (id, criteria = {}) => {
+    return await axiosInstance.post(API_PATHS.GOV_BENEFITS.CHECK_ELIGIBILITY(id), criteria);
   },
 
-  /**
-   * Submit an application for an incentive scheme
-   * @param {string} schemeId
-   * @param {{ udyamRegNumber: string, claimAmount: number, supportingDocs: string[] }} payload
-   */
-  applyForScheme: async (schemeId, payload) => {
-    return apiClient.post(`/benefits/schemes/${schemeId}/apply`, payload);
+  applyScheme: async (id, claimData) => {
+    return await axiosInstance.post(API_PATHS.GOV_BENEFITS.APPLY_SCHEME(id), claimData);
   },
 };
 

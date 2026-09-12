@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Pencil } from 'lucide-react';
+import { Building2, Pencil, LogOut, Loader2 } from 'lucide-react';
+import { authService } from '../../../services/authService';
+import { useAuth } from '../../../context/AuthContext';
 
 // Mock Data
 const initialFactoryData = {
@@ -49,10 +52,36 @@ const SectionHeading = ({ title, subtitle }) => (
 );
 
 export const EnterpriseProfilePage = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [factory, setFactory] = useState(initialFactoryData);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(initialFactoryData);
   const [showSavedMsg, setShowSavedMsg] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to sign out from your account?')) {
+      await logout();
+      navigate('/login');
+    }
+  };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await authService.getProfile();
+        if (res?.data?.enterprise || res?.data?.profile) {
+          const profileData = { ...initialFactoryData, ...(res.data.enterprise || res.data.profile) };
+          setFactory(profileData);
+          setFormData(profileData);
+        }
+      } catch (err) {
+        console.warn('Using local profile data fallback:', err.message);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleChange = (section, key, value) => {
     setFormData((prev) =>
@@ -62,12 +91,20 @@ export const EnterpriseProfilePage = () => {
     );
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    setFactory(formData);
-    setIsEditing(false);
-    setShowSavedMsg(true);
-    setTimeout(() => setShowSavedMsg(false), 3000);
+    setIsSaving(true);
+    try {
+      await authService.updateProfile(formData);
+    } catch (err) {
+      console.warn('Backend profile update failed, updated locally:', err.message);
+    } finally {
+      setIsSaving(false);
+      setFactory(formData);
+      setIsEditing(false);
+      setShowSavedMsg(true);
+      setTimeout(() => setShowSavedMsg(false), 3000);
+    }
   };
 
   return (
@@ -111,15 +148,25 @@ export const EnterpriseProfilePage = () => {
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit Details
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit Details
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-border text-foreground/70 hover:text-india-orange hover:border-india-orange/30 text-xs font-semibold transition-colors cursor-pointer"
+                  title="Sign out of DocFlow"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
+                </button>
+              </>
             ) : (
               <div className="flex items-center gap-2">
                 <button onClick={() => { setFormData(factory); setIsEditing(false); }} className="px-3.5 py-2 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-border transition-colors cursor-pointer">

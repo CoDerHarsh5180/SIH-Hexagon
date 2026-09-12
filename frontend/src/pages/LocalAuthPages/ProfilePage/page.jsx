@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../../components/ui';
-import { Landmark, KeyRound, CheckCircle2, Phone, Mail, ShieldCheck } from 'lucide-react';
+import { Landmark, KeyRound, CheckCircle2, Phone, Mail, ShieldCheck, LogOut } from 'lucide-react';
+import { authService } from '../../../services/authService';
+import { useAuth } from '../../../context/AuthContext';
 
 export const LocalAuthProfilePage = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [officerData, setOfficerData] = useState({
     officerName: 'S. K. Kulkarni',
     designation: 'Scrutiny & Verification Officer',
@@ -17,12 +22,44 @@ export const LocalAuthProfilePage = () => {
     dscStatus: 'ACTIVE & VERIFIED'
   });
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await authService.getProfile();
+        if (res?.data?.officer || res?.data?.profile) {
+          setOfficerData((prev) => ({ ...prev, ...(res.data.officer || res.data.profile) }));
+        }
+      } catch (err) {
+        console.warn('Using offline officer profile fallback:', err.message);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to sign out from your officer account?')) {
+      await logout();
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-6">
-      <PageHeader
-        title="Local Authority Officer Profile"
-        subtitle="Verification officer credentials, jurisdiction, and active Digital Signature Certificate (DSC) token status."
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+        <PageHeader
+          title="Local Authority Officer Profile"
+          subtitle="Verification officer credentials, jurisdiction, and active Digital Signature Certificate (DSC) token status."
+          className="pb-0 border-b-0"
+        />
+        <button
+          onClick={handleLogout}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-border text-foreground/70 hover:text-india-orange hover:border-india-orange/30 text-xs font-semibold transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
+          title="Sign out of DocFlow"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Sign Out</span>
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Officer Card */}

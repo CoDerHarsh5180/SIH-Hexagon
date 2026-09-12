@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../../components/ui';
-import { ShieldAlert, AlertTriangle, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, CheckCircle2, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 export const MainAuthComplaintsPage = () => {
   const [escalations, setEscalations] = useState([
@@ -36,7 +37,29 @@ export const MainAuthComplaintsPage = () => {
     }
   ]);
 
-  const handleIntervene = (id) => {
+  useEffect(() => {
+    const fetchEscalations = async () => {
+      try {
+        const res = await mainAuthService.getStateComplaints();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setEscalations(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline state escalations fallback:', err.message);
+      }
+    };
+    fetchEscalations();
+  }, []);
+
+  const handleIntervene = async (id) => {
+    try {
+      await mainAuthService.interveneComplaint(id, {
+        action: 'EXPEDITE_NOTICE_SENT',
+        noticeTimestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn('Backend intervention dispatch failed, updating local state:', err.message);
+    }
     setEscalations((prev) =>
       prev.map((e) =>
         e.id === id ? { ...e, status: 'EXPEDITE_NOTICE_SENT' } : e

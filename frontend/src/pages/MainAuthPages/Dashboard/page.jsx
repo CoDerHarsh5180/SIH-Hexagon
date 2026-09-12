@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
@@ -12,24 +12,40 @@ import {
   ArrowRight,
   ShieldAlert
 } from 'lucide-react';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 export const MainAuthDashboardPage = () => {
   const navigate = useNavigate();
 
-  const stateMetrics = [
+  const [stateMetrics, setStateMetrics] = useState([
     { title: 'Total Applications', count: '14,820', subtitle: 'All districts (FY 2026-27)', color: 'text-foreground' },
     { title: 'Issued Approvals', count: '12,410', subtitle: '83.7% statutory clearance rate', color: 'text-india-blue' },
     { title: 'Active in Queue', count: '1,985', subtitle: 'Across 36 district desks', color: 'text-foreground' },
     { title: 'Escalated Delays', count: '425', subtitle: 'Exceeded SLA deadline', color: 'text-india-orange' },
-  ];
+  ]);
 
-  const districtPerformances = [
+  const [districtPerformances, setDistrictPerformances] = useState([
     { district: 'Pune', total: '4,120', approved: '3,650', avgTurnaround: '18 Days', compliance: '94%' },
     { district: 'Thane', total: '3,210', approved: '2,810', avgTurnaround: '21 Days', compliance: '91%' },
     { district: 'Chhatrapati Sambhajinagar', total: '2,480', approved: '2,110', avgTurnaround: '16 Days', compliance: '95%' },
     { district: 'Nagpur', total: '1,890', approved: '1,540', avgTurnaround: '24 Days', compliance: '88%' },
     { district: 'Nashik', total: '1,720', approved: '1,420', avgTurnaround: '22 Days', compliance: '89%' },
-  ];
+  ]);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await mainAuthService.getAnalytics();
+        if (res?.data) {
+          if (res.data.stateMetrics) setStateMetrics(res.data.stateMetrics);
+          if (res.data.districtPerformances) setDistrictPerformances(res.data.districtPerformances);
+        }
+      } catch (err) {
+        console.warn('Using offline state analytics fallback:', err.message);
+      }
+    };
+    fetchAnalytics();
+  }, []);
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-6">

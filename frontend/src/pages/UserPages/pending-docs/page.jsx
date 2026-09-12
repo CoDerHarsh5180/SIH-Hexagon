@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PageHeader, SearchInput, FilterTabs, Modal, EmptyState } from '../../../components/ui';
+import { vaultService } from '../../../services/vaultService';
 
 // Mock Data
 const initialPendingDocs = [
@@ -81,10 +82,29 @@ const STATUS_BADGE = {
 
 export const PendingDocsPage = () => {
   const navigate = useNavigate();
-  const [pendingDocs] = useState(initialPendingDocs);
+  const [pendingDocs, setPendingDocs] = useState(initialPendingDocs);
   const [filterPriority, setFilterPriority] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDocInfo, setSelectedDocInfo] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchPending = async () => {
+      setIsLoading(true);
+      try {
+        const params = filterPriority !== 'ALL' ? { priority: filterPriority } : {};
+        const res = await vaultService.getPendingDocuments(params);
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setPendingDocs(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline pending docs fallback:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPending();
+  }, [filterPriority]);
 
   const handleOpenTracker = (doc) => {
     const trackId = doc?.applicationId || doc?.id;

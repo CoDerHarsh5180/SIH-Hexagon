@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -8,18 +8,41 @@ import {
   FileText, 
   Wallet, 
   Clock, 
-  Users 
+  Users,
+  Loader2
 } from 'lucide-react';
 import { initialDocData } from './mockSingleDocData';
 import { EditDocModal } from './EditDocModal';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 export const MainAuthDocDetailsPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [doc, setDoc] = useState(initialDocData);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
-  const handleSaveDoc = (updatedData) => {
+  useEffect(() => {
+    const fetchDoc = async () => {
+      if (!id) return;
+      try {
+        const res = await mainAuthService.getMasterDocById(id);
+        if (res?.data) {
+          setDoc(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline single master doc fallback:', err.message);
+      }
+    };
+    fetchDoc();
+  }, [id]);
+
+  const handleSaveDoc = async (updatedData) => {
+    try {
+      await mainAuthService.updateMasterDoc(doc.id || id, updatedData);
+    } catch (err) {
+      console.warn('Backend update failed, applying changes locally:', err.message);
+    }
     setDoc(updatedData);
     setIsEditModalOpen(false);
     setShowSuccessBanner(true);

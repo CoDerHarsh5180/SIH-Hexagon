@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
@@ -12,15 +12,61 @@ import {
   FileText, 
   Sparkles 
 } from 'lucide-react';
+import { applicationsService, vaultService, benefitsService, authService } from '../../../services';
 
 export const UserDashboardPage = () => {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [counts, setCounts] = useState({
+    active: 4,
+    issued: 5,
+    pending: 2,
+    subsidies: 3,
+  });
+
+  useEffect(() => {
+    // Load dynamic metrics
+    const fetchDashboardMetrics = async () => {
+      try {
+        const [profRes, appsRes, vaultRes, pendingRes, benefitsRes] = await Promise.allSettled([
+          authService.getProfile(),
+          applicationsService.getUserApplications(),
+          vaultService.getVaultDocuments(),
+          vaultService.getPendingDocuments(),
+          benefitsService.getSchemes(),
+        ]);
+
+        if (profRes.status === 'fulfilled' && profRes.value?.data) {
+          setProfile(profRes.value.data);
+        }
+
+        setCounts({
+          active: appsRes.status === 'fulfilled' && Array.isArray(appsRes.value?.data)
+            ? appsRes.value.data.length
+            : 4,
+          issued: vaultRes.status === 'fulfilled' && Array.isArray(vaultRes.value?.data)
+            ? vaultRes.value.data.length
+            : 5,
+          pending: pendingRes.status === 'fulfilled' && Array.isArray(pendingRes.value?.data)
+            ? pendingRes.value.data.length
+            : 2,
+          subsidies: benefitsRes.status === 'fulfilled' && Array.isArray(benefitsRes.value?.data)
+            ? benefitsRes.value.data.length
+            : 3,
+        });
+      } catch (err) {
+        console.warn('[UserDashboard] Metrics fetch fallback:', err.message);
+      }
+    };
+
+    fetchDashboardMetrics();
+  }, []);
 
   const stats = [
-    { title: 'Active Approvals', count: '4', subtitle: 'In inter-authority pipeline', color: 'text-india-blue', border: 'border-india-blue/30', bg: 'bg-india-blue/5' },
-    { title: 'Issued Clearances', count: '5', subtitle: 'Valid & in document vault', color: 'text-foreground', border: 'border-border', bg: 'bg-background' },
-    { title: 'Action Required', count: '2', subtitle: 'Expiring or revision needed', color: 'text-india-orange', border: 'border-india-orange/30', bg: 'bg-india-orange/5' },
-    { title: 'Eligible Subsidies', count: '3', subtitle: 'State incentive schemes', color: 'text-india-blue', border: 'border-india-blue/20', bg: 'bg-india-blue/5' },
+    { title: 'Active Approvals', count: String(counts.active), subtitle: 'In inter-authority pipeline', color: 'text-india-blue', border: 'border-india-blue/30', bg: 'bg-india-blue/5' },
+    { title: 'Issued Clearances', count: String(counts.issued), subtitle: 'Valid & in document vault', color: 'text-foreground', border: 'border-border', bg: 'bg-background' },
+    { title: 'Action Required', count: String(counts.pending), subtitle: 'Expiring or revision needed', color: 'text-india-orange', border: 'border-india-orange/30', bg: 'bg-india-orange/5' },
+    { title: 'Eligible Subsidies', count: String(counts.subsidies), subtitle: 'State incentive schemes', color: 'text-india-blue', border: 'border-india-blue/20', bg: 'bg-india-blue/5' },
   ];
 
   const quickActions = [
@@ -66,14 +112,14 @@ export const UserDashboardPage = () => {
           <div className="space-y-1.5 max-w-2xl">
             <div className="flex items-center space-x-2">
               <span className="text-[11px] font-mono font-bold text-india-blue bg-india-blue/10 px-2.5 py-0.5 rounded-full border border-india-blue/20">
-                ENT-MH-440912
+                {profile?.id || profile?.businessId || 'ENT-MH-440912'}
               </span>
               <span className="text-xs text-foreground/60 uppercase tracking-wider font-semibold">
-                MIDC Shendra Phase 2 &bull; Chhatrapati Sambhajinagar
+                {profile?.address?.street ? `${profile.address.street} • ${profile.address.city || profile.address.district}` : 'MIDC Shendra Phase 2 • Chhatrapati Sambhajinagar'}
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              Sahyadri Agro Foods Pvt. Ltd.
+              {profile?.companyName || 'Sahyadri Agro Foods Pvt. Ltd.'}
             </h1>
             <p className="text-xs sm:text-sm text-foreground/70 leading-relaxed">
               Industrial Single-Window Compliance Hub. Track statutory permits, schedule field inspections, and claim state industrial incentives.

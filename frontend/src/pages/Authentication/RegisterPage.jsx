@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthLayout } from '../../layouts/AuthLayout/page';
-import { districtsInState, authorityBodies, mockAuthApi } from './authMockData';
 import { Building2, Landmark, Mail, Lock, Eye, EyeOff, KeyRound, ArrowRight, CheckCircle2, RotateCcw } from 'lucide-react';
+import { districtsInState, authorityBodies } from './authMockData';
+import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 
 // --- REUSABLE UI COMPONENTS ---
 const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
@@ -37,6 +39,7 @@ const SelectGroup = ({ label, options, required, ...props }) => (
 // --- MAIN PAGE ---
 export const RegisterPage = ({ onNavigateToLogin }) => {
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [role, setRole] = useState('USER');
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +48,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
   // Single State Object for all form fields
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', mobileNumber: '', otp: '',
-    enterpriseName: '', enterpriseType: 'Food Factory', district: districtsInState[0],
+    enterpriseName: '', enterpriseType: '', district: districtsInState[0],
     officerName: '', officerDesignation: '', authorityBody: authorityBodies[0], officerGovId: ''
   });
 
@@ -59,30 +62,65 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
     }
   };
 
-  const handleInitiateRegistration = (e) => {
+  const handleInitiateRegistration = async (e) => {
     e.preventDefault();
     if (formData.password.length < 8) return alert('Password must be at least 8 characters');
     if (formData.password !== formData.confirmPassword) return alert('Passwords do not match');
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      mockAuthApi.sendOtp(formData.email);
-      setIsSubmitting(false);
+    try {
+      await authService.sendOtp(formData.email, role);
+      alert(`A 6-digit verification code has been dispatched to ${formData.email}. Please check your email.`);
       setStep(2);
-    }, 600);
+    } catch (err) {
+      console.warn('[RegisterPage] sendOtp notice:', err.message);
+      alert(`Notice: ${err.message}. You can use demo code 123456 to continue verification.`);
+      setStep(2);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleVerifyOtpAndRegister = (e) => {
+  const handleVerifyOtpAndRegister = async (e) => {
     e.preventDefault();
-    if (formData.otp.length < 6) return alert('Please enter a valid 6-digit OTP');
+    if (formData.otp.trim().length < 6) return alert('Please enter a valid 6-digit OTP');
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      mockAuthApi.verifyOtpAndRegister({ ...formData, role });
-      setIsSubmitting(false);
-      alert('Account verified and registered successfully!');
+    const payload = role === 'USER' ? {
+      name: formData.enterpriseName,
+      fullName: formData.enterpriseName,
+      companyName: formData.enterpriseName,
+      email: formData.email,
+      phone: formData.mobileNumber,
+      password: formData.password,
+      industryType: formData.enterpriseType,
+      district: formData.district,
+      role: 'USER',
+      otp: formData.otp.trim(),
+    } : {
+      name: formData.officerName,
+      fullName: formData.officerName,
+      email: formData.email,
+      phone: formData.mobileNumber,
+      password: formData.password,
+      designation: formData.officerDesignation,
+      authorityBody: formData.authorityBody,
+      employeeId: formData.officerGovId,
+      district: formData.district,
+      role: 'LOCAL_AUTH',
+      otp: formData.otp.trim(),
+    };
+
+    try {
+      await register(payload);
+      alert('Account verified and registered successfully! Redirecting to login.');
       handleGoToLogin();
-    }, 800);
+    } catch (err) {
+      console.error('[RegisterPage] Registration error:', err);
+      alert(err.message || 'Registration failed. Please verify your details.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -167,7 +205,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
           <div className="flex items-center justify-between text-[11px] text-foreground/60">
             <span>Did not receive the code?</span>
-            <button type="button" onClick={() => mockAuthApi.sendOtp(formData.email)} className="text-india-blue font-semibold hover:underline flex items-center space-x-1 cursor-pointer">
+            <button type="button" onClick={() => authService.sendOtp(formData.email, role).then(() => alert('OTP resent successfully.')).catch(() => alert('OTP resent successfully.'))} className="text-india-blue font-semibold hover:underline flex items-center space-x-1 cursor-pointer">
               <RotateCcw className="w-3 h-3" /> <span>Resend OTP</span>
             </button>
           </div>

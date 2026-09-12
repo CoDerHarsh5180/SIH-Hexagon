@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 import { ChevronDown } from 'lucide-react';
+import { notificationsService } from '../../services/notificationsService';
 
 // Primary navigation links
 const primaryNavLinks = [
@@ -146,6 +147,21 @@ export const UserLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const [unreadCount, setUnreadCount] = useState(mockUserData.unreadNotifications);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await notificationsService.getUnreadCount();
+        if (typeof res?.data?.count === 'number') {
+          setUnreadCount(res.data.count);
+        }
+      } catch (err) {
+        // graceful offline fallback
+      }
+    };
+    fetchUnread();
+  }, [currentPath]);
 
   const handleNavClick = (path) => {
     navigate(path);
@@ -158,7 +174,7 @@ export const UserLayout = ({ children }) => {
         onNavClick={handleNavClick}
         notificationPath="/user/notifications"
         profilePath="/user/profile"
-        unreadCount={mockUserData.unreadNotifications}
+        unreadCount={unreadCount}
         avatarUrl={mockUserData.avatarUrl}
         avatarAlt={mockUserData.name}
         notificationLabel="View Notifications"

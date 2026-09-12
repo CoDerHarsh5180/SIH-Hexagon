@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { initialMainAuthRequestsData } from './data';
 import { MainAuthRequestCard } from './MainAuthRequestCard';
@@ -6,6 +6,7 @@ import { ViewCentralDocsModal } from './ViewCentralDocsModal';
 import { CentralApprovalModal } from './CentralApprovalModal';
 import { CentralRejectModal } from './CentralRejectModal';
 import { SearchInput, FilterTabs, EmptyState } from '../../../components/ui';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 const FILTER_TABS = [
   { key: 'ALL', label: 'All Inward Requests' },
@@ -20,6 +21,24 @@ export const MainAuthAllRequestsPage = () => {
   const [modalMode, setModalMode] = useState(null); // 'VIEW_DOCS' | 'APPROVE' | 'REJECT'
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      try {
+        const res = await mainAuthService.getCentralRequests();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setRequests(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline central requests fallback:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRequests();
+  }, []);
 
   const handleOpenModal = (req, mode) => {
     setActiveReq(req);
@@ -31,7 +50,15 @@ export const MainAuthAllRequestsPage = () => {
     setModalMode(null);
   };
 
-  const handleConfirmApproval = (requestId, signedDocId, remarks) => {
+  const handleConfirmApproval = async (requestId, signedDocId, remarks) => {
+    try {
+      await mainAuthService.approveCentralRequest(requestId, {
+        signedDocId,
+        remarks,
+      });
+    } catch (err) {
+      console.warn('Central approval dispatch failed, updating local state:', err.message);
+    }
     setRequests((prev) =>
       prev.map((r) =>
         r.requestId === requestId
@@ -43,7 +70,15 @@ export const MainAuthAllRequestsPage = () => {
     handleCloseModal();
   };
 
-  const handleConfirmRejection = (requestId, rejectionReason, grounds) => {
+  const handleConfirmRejection = async (requestId, rejectionReason, grounds) => {
+    try {
+      await mainAuthService.rejectCentralRequest(requestId, {
+        rejectionReason,
+        grounds,
+      });
+    } catch (err) {
+      console.warn('Central rejection dispatch failed, updating local state:', err.message);
+    }
     setRequests((prev) =>
       prev.map((r) =>
         r.requestId === requestId

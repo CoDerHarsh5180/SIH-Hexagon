@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, PlusCircle, Filter, FileText } from 'lucide-react';
+import { Search, PlusCircle, Filter, FileText, Loader2 } from 'lucide-react';
 import { mainAuthDocsData } from './mockMainAuthDocs';
 import { ManagedDocCard } from './ManagedDocCard';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 export const MainAuthCatalogPage = () => {
   const navigate = useNavigate();
   const [docs, setDocs] = useState(mainAuthDocsData);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('ALL'); // 'ALL', 'ACTIVE', 'PAUSED', 'DRAFT'
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      setIsLoading(true);
+      try {
+        const res = await mainAuthService.getMasterCatalog();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setDocs(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline master catalog fallback:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCatalog();
+  }, []);
 
   const filteredDocs = docs.filter((doc) => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 

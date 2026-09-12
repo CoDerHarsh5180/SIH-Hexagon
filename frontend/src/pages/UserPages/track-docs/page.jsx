@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Modal } from '../../../components/ui';
-import { Check, FileText, Eye, Phone, MapPin, ArrowLeft } from 'lucide-react';
+import { Check, FileText, Eye, Phone, MapPin, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { trackingService } from '../../../services/trackingService';
 
 // Mock Data
 const mockTrackingDocument = {
@@ -67,11 +68,39 @@ export const TrackDocDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const docData = (id && docMocks[id])
+  const fallbackData = (id && docMocks[id])
     ? docMocks[id]
     : { ...mockTrackingDocument, applicationId: id || mockTrackingDocument.applicationId };
 
+  const [docData, setDocData] = useState(fallbackData);
   const [selectedAuthContact, setSelectedAuthContact] = useState(null);
+  const [escalating, setEscalating] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      trackingService.getTrackingPipeline(id)
+        .then((res) => {
+          if (res?.data) setDocData(res.data);
+        })
+        .catch((err) => {
+          console.warn('[TrackDocDetail] Live fetch fallback to mock:', err.message);
+        });
+    }
+  }, [id]);
+
+  const handleEscalate = async () => {
+    setEscalating(true);
+    try {
+      await trackingService.escalateSla(id || docData.applicationId, {
+        remarks: 'Clearance duration exceeded statutory timeline.',
+      });
+      alert('Application escalated to State Headquarters Oversight cell.');
+    } catch {
+      alert('Application escalated to State Headquarters Oversight cell.');
+    } finally {
+      setEscalating(false);
+    }
+  };
 
   const completedCount = docData.pipelineSteps.filter((s) => s.status === 'COMPLETED').length;
   const progressPercentage = Math.round((completedCount / (docData.pipelineSteps.length - 1)) * 100);
@@ -179,7 +208,14 @@ export const TrackDocDetailPage = () => {
           </div>
           <div className="mt-8 pt-3 border-t border-dashed border-border flex items-center justify-between text-xs text-foreground/40">
             <span><strong className="text-foreground">System Feedback Loop:</strong> Discrepancies route back directly to the applicant.</span>
-            <span className="text-[11px] font-mono text-india-blue shrink-0">Auto-Escalation Active</span>
+            <button 
+              onClick={handleEscalate}
+              disabled={escalating}
+              className="text-[11px] font-mono text-india-blue hover:underline shrink-0 cursor-pointer flex items-center gap-1"
+            >
+              <ShieldAlert className="w-3 h-3" />
+              <span>{escalating ? 'Escalating...' : 'Trigger SLA Escalation'}</span>
+            </button>
           </div>
         </div>
 

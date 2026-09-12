@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../../components/ui';
-import { Landmark, Search, ShieldCheck, Phone, Mail, UserCheck } from 'lucide-react';
+import { Landmark, Search, ShieldCheck, Phone, Mail, UserCheck, Loader2 } from 'lucide-react';
+import { mainAuthService } from '../../../services/mainAuthService';
 
 export const LocalAuthsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-
-  const officers = [
+  const [officersList, setOfficersList] = useState([
     {
       id: 'AUTH-OFF-01',
       name: 'S. K. Kulkarni',
@@ -58,16 +58,30 @@ export const LocalAuthsPage = () => {
       district: 'Nagpur',
       phone: '+91 712 256 0881',
       email: 'r.joshi@dish.maharashtra.gov.in',
-      activeDockets: 31,
+      activeDockets: 34,
       status: 'ACTIVE'
     }
-  ];
+  ]);
 
-  const filtered = officers.filter(
-    (o) =>
-      o.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.body.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    const fetchAuthorities = async () => {
+      try {
+        const res = await mainAuthService.getLocalAuthorities();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setOfficersList(res.data);
+        }
+      } catch (err) {
+        console.warn('Using offline local authorities fallback:', err.message);
+      }
+    };
+    fetchAuthorities();
+  }, []);
+
+  const filteredOfficers = officersList.filter(
+    (off) =>
+      off.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      off.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      off.body.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -104,7 +118,7 @@ export const LocalAuthsPage = () => {
 
       {/* Officers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((o) => (
+        {filteredOfficers.map((o) => (
           <div key={o.id} className="border border-border rounded-xl p-5 bg-background space-y-3 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">

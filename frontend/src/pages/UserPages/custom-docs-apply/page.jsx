@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader, SearchInput, SelectFilter, Modal } from '../../../components/ui';
-import { Info, ChevronRight } from 'lucide-react';
+import { Info, ChevronRight, Loader2 } from 'lucide-react';
+import { approvalsService } from '../../../services/approvalsService';
+import { applicationsService } from '../../../services/applicationsService';
 
 // Mock Data
 const availableDocsCatalog = [
@@ -84,19 +87,63 @@ const docTypes = ['All Types', 'Pollution NOC', 'Fire NOC', 'Building Permit', '
 const authorityTypes = ['All Authorities', 'Pollution Control', 'Fire Department', 'Municipal Corporation', 'Revenue / SDO', 'Labour & Safety'];
 
 export const CustomDocsApplyPage = () => {
+  const navigate = useNavigate();
+  const [catalog, setCatalog] = useState(availableDocsCatalog);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [selectedDocType, setSelectedDocType] = useState('All Types');
   const [selectedAuth, setSelectedAuth] = useState('All Authorities');
   const [activeInfoDoc, setActiveInfoDoc] = useState(null);
   const [applyingDoc, setApplyingDoc] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredDocs = availableDocsCatalog.filter((doc) => {
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      try {
+        const res = await approvalsService.getApprovalsCatalog();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setCatalog(res.data);
+        }
+      } catch (err) {
+        console.warn('Using default custom approvals catalog:', err.message);
+      }
+    };
+    fetchCatalog();
+  }, []);
+
+  const handleConfirmApply = async () => {
+    if (!applyingDoc) return;
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        approvalId: applyingDoc.id,
+        title: applyingDoc.title,
+        authority: applyingDoc.authorityName,
+        district: selectedDistrict !== 'All Districts' ? selectedDistrict : 'Maharashtra State',
+      };
+      const res = await applicationsService.submitCustomApplication(payload);
+      const newAppId = res?.data?.applicationId || res?.data?.id;
+      setApplyingDoc(null);
+      if (newAppId) {
+        navigate(`/user/track/${newAppId}`);
+      } else {
+        alert(`Application draft created successfully for ${applyingDoc.title}`);
+      }
+    } catch (err) {
+      console.warn('Backend custom application failed, using local confirmation:', err.message);
+      alert(`Application initiated for ${applyingDoc.title}`);
+      setApplyingDoc(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredDocs = catalog.filter((doc) => {
     const matchesSearch =
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       doc.authorityName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDistrict =
-      selectedDistrict === 'All Districts' || doc.supportedDistricts.includes(selectedDistrict);
+      selectedDistrict === 'All Districts' || doc.supportedDistricts?.includes(selectedDistrict);
     const matchesType = selectedDocType === 'All Types' || doc.type === selectedDocType;
     const matchesAuth = selectedAuth === 'All Authorities' || doc.authorityCategory === selectedAuth;
     return matchesSearch && matchesDistrict && matchesType && matchesAuth;
@@ -276,10 +323,18 @@ export const CustomDocsApplyPage = () => {
               Cancel
             </button>
             <button
-              onClick={() => { alert(`Application draft created for ${applyingDoc?.title}`); setApplyingDoc(null); }}
-              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-semibold hover:opacity-90 cursor-pointer text-center"
+              onClick={handleConfirmApply}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-semibold hover:opacity-90 cursor-pointer text-center flex items-center justify-center gap-1.5"
             >
-              Confirm & Upload Docs
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Confirm & Upload Docs'
+              )}
             </button>
           </div>
         }

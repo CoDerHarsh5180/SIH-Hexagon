@@ -5,6 +5,7 @@ export const RequestCard = ({ req, onOpenModal }) => {
   const isPending = req.status === 'PENDING_REVIEW';
   const isApproved = req.status === 'APPROVED';
   const isRejected = req.status === 'REJECTED';
+  const isInspectionScheduled = req.status === 'INSPECTION_SCHEDULED';
 
   return (
     <motion.div
@@ -27,10 +28,12 @@ export const RequestCard = ({ req, onOpenModal }) => {
               ? 'border-border text-foreground/80 bg-border/20'
               : isApproved
               ? 'border-india-blue text-india-blue bg-india-blue/10'
+              : isInspectionScheduled
+              ? 'border-india-orange/30 text-india-orange bg-india-orange/10'
               : 'border-border text-foreground/60 bg-border/40'
           }`}
         >
-          {isPending ? 'Pending Scrutiny' : isApproved ? 'Issued & Signed' : 'Returned / Discrepancy'}
+          {isPending ? 'Pending Scrutiny' : isApproved ? 'Issued & Signed' : isInspectionScheduled ? 'Inspection Scheduled' : 'Returned / Discrepancy'}
         </span>
       </div>
 
@@ -96,6 +99,12 @@ export const RequestCard = ({ req, onOpenModal }) => {
           {isPending && (
             <>
               <button
+                onClick={() => onOpenModal(req, 'INSPECTION')}
+                className="px-3 py-1.5 rounded-lg border border-india-blue/30 bg-india-blue/5 text-xs font-semibold text-india-blue hover:bg-india-blue/10 transition-colors cursor-pointer"
+              >
+                Schedule Inspection
+              </button>
+              <button
                 onClick={() => onOpenModal(req, 'REJECT')}
                 className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-border transition-colors cursor-pointer"
               >
@@ -114,6 +123,18 @@ export const RequestCard = ({ req, onOpenModal }) => {
       </div>
 
       {/* Outcome Messages */}
+      {isInspectionScheduled && (
+        <div className="border border-india-orange/30 bg-india-orange/5 rounded-lg p-2.5 text-xs text-foreground flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="w-2 h-2 rounded-full bg-india-orange shrink-0 animate-pulse" />
+            <span>
+              Field Inspection Scheduled: <strong>{req.inspectionDetails?.inspectionDate || 'Upcoming'}</strong> ({req.inspectionDetails?.inspectionTime || '11:00 AM'}) &bull; Inspector: {req.inspectionDetails?.inspectorName || 'Assigned Officer'}
+            </span>
+          </div>
+          <span className="font-mono text-[11px] text-india-orange font-semibold">Inspector Assigned</span>
+        </div>
+      )}
+
       {isApproved && (
         <div className="border border-india-blue/30 bg-india-blue/5 rounded-lg p-2.5 text-xs text-foreground flex items-center justify-between">
           <div className="flex items-center space-x-2">

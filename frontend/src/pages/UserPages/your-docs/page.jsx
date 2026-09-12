@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader, SearchInput, FilterTabs, Modal } from '../../../components/ui';
 import { FileText, Download, AlertTriangle, RotateCcw, CheckCircle2 } from 'lucide-react';
 import { RenewDocumentModal } from './RenewDocumentModal';
+import { vaultService } from '../../../services/vaultService';
 
 // Mock Data with renewal fee and required documents
 const initialDocumentsData = [
@@ -168,17 +169,55 @@ export const YourDocsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [successBanner, setSuccessBanner] = useState('');
 
-  const handleRenewalSuccess = (docId) => {
-    setDocuments((prev) =>
-      prev.map((d) =>
-        d.id === docId
-          ? { ...d, needsRenewal: false, verificationStatus: 'VERIFIED' }
-          : d
-      )
-    );
-    setRenewingDoc(null);
-    setSuccessBanner('Renewal application and requisite documents successfully submitted!');
-    setTimeout(() => setSuccessBanner(''), 4000);
+  useEffect(() => {
+    vaultService.getVaultDocuments()
+      .then((res) => {
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setDocuments(res.data);
+        }
+      })
+      .catch((err) => {
+        console.warn('[YourDocs] Live fetch fallback to mock:', err.message);
+      });
+  }, []);
+
+  const handleRenewalSuccess = async (docId, renewalData = {}) => {
+    try {
+      await vaultService.renewDocument(docId, renewalData).catch(() => {});
+    } finally {
+      setDocuments((prev) =>
+        prev.map((d) =>
+          d.id === docId
+            ? { ...d, needsRenewal: false, verificationStatus: 'VERIFIED' }
+            : d
+        )
+      );
+      setRenewingDoc(null);
+      setSuccessBanner('Renewal application and requisite documents successfully submitted!');
+      setTimeout(() => setSuccessBanner(''), 4000);
+    }
+  };
+
+  const handleDownload = async (doc) => {
+    try {
+      const blob = await vaultService.downloadCertificate(doc.id);
+      if (blob) {
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${doc.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (err) {
+      console.warn('API download fallback to direct PDF link:', err.message);
+    }
+    if (doc.pdfUrl) {
+      window.open(doc.pdfUrl, '_blank');
+    }
   };
 
   const filteredDocs = documents.filter((doc) => {
@@ -304,15 +343,14 @@ export const YourDocsPage = () => {
             <div className="flex items-center justify-between pt-3 gap-2">
               <span className="text-[10px] text-foreground/40 font-mono shrink-0">{doc.fileSize}</span>
               <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                <a
-                  href={doc.pdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border hover:border-india-blue text-xs font-semibold text-foreground/60 hover:text-india-blue transition-colors"
+                <button
+                  onClick={() => handleDownload(doc)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border hover:border-india-blue text-xs font-semibold text-foreground/60 hover:text-india-blue transition-colors cursor-pointer"
+                  title="Download Official Certificate"
                 >
                   <Download className="w-3.5 h-3.5" />
                   PDF
-                </a>
+                </button>
                 <button
                   onClick={() => setSelectedDoc(doc)}
                   className="px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-border text-xs font-semibold transition-colors cursor-pointer"

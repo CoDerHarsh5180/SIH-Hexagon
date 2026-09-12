@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/ui';
-import { Bell, Calendar, Clock, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Bell, Calendar, Clock, AlertTriangle, CheckCircle2, ShieldAlert, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { notificationsService } from '../../services/notificationsService';
 
 export const NotificationsPage = () => {
   const [filter, setFilter] = useState('ALL');
-
-  const notifications = [
+  const [notificationsList, setNotificationsList] = useState([
     {
       id: 'NOTIF-01',
       title: 'Field Inspection Scheduled - MPCB',
@@ -46,9 +46,53 @@ export const NotificationsPage = () => {
       icon: CheckCircle2,
       tag: 'Approved'
     }
-  ];
+  ]);
 
-  const filtered = notifications.filter(
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const res = await notificationsService.getNotifications();
+        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          setNotificationsList(res.data.map(item => ({
+            ...item,
+            icon: item.type === 'INSPECTION' ? Calendar : item.type === 'RENEWAL' ? Clock : item.type === 'ESCALATION' ? ShieldAlert : CheckCircle2
+          })));
+        }
+      } catch (err) {
+        console.warn('Using offline notifications fallback:', err.message);
+      }
+    };
+    fetchNotifs();
+  }, []);
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationsService.markAsRead(id);
+    } catch (err) {
+      console.warn('Backend mark as read failed:', err.message);
+    }
+    setNotificationsList(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationsService.markAllAsRead();
+    } catch (err) {
+      console.warn('Backend mark all as read failed:', err.message);
+    }
+    setNotificationsList(prev => prev.map(n => ({ ...n, unread: false })));
+  };
+
+  const handleDeleteNotification = async (id) => {
+    try {
+      await notificationsService.deleteNotification(id);
+    } catch (err) {
+      console.warn('Backend delete notification failed:', err.message);
+    }
+    setNotificationsList(prev => prev.filter(n => n.id !== id));
+  };
+
+  const filtered = notificationsList.filter(
     (n) => filter === 'ALL' || n.type === filter
   );
 
@@ -61,18 +105,29 @@ export const NotificationsPage = () => {
           className="pb-0 border-b-0"
         />
 
-        <div className="flex bg-border/20 p-1 rounded-xl shrink-0">
-          {['ALL', 'INSPECTION', 'RENEWAL', 'ESCALATION'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                filter === tab ? 'bg-india-blue text-white shadow-xs' : 'text-foreground/70'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleMarkAllAsRead}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-foreground/70 hover:text-india-blue hover:border-india-blue/40 text-xs font-semibold transition-colors cursor-pointer"
+            title="Mark all notifications as read"
+          >
+            <CheckCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Mark All Read</span>
+          </button>
+
+          <div className="flex bg-border/20 p-1 rounded-xl shrink-0">
+            {['ALL', 'INSPECTION', 'RENEWAL', 'ESCALATION'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  filter === tab ? 'bg-india-blue text-white shadow-xs' : 'text-foreground/70'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -112,9 +167,27 @@ export const NotificationsPage = () => {
                 </div>
               </div>
 
-              <span className="text-[10px] font-mono text-foreground/40 shrink-0 hidden sm:block">
-                {item.id}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {item.unread && (
+                  <button
+                    onClick={() => handleMarkAsRead(item.id)}
+                    className="p-1.5 rounded-lg border border-border hover:border-india-blue text-foreground/50 hover:text-india-blue text-xs transition-colors cursor-pointer"
+                    title="Mark as read"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDeleteNotification(item.id)}
+                  className="p-1.5 rounded-lg border border-border hover:border-india-orange text-foreground/40 hover:text-india-orange text-xs transition-colors cursor-pointer"
+                  title="Delete notification"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-[10px] font-mono text-foreground/40 hidden sm:block ml-1">
+                  {item.id}
+                </span>
+              </div>
             </div>
           );
         })}

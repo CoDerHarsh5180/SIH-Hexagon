@@ -1,14 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../../../components/ui';
-import { Landmark, ShieldCheck, Mail, Phone, Building } from 'lucide-react';
+import { Landmark, ShieldCheck, Mail, Phone, Building, LogOut } from 'lucide-react';
+import { authService } from '../../../services/authService';
+import { useAuth } from '../../../context/AuthContext';
 
 export const MainAuthProfilePage = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [profile, setProfile] = useState({
+    title: 'Principal Secretary (Industries)',
+    subtitle: 'State Level Apex Clearances Cell',
+    adminId: 'IAS-MH-ADMIN-01',
+    department: 'Industries, Energy & Labour Department',
+    office: 'Mantralaya, Madam Cama Road, Nariman Point, Mumbai 400032',
+    email: 'psec.ind@maharashtra.gov.in',
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await authService.getProfile();
+        if (res?.data?.profile || res?.data?.admin) {
+          setProfile((prev) => ({ ...prev, ...(res.data.profile || res.data.admin) }));
+        }
+      } catch (err) {
+        console.warn('Using offline state admin profile fallback:', err.message);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    if (window.confirm('Are you sure you want to sign out from State Administrator console?')) {
+      await logout();
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-6">
-      <PageHeader
-        title="State Authority Headquarters Profile"
-        subtitle="Principal Secretary and Headquarters State-Level Policy Administrator credentials."
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+        <PageHeader
+          title="State Authority Headquarters Profile"
+          subtitle="Principal Secretary and Headquarters State-Level Policy Administrator credentials."
+          className="pb-0 border-b-0"
+        />
+        <button
+          onClick={handleLogout}
+          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-border text-foreground/70 hover:text-india-orange hover:border-india-orange/30 text-xs font-semibold transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
+          title="Sign out of DocFlow"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Sign Out</span>
+        </button>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="border border-border rounded-xl bg-background p-6 space-y-4 text-xs">
