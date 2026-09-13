@@ -1,10 +1,7 @@
 import React from 'react';
 import borderImg from '../../assets/border.png';
 
-/**
- * BackgroundFlagDecor — Elegant Indian Tricolor wave ribbon accent in corners.
- * Uses pointer-events-none so it never intercepts clicks or touch events.
- */
+
 export const BackgroundFlagDecor = ({ 
   opacityClass = 'opacity-30 dark:opacity-20',
   showTopLeft = true,
