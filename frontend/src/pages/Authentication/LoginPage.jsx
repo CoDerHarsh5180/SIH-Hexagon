@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthLayout } from '../../layouts/AuthLayout/page';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
@@ -26,7 +26,8 @@ const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
 
 export const LoginPage = ({ onNavigateToRegister }) => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const location = useLocation();
+  const { login, devLoginAs } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,14 +51,35 @@ export const LoginPage = ({ onNavigateToRegister }) => {
     try {
       const res = await login({ email: formData.email, password: formData.password, portalType });
       const userRole = res?.data?.user?.role || res?.user?.role || portalType;
-      if (userRole === 'LOCAL_AUTH') navigate('/local-auth/requests');
-      else if (userRole === 'MAIN_AUTH') navigate('/main-auth/dashboard');
-      else navigate('/user/dashboard');
+
+      const fromPath = location.state?.from?.pathname || (typeof location.state?.from === 'string' ? location.state.from : null);
+
+      if (userRole === 'LOCAL_AUTH') {
+        navigate('/local-auth/requests');
+      } else if (userRole === 'MAIN_AUTH') {
+        navigate('/main-auth/dashboard');
+      } else if (fromPath) {
+        // Return back to where user clicked Apply Now or intended route
+        navigate(fromPath, { state: location.state?.from?.state });
+      } else {
+        navigate('/user/dashboard');
+      }
     } catch (err) {
       console.error('[LoginPage] Login failed:', err.message);
       alert(err.message || 'Login failed. Please verify your credentials.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickPortalAccess = (targetRole) => {
+    devLoginAs(targetRole);
+    if (targetRole === 'LOCAL_AUTH') {
+      navigate('/local-auth/requests');
+    } else if (targetRole === 'MAIN_AUTH') {
+      navigate('/main-auth/dashboard');
+    } else {
+      navigate('/user/dashboard');
     }
   };
 
@@ -84,11 +106,64 @@ export const LoginPage = ({ onNavigateToRegister }) => {
   return (
     <AuthLayout
       title="Welcome Back"
-      subtitle="Sign in securely to your DocFlow account using your email and password."
+      subtitle="Sign in to your SARAL account to access your applications and clearances."
     >
+      {location.state?.intent === 'APPLY_APPROVALS' && (
+        <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5 mb-2">
+          <span className="text-base">📋</span>
+          <div>
+            <p className="font-bold">Authentication Required to Submit Clearances</p>
+            <p className="text-[11px] opacity-90 mt-0.5">
+              Please sign in to submit your selected clearances ({location.state?.itemCount || 'dockets'}). Your chosen parameters have been safely saved and will resume immediately after login.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 1-Click Fast Preview Panel (Zero Backend Needed) */}
+      <div className="p-3.5 rounded-xl border border-dashed border-india-orange/50 bg-india-orange/5 text-foreground space-y-2 mb-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-bold text-india-orange uppercase tracking-wider flex items-center gap-1.5">
+            <span>⚡</span> One-Click Portal Preview (No Backend Required)
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Click any role below to instantly explore protected pages and dashboards:
+        </p>
+        <div className="grid grid-cols-3 gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => handleQuickPortalAccess('USER')}
+            className="px-2 py-2 rounded-lg bg-card border border-border text-foreground hover:border-india-orange hover:text-india-orange text-[11px] font-bold transition-all text-center cursor-pointer shadow-2xs"
+          >
+            User Portal
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickPortalAccess('LOCAL_AUTH')}
+            className="px-2 py-2 rounded-lg bg-card border border-border text-foreground hover:border-india-blue hover:text-india-blue text-[11px] font-bold transition-all text-center cursor-pointer shadow-2xs"
+          >
+            Local Auth
+          </button>
+          <button
+            type="button"
+            onClick={() => handleQuickPortalAccess('MAIN_AUTH')}
+            className="px-2 py-2 rounded-lg bg-card border border-border text-foreground hover:border-india-orange hover:text-india-orange text-[11px] font-bold transition-all text-center cursor-pointer shadow-2xs"
+          >
+            Main Auth
+          </button>
+        </div>
+      </div>
+
+      <div className="relative flex py-1 items-center">
+        <div className="flex-grow border-t border-border"></div>
+        <span className="shrink mx-2 text-[10px] uppercase font-semibold text-muted-foreground">or sign in with credentials</span>
+        <div className="flex-grow border-t border-border"></div>
+      </div>
+
       <form onSubmit={handlePasswordLogin} className="space-y-4 text-xs">
         <InputGroup 
-          label="Registered Email Address" 
+          label="Email Address" 
           type="email" 
           icon={Mail} 
           required 
@@ -97,7 +172,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
           onChange={updateForm('email')} 
         />
 
-        {/* Custom wrapping for the Password field to fit the "Forgot Password" link */}
+        {/* Custom wrapping for the Password field */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">
@@ -134,21 +209,30 @@ export const LoginPage = ({ onNavigateToRegister }) => {
         <button 
           type="submit" 
           disabled={isSubmitting} 
-          className="w-full py-2.5 px-4 rounded-lg bg-india-blue text-white font-semibold text-xs hover:opacity-90 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 pt-2"
+          className="w-full py-2.5 px-4 rounded-lg bg-india-orange text-white font-semibold text-xs hover:opacity-90 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 pt-2 shadow-xs transition-opacity"
         >
-          <span>{isSubmitting ? 'Verifying Credentials...' : 'Sign In'}</span> 
+          <span>{isSubmitting ? 'Signing in...' : 'Sign In'}</span> 
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </form>
 
-      <div className="text-center pt-4 border-t border-border text-xs text-foreground/70 mt-6">
-        Don&apos;t have an account yet?{' '}
-        <button 
-          type="button" 
-          onClick={handleGoToRegister} 
-          className="text-india-blue font-semibold hover:underline cursor-pointer"
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border text-xs text-muted-foreground mt-4">
+        <div>
+          Don&apos;t have an account yet?{' '}
+          <button 
+            type="button" 
+            onClick={handleGoToRegister} 
+            className="text-india-orange font-semibold hover:underline cursor-pointer"
+          >
+            Register here
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="text-xs font-semibold text-foreground hover:text-india-orange transition-colors cursor-pointer"
         >
-          Register here
+          &larr; Back to Landing Page
         </button>
       </div>
     </AuthLayout>

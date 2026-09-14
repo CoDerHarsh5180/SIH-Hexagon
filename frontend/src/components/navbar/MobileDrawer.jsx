@@ -37,6 +37,17 @@ const MobileDrawer = ({ isOpen, links, currentPath, onNavClick, children }) => (
           </button>
         ))}
         {children}
+
+        {/* Return to Public Landing Page */}
+        <div className="pt-2 mt-2 border-t border-border">
+          <button
+            onClick={() => onNavClick('/')}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-md text-sm font-semibold text-india-orange hover:bg-muted transition-colors cursor-pointer"
+          >
+            <span>Return to Landing Page</span>
+            <span className="text-xs">&rarr;</span>
+          </button>
+        </div>
       </motion.div>
     )}
   </AnimatePresence>

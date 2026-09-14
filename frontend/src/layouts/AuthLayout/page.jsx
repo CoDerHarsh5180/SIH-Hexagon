@@ -1,7 +1,7 @@
 import React from 'react';
-import { Building2, ShieldCheck } from 'lucide-react';
-import image from './image.png'
-
+import { Link } from 'react-router-dom';
+import { Building2, ShieldCheck, ArrowLeft } from 'lucide-react';
+import image from './image.png';
 
 export const AuthLayout = ({ title, subtitle, children }) => {
   return (
@@ -9,13 +9,25 @@ export const AuthLayout = ({ title, subtitle, children }) => {
       {/* Left Column: Image & Brand Narrative (Visible on lg screens and up) */}
       <div className="hidden lg:flex lg:w-5/12 border-r border-border bg-border/5 flex-col justify-between p-12 relative overflow-hidden">
         {/* Brand Header */}
-        <div className="flex items-center space-x-2">
-          <span className="text-foreground font-bold text-2xl tracking-tight">
-            Doc<span className="text-india-blue">Flow</span>
-          </span>
-          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-india-blue/30 bg-india-blue/10 text-india-blue uppercase">
-            Gov Approvals Portal
-          </span>
+        <div className="flex items-center justify-between">
+          <Link to="/" className="flex flex-col group" title="Streamlined Applications, Record and Approvals Link">
+            <div className="flex items-center space-x-2">
+              <span className="text-foreground font-bold text-2xl tracking-tight group-hover:opacity-90">
+                SAR<span className="text-india-blue">AL</span>
+              </span>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-india-blue/30 bg-india-blue/10 text-india-blue uppercase">
+                Gov Approvals Portal
+              </span>
+            </div>
+            <span className="text-[10px] text-muted-foreground font-medium tracking-tight mt-0.5">
+              Streamlined Applications, Record and Approvals Link
+            </span>
+          </Link>
+
+          <Link to="/" className="text-xs text-foreground/60 hover:text-india-blue flex items-center gap-1 font-medium">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Home</span>
+          </Link>
         </div>
 
         {/* IMAGE PLACEHOLDER AREA */}
@@ -40,10 +52,19 @@ export const AuthLayout = ({ title, subtitle, children }) => {
       <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-12 py-10">
         <div className="w-full max-w-md space-y-6">
           {/* Mobile Logo Branding */}
-          <div className="lg:hidden flex items-center space-x-2">
-            <span className="text-foreground font-bold text-2xl tracking-tight">
-              Doc<span className="text-india-blue">Flow</span>
-            </span>
+          <div className="lg:hidden flex items-center justify-between">
+            <Link to="/" className="flex flex-col">
+              <span className="text-foreground font-bold text-2xl tracking-tight">
+                SAR<span className="text-india-blue">AL</span>
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium">
+                Streamlined Applications, Record and Approvals Link
+              </span>
+            </Link>
+            <Link to="/" className="text-xs text-foreground/60 hover:text-india-blue flex items-center gap-1 font-medium">
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Home</span>
+            </Link>
           </div>
 
           <div>

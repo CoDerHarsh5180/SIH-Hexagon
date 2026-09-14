@@ -219,9 +219,21 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
         </motion.form>
       )}
 
-      {/* Switch to Login */}
-      <div className="text-center pt-2 border-t border-border text-xs text-foreground/70">
-        Already registered? <button type="button" onClick={handleGoToLogin} className="text-india-blue font-semibold hover:underline cursor-pointer">Sign In</button>
+      {/* Switch to Login & Back to Landing */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border text-xs text-muted-foreground">
+        <div>
+          Already registered?{' '}
+          <button type="button" onClick={handleGoToLogin} className="text-india-orange font-semibold hover:underline cursor-pointer">
+            Sign In
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="text-xs font-semibold text-foreground hover:text-india-orange transition-colors cursor-pointer"
+        >
+          &larr; Back to Landing Page
+        </button>
       </div>
     </AuthLayout>
   );

@@ -8,3 +8,4 @@ export { benefitsService } from './benefitsService';
 export { notificationsService } from './notificationsService';
 export { localAuthService } from './localAuthService';
 export { mainAuthService } from './mainAuthService';
+export { publicDashboardService } from './publicDashboardService';

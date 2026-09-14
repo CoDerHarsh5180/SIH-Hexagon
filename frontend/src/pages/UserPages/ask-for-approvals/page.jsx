@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader, AIAdvisorPanel } from '../../../components/ui';
 import { Bot, Check, Sparkles, Clock } from 'lucide-react';
@@ -489,13 +489,35 @@ const YesNoToggle = ({ value, onChange }) => (
 // ─────────────────────────────────────────────────────────────
 const MAX_HISTORY = 3;
 
+const DISTRICT_MAP = {
+  pune: 'Pune',
+  thane: 'Thane',
+  csn: 'Aurangabad (Chhatrapati Sambhajinagar)',
+  nagpur: 'Nagpur',
+  nashik: 'Nashik',
+  kolhapur: 'Kolhapur',
+  solapur: 'Solapur',
+  raigad: 'Raigad',
+  amravati: 'Nagpur',
+  palghar: 'Thane',
+};
+
 export const AskForApprovalPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentSection, setCurrentSection] = useState(1);
   const [evaluating, setEvaluating] = useState(false);
+  const [advisoryBanner, setAdvisoryBanner] = useState(Boolean(location.state?.needQuestionnaire));
+
+  const resolvedInitialDistrict = () => {
+    const raw = location.state?.initialDistrict;
+    if (!raw) return 'Pune';
+    return DISTRICT_MAP[raw.toLowerCase()] || raw;
+  };
+
   const [formData, setFormData] = useState({
     stage: 'pre-construction',
-    district: 'Pune',
+    district: resolvedInitialDistrict(),
     landType: 'MIDC Industrial Allotted Plot',
     midcAreaName: 'MIDC Chakan Phase 2',
     plotAreaSqMtr: '2500',
@@ -553,12 +575,14 @@ export const AskForApprovalPage = () => {
       workforceCount: Number(formData.proposedWorkers) || 0,
     };
 
+    const targetListRoute = location.pathname.startsWith('/user') ? '/user/approvals/list' : '/approvals/list';
+
     try {
       const res = await approvalsService.evaluateQuestionnaire(evaluationPayload);
-      navigate('/user/approvals/list', { state: { evaluationResult: res.data } });
+      navigate(targetListRoute, { state: { evaluationResult: res.data } });
     } catch (err) {
       console.warn('[AskForApproval] Evaluation fallback to client heuristics:', err.message);
-      navigate('/user/approvals/list');
+      navigate(targetListRoute);
     } finally {
       setEvaluating(false);
     }
@@ -580,6 +604,24 @@ export const AskForApprovalPage = () => {
           className="pb-0 border-b-0"
         />
       </div>
+
+      {/* Advisory Banner if accessed directly */}
+      {advisoryBanner && (
+        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📋</span>
+            <p>
+              <strong>Questionnaire Required:</strong> The <em>List of Approvals</em> is generated dynamically based on your industrial parameters. Please complete this 3-step questionnaire to formulate your customized statutory clearances list.
+            </p>
+          </div>
+          <button
+            onClick={() => setAdvisoryBanner(false)}
+            className="text-amber-900 dark:text-amber-100 font-bold hover:underline cursor-pointer ml-3 shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

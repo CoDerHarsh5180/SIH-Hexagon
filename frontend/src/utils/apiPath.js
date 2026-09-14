@@ -1,5 +1,5 @@
 /**
- * DocFlow Single-Window Industrial Clearance Platform
+ * SARAL Single-Window Industrial Clearance Platform
  * Consolidated API Paths & Base URL Configuration
  *
  * This file centralizes all backend API route endpoints required across
@@ -117,6 +117,14 @@ export const API_PATHS = {
     GET_REQUEST_BY_ID: (id) => `/api/main-auth/requests/${id}`,
     APPROVE_REQUEST: (id) => `/api/main-auth/requests/${id}/approve`,
     REJECT_REQUEST: (id) => `/api/main-auth/requests/${id}/reject`,
+  },
+
+  // ── 11. Public Regulatory Transparency Dashboard ──
+  PUBLIC_DASHBOARD: {
+    GET_METRICS: "/api/dashboard/public",
+    GET_MONTHLY_VELOCITY: "/api/dashboard/monthly-velocity",
+    GET_DEPARTMENT_MATRIX: "/api/dashboard/department-matrix",
+    GET_DISTRICT_MATRIX: "/api/dashboard/district-matrix",
   },
 };
 

@@ -54,7 +54,7 @@ export const LocalAuthProfilePage = () => {
         <button
           onClick={handleLogout}
           className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-border text-foreground/70 hover:text-india-orange hover:border-india-orange/30 text-xs font-semibold transition-colors cursor-pointer shrink-0 self-start sm:self-auto"
-          title="Sign out of DocFlow"
+          title="Sign out of SARAL"
         >
           <LogOut className="w-4 h-4" />
           <span>Sign Out</span>

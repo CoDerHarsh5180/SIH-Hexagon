@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageHeader } from '../../../components/ui';
 import { Award, Calculator, ArrowRight, CheckCircle2, DollarSign, Percent, ShieldCheck, Loader2 } from 'lucide-react';
 import { benefitsService } from '../../../services/benefitsService';
+import { useAuth } from '../../../context/AuthContext';
 
 export const GovBenefitsPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('SCHEMES'); // 'SCHEMES' | 'CALCULATOR'
   const [sectorFilter, setSectorFilter] = useState('ALL');
   const [schemesList, setSchemesList] = useState([
@@ -76,6 +81,11 @@ export const GovBenefitsPage = () => {
   }, []);
 
   const handleApplyScheme = async (scheme) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location, schemeId: scheme.id } });
+      return;
+    }
+
     setApplyingSchemeId(scheme.id);
     try {
       await benefitsService.applyScheme(scheme.id, {
