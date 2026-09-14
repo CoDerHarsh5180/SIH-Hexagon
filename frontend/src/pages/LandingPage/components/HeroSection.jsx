@@ -1,26 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, 
   ArrowRight, 
   Search, 
   MapPin, 
-  CheckCircle2, 
-  Clock, 
-  QrCode, 
-  Shield, 
-  FileText, 
-  ExternalLink, 
+  ShieldCheck, 
+  CheckCircle2,
   ChevronRight, 
   ChevronDown,
-  TrendingUp, 
-  Flame, 
   Check,
   X,
   Building2
 } from 'lucide-react';
-import { POPULAR_DISTRICTS, POPULAR_CLEARANCES, LIVE_DOSSIER_MOCK } from '../data/landingData';
-import borderImg from '../../../assets/border.png';
+import { POPULAR_DISTRICTS, POPULAR_CLEARANCES } from '../data/landingData';
+import hero3dImage from '../../../assets/hero-3d.jpg';
+
+const ROTATING_TARGETS = [
+  'New Factories',
+  'MSME Units',
+  'Plant Expansion',
+  'Warehouses',
+  'Industrial Units'
+];
 
 export const HeroSection = ({ onSelectClearanceSearch }) => {
   const navigate = useNavigate();
@@ -29,8 +32,17 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
   const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState(false);
   const [districtFilterSearch, setDistrictFilterSearch] = useState('');
   const [selectedRegionFilter, setSelectedRegionFilter] = useState('All');
+  const [wordIndex, setWordIndex] = useState(0);
+
   const dropdownRef = useRef(null);
   const filterInputRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % ROTATING_TARGETS.length);
+    }, 2600);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -75,11 +87,7 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchQuery.trim() || selectedDistrict) {
-      navigate('/user/approvals/list', { state: { searchQuery, selectedDistrict } });
-    } else {
-      navigate('/user/approvals');
-    }
+    navigate('/approvals', { state: { initialQuery: searchQuery, initialDistrict: selectedDistrict } });
   };
 
   const handleTagClick = (tagQuery) => {
@@ -90,109 +98,129 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
   };
 
   return (
-    <section className="relative z-20 bg-gradient-to-b from-white via-slate-50 to-slate-100/50 dark:from-[#1c1c1c] dark:via-[#181818] dark:to-[#141414] pt-8 pb-16 border-b border-slate-200 dark:border-[#3a445a] transition-colors duration-300">
-      {/* Background Decorative Layer (Clipped to Hero Boundary) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Background Decorative Gradients */}
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 dark:bg-emerald-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-10 w-80 h-80 bg-[#ff7700]/5 rounded-full blur-3xl" />
-
-        {/* Top-Left Indian Tricolor Corner Ribbon Accent */}
-        <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 md:-top-8 md:-left-8 select-none">
-          <img
-            src={borderImg}
-            alt=""
-            aria-hidden="true"
-            className="w-40 sm:w-56 md:w-72 lg:w-88 h-auto object-contain transform -scale-x-100 rotate-12 opacity-35 dark:opacity-20 filter drop-shadow-xs"
-          />
-        </div>
-      </div>
-
-      <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Live Policy Pill */}
-        <div className="inline-flex flex-wrap items-center gap-1.5 sm:gap-2 bg-white dark:bg-[#252525] border border-slate-200 dark:border-[#3a445a] shadow-xs rounded-full px-3 sm:px-3.5 py-1 text-[10px] sm:text-xs font-medium text-slate-700 dark:text-slate-300 mb-6 transition-all hover:border-[#1E3A6E]/30">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-600 animate-ping"></span>
-          <span className="font-semibold text-[#1E3A6E] dark:text-emerald-400">Maharashtra Industrial Policy 2024–2029</span>
-          <span className="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
-          <span className="text-slate-600 dark:text-slate-300 hidden sm:flex items-center gap-1">
-            Section 19 Deemed SLA Enforced
+    <section className="relative z-20 bg-background text-foreground pt-8 pb-14 border-b border-border transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        
+        {/* Top Government Official Badge (Clean, No Gradients, No SLA Claims) */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="inline-flex flex-wrap items-center gap-2 bg-background border border-border rounded-full px-3.5 py-1 text-xs font-medium text-foreground mb-6"
+        >
+          <span className="inline-block w-2 h-2 rounded-full bg-india-orange animate-pulse"></span>
+          <span className="font-semibold text-india-orange">Government of Maharashtra</span>
+          <span className="text-foreground/40">•</span>
+          <span className="text-foreground/80">
+            SARAL — Streamlined Applications, Record and Approvals Link
           </span>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Hero Left Content */}
+          {/* Hero Left Content with Cool Text Animation */}
           <div className="lg:col-span-7 flex flex-col gap-5 relative z-30">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-              Every Industrial Clearance, Subsidy & Permit —{' '}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1E3A6E] via-emerald-700 to-[#ff7700] dark:from-emerald-400 dark:via-blue-400 dark:to-[#ff7700]">
-                Under One Intelligent Window
-              </span>
-            </h1>
+            
+            {/* Animated Headline with Dynamic Rotating Target Word (Locked Height & Stable Line Structure) */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="min-h-[85px] sm:min-h-[105px] lg:min-h-[130px] flex flex-col justify-center"
+            >
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.2]">
+                <span className="block">Apply for Approvals &amp; Clearances</span>
+                <span className="block mt-1 sm:mt-2 text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground/90">
+                  Directly Online for{' '}
+                  <span className="inline-block text-india-orange whitespace-nowrap">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={wordIndex}
+                        initial={{ y: 12, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -12, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        className="inline-block underline decoration-india-orange/30 decoration-wavy"
+                      >
+                        {ROTATING_TARGETS[wordIndex]}
+                      </motion.span>
+                    </AnimatePresence>
+                  </span>
+                </span>
+              </h1>
+            </motion.div>
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl font-normal">
-              Empowering manufacturing plants, MSMEs, and heavy engineering facilities across Maharashtra with AI-powered approvals, real-time tracking, and direct access to state industrial incentive packages.
-            </p>
+            {/* Simple, natural English subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-base sm:text-lg text-foreground/75 leading-relaxed max-w-2xl font-normal"
+            >
+              No more visiting multiple government offices. Check which approvals your business needs, calculate your state subsidies, and submit your applications from home or office.
+            </motion.p>
 
-            {/* Two Strong Action CTAs */}
-            <div className="flex flex-wrap items-center gap-3.5 pt-2">
+            {/* Action Buttons */}
+            <motion.div 
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="flex flex-wrap items-center gap-3 pt-1"
+            >
               <button
-                onClick={() => navigate('/user/approvals')}
-                className="px-6 py-3.5 bg-[#ff7700] hover:bg-[#e06600] text-white font-semibold text-sm rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-2 transform active:scale-95 shadow-orange-500/20 cursor-pointer"
+                onClick={() => navigate('/approvals')}
+                className="px-6 py-3 bg-india-orange hover:opacity-90 text-white font-semibold text-sm rounded-lg shadow-xs transition-opacity flex items-center gap-2 cursor-pointer"
               >
-                <Sparkles className="w-5 h-5 text-white" />
-                <span>Ask for Approvals – AI Wizard</span>
+                <Sparkles className="w-4 h-4 text-white" />
+                <span>Check Required Approvals</span>
               </button>
 
               <button
                 onClick={() => {
                   const el = document.getElementById('subsidies');
                   if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  else navigate('/user/gov-benefits');
+                  else navigate('/gov-benefits');
                 }}
-                className="px-6 py-3.5 bg-white dark:bg-[#252525] hover:bg-slate-50 dark:hover:bg-[#303030] text-[#1E3A6E] dark:text-white border-2 border-[#1E3A6E] dark:border-[#3a445a] font-semibold text-sm rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-background hover:bg-border text-foreground border border-border font-semibold text-sm rounded-lg shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
               >
-                <span>Explore Industrial Subsidies</span>
+                <span>View Government Benefits</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
-            </div>
+            </motion.div>
 
             {/* District & Clearance Instant Search Bar */}
-            <form onSubmit={handleSearchSubmit} className="mt-3 bg-white dark:bg-[#252525] p-2 rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-lg flex flex-col sm:flex-row items-stretch gap-2 relative z-30">
+            <motion.form 
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              onSubmit={handleSearchSubmit} 
+              className="mt-2 bg-background p-2 rounded-xl border border-border shadow-sm flex flex-col sm:flex-row items-stretch gap-2 relative z-30"
+            >
               <div className="flex items-center gap-2 flex-grow px-3 py-2">
-                <Search className="w-5 h-5 text-slate-400 shrink-0" />
+                <Search className="w-4 h-4 text-foreground/50 shrink-0" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search 80+ clearances (e.g., MPCB CTE, Fire NOC, Factory Building Plan)..."
-                  className="w-full bg-transparent border-0 focus:outline-none p-0 text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                  placeholder="Search any approval (e.g. Factory License, Fire NOC, Pollution CTE)..."
+                  className="w-full bg-transparent border-0 focus:outline-none p-0 text-sm text-foreground placeholder:text-foreground/40"
                 />
               </div>
 
-              {/* Custom Modern District Dropdown */}
-              <div className="relative border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-800 px-3 py-1.5 sm:w-80" ref={dropdownRef}>
+              {/* District Dropdown */}
+              <div className="relative border-t sm:border-t-0 sm:border-l border-border px-3 py-1.5 sm:w-72" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsDistrictDropdownOpen(!isDistrictDropdownOpen)}
-                  className="w-full h-full flex items-center justify-between gap-2 text-left focus:outline-none cursor-pointer group py-1"
+                  className="w-full h-full flex items-center justify-between gap-2 text-left focus:outline-none cursor-pointer py-1"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border transition-all ${
-                      selectedDistrictObj 
-                        ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60 shadow-xs' 
-                        : 'bg-blue-50 text-[#1E3A6E] border-blue-100 dark:bg-[#202836] dark:text-blue-300 dark:border-slate-700'
-                    }`}>
-                      <MapPin className="w-4 h-4" />
-                    </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin className="w-4 h-4 text-india-orange shrink-0" />
                     <div className="min-w-0">
-                      <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-400 tracking-wider leading-none mb-0.5 flex items-center gap-1">
-                        <span>District Hub</span>
-                        {selectedDistrictObj && (
-                          <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-extrabold">• ACTIVE</span>
-                        )}
+                      <p className="text-[10px] uppercase font-bold text-foreground/50 leading-none mb-0.5">
+                        District
                       </p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                        {selectedDistrictObj ? (selectedDistrictObj.city || selectedDistrictObj.name.split('(')[0].trim()) : 'Select District Hub'}
+                      <p className="text-xs sm:text-sm font-bold text-foreground truncate">
+                        {selectedDistrictObj ? (selectedDistrictObj.city || selectedDistrictObj.name.split('(')[0].trim()) : 'Select Your District'}
                       </p>
                     </div>
                   </div>
@@ -212,102 +240,80 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                             setSelectedDistrict('');
                           }
                         }}
-                        title="Clear district selection"
-                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                        title="Clear district"
+                        className="p-1 hover:bg-border rounded-full text-foreground/50 hover:text-foreground cursor-pointer"
                       >
                         <X className="w-3.5 h-3.5" />
                       </span>
                     )}
-                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isDistrictDropdownOpen ? 'rotate-180 text-[#1E3A6E] dark:text-emerald-400' : 'group-hover:text-slate-600 dark:group-hover:text-slate-200'}`} />
+                    <ChevronDown className={`w-4 h-4 text-foreground/50 transition-transform duration-200 ${isDistrictDropdownOpen ? 'rotate-180' : ''}`} />
                   </div>
                 </button>
 
                 {/* Dropdown Floating Menu */}
                 {isDistrictDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2.5 w-84 sm:w-[420px] max-w-[92vw] bg-white dark:bg-[#1e232d] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl shadow-slate-900/30 dark:shadow-black/80 p-3 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-slate-900/5 dark:ring-white/10">
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 dark:border-slate-800">
+                  <div className="absolute top-full right-0 mt-2.5 w-80 sm:w-[380px] max-w-[92vw] bg-background border border-border rounded-xl shadow-xl p-3 z-50 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="w-4 h-4 text-[#1E3A6E] dark:text-emerald-400" />
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                          Maharashtra Industrial Hubs
-                        </span>
-                        <span className="text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded-full">
-                          {filteredDistricts.length}
+                        <Building2 className="w-4 h-4 text-india-orange" />
+                        <span className="text-xs font-bold text-foreground">
+                          Maharashtra Districts
                         </span>
                       </div>
                       {selectedDistrict && (
                         <button
                           type="button"
                           onClick={() => setSelectedDistrict('')}
-                          className="text-[11px] text-[#ff7700] hover:text-[#d45d00] hover:underline font-semibold cursor-pointer"
+                          className="text-[11px] text-india-orange hover:underline font-semibold cursor-pointer"
                         >
                           Clear Selection
                         </button>
                       )}
                     </div>
 
-                    {/* Instant Search Filter Input */}
-                    <div className="relative flex items-center bg-slate-50 dark:bg-[#151921] border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1.5 mb-2 focus-within:ring-2 focus-within:ring-[#1E3A6E]/20 dark:focus-within:ring-emerald-500/20 focus-within:border-[#1E3A6E] dark:focus-within:border-emerald-500 transition-all">
-                      <Search className="w-3.5 h-3.5 text-slate-400 shrink-0 mr-2" />
+                    {/* Search inside district dropdown */}
+                    <div className="relative flex items-center bg-border/40 border border-border rounded-lg px-2.5 py-1.5 mb-2">
+                      <Search className="w-3.5 h-3.5 text-foreground/50 shrink-0 mr-2" />
                       <input
                         ref={filterInputRef}
                         type="text"
                         value={districtFilterSearch}
                         onChange={(e) => setDistrictFilterSearch(e.target.value)}
-                        placeholder="Search city or MIDC zone (e.g., Chakan, Taloja)..."
-                        className="w-full bg-transparent border-0 focus:outline-none p-0 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+                        placeholder="Search district or industrial area..."
+                        className="w-full bg-transparent border-0 focus:outline-none p-0 text-xs text-foreground placeholder:text-foreground/40"
                       />
-                      {districtFilterSearch && (
-                        <button
-                          type="button"
-                          onClick={() => setDistrictFilterSearch('')}
-                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
                     </div>
 
                     {/* Region Filter Chips */}
                     <div className="flex items-center gap-1 overflow-x-auto pb-2 mb-2 scrollbar-none">
                       {REGION_TABS.map((tab) => {
                         const isActive = selectedRegionFilter === tab;
-                        const shortLabel = 
-                          tab === 'Western Maharashtra' ? 'Western MH' :
-                          tab === 'North Maharashtra' ? 'North MH' : tab;
                         return (
                           <button
                             key={tab}
                             type="button"
                             onClick={() => setSelectedRegionFilter(tab)}
-                            className={`text-[10px] font-semibold px-2 py-1 rounded-lg shrink-0 transition-all cursor-pointer ${
+                            className={`text-[10px] font-semibold px-2 py-1 rounded-md shrink-0 transition-colors cursor-pointer ${
                               isActive
-                                ? 'bg-[#1E3A6E] dark:bg-emerald-600 text-white shadow-xs'
-                                : 'bg-slate-100 dark:bg-slate-800/90 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                ? 'bg-india-orange text-white'
+                                : 'bg-border text-foreground hover:bg-border/80'
                             }`}
                           >
-                            {shortLabel}
+                            {tab}
                           </button>
                         );
                       })}
                     </div>
 
                     {/* Districts List */}
-                    <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                       {filteredDistricts.length === 0 ? (
-                        <div className="py-6 text-center text-slate-400 dark:text-slate-500">
-                          <Building2 className="w-7 h-7 mx-auto mb-1.5 opacity-40" />
-                          <p className="text-xs font-semibold">No industrial hubs found</p>
-                          <p className="text-[10px] mt-0.5">Try searching another MIDC zone or select "All"</p>
+                        <div className="py-4 text-center text-foreground/50 text-xs">
+                          No districts found
                         </div>
                       ) : (
                         filteredDistricts.map((district) => {
                           const isSelected = selectedDistrict === district.id;
-                          const [cityName, subAreas] = district.name.split('(');
-                          const subAreaClean = subAreas ? subAreas.replace(')', '') : '';
-                          const clusters = district.clusters || (subAreaClean ? subAreaClean.split('/').map(s => s.trim()) : []);
-
                           return (
                             <button
                               key={district.id}
@@ -316,60 +322,20 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                                 setSelectedDistrict(district.id);
                                 setIsDistrictDropdownOpen(false);
                               }}
-                              className={`w-full text-left p-2.5 rounded-xl transition-all flex flex-col gap-1.5 cursor-pointer border ${
+                              className={`w-full text-left p-2 rounded-lg transition-colors flex items-center justify-between text-xs cursor-pointer ${
                                 isSelected 
-                                  ? 'bg-blue-50/90 dark:bg-emerald-950/50 border-[#1E3A6E]/30 dark:border-emerald-600/50 shadow-xs' 
-                                  : 'hover:bg-slate-50 dark:hover:bg-[#262c38] border-slate-100 dark:border-slate-800/80 bg-white/50 dark:bg-[#1a1f28]/40'
+                                  ? 'bg-india-orange/10 text-india-orange font-bold' 
+                                  : 'hover:bg-border text-foreground'
                               }`}
                             >
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span className={`text-xs font-bold ${
-                                    isSelected 
-                                      ? 'text-[#1E3A6E] dark:text-emerald-300' 
-                                      : 'text-slate-900 dark:text-white'
-                                  }`}>
-                                    {district.city || cityName.trim()}
-                                  </span>
-                                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                                    {district.region}
-                                  </span>
-                                </div>
-
-                                {isSelected && (
-                                  <div className="w-4 h-4 rounded-full bg-[#1E3A6E] dark:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                                    <Check className="w-2.5 h-2.5" />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Cluster tags */}
-                              {clusters.length > 0 && (
-                                <div className="flex flex-wrap items-center gap-1">
-                                  {clusters.map((c, idx) => (
-                                    <span 
-                                      key={idx}
-                                      className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
-                                        isSelected 
-                                          ? 'bg-blue-100/70 dark:bg-emerald-900/60 text-[#1E3A6E] dark:text-emerald-300' 
-                                          : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400'
-                                      }`}
-                                    >
-                                      {c}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
+                              <span>{district.city || district.name.split('(')[0].trim()}</span>
+                              <span className="text-[10px] text-foreground/50 font-normal">
+                                {district.region}
+                              </span>
                             </button>
                           );
                         })
                       )}
-                    </div>
-
-                    {/* Bottom hint */}
-                    <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-400 flex items-center justify-between">
-                      <span>💡 Prioritizes MIDC NOCs & Regional SLAs</span>
-                      <span className="font-mono text-[9px] text-slate-400">ESC to close</span>
                     </div>
                   </div>
                 )}
@@ -377,125 +343,77 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
 
               <button
                 type="submit"
-                className="bg-[#1E3A6E] dark:bg-emerald-700 hover:bg-[#14284d] dark:hover:bg-emerald-600 text-white font-semibold text-xs sm:text-sm px-6 py-2.5 rounded-xl transition-colors shrink-0 cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                className="bg-india-blue hover:opacity-90 text-white font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-lg transition-opacity shrink-0 cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <span>Find Approvals</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
-            </form>
+            </motion.form>
 
             {/* Popular Clearance Tags */}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
-              <span className="font-semibold text-slate-700 dark:text-slate-200">Popular Clearances:</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-foreground/60 pt-1">
+              <span className="font-semibold text-foreground">Common Clearances:</span>
               {POPULAR_CLEARANCES.slice(0, 4).map((item, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => handleTagClick(item.query)}
-                  className="bg-white dark:bg-[#252525] px-2.5 py-1 rounded-md border border-slate-200 dark:border-[#3a445a] hover:border-[#1E3A6E] dark:hover:border-emerald-400 text-slate-700 dark:text-slate-300 hover:text-[#1E3A6E] transition-colors cursor-pointer text-[11px]"
+                  className="bg-background px-2.5 py-1 rounded-md border border-border hover:border-india-orange hover:text-india-orange text-foreground/80 transition-colors cursor-pointer text-[11px]"
                 >
-                  {item.label.split('(')[0].trim()}
+                  {item.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Hero Right Mockup Card: High-Fidelity Active Application Dossier */}
-          <div className="lg:col-span-5 relative z-10">
-            <div className="bg-white dark:bg-[#222222] rounded-2xl border border-slate-200 dark:border-[#3a445a] shadow-xl p-6 relative overflow-hidden transition-all duration-300">
-              {/* Header Details */}
-              <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                    Live Statutory Dossier
-                  </span>
-                </div>
-                <button
-                  onClick={() => navigate('/user/track/APP-MH-2026-89412')}
-                  title="Click to track in detail"
-                  className="text-[11px] font-mono font-bold bg-slate-100 dark:bg-slate-800 text-[#1E3A6E] dark:text-emerald-400 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Ref: {LIVE_DOSSIER_MOCK.ref}</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-
-              {/* Title & Facility */}
-              <div className="py-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      {LIVE_DOSSIER_MOCK.company}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      {LIVE_DOSSIER_MOCK.location}
-                    </p>
-                  </div>
-                  <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shrink-0">
-                    {LIVE_DOSSIER_MOCK.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Interactive Stepper */}
-              <div className="bg-slate-50 dark:bg-[#1a1a1a] p-3.5 rounded-xl border border-slate-200 dark:border-[#333333] my-2">
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">Clearance Pipeline</span>
-                  <span className="text-[#1E3A6E] dark:text-emerald-400 font-extrabold">
-                    {LIVE_DOSSIER_MOCK.completedSteps} of {LIVE_DOSSIER_MOCK.totalSteps} Completed
-                  </span>
-                </div>
+          {/* Hero Right: Clean 3D Visual Frame (No gradients, matching app style) */}
+          <div className="lg:col-span-5 relative z-10 flex items-center justify-center">
+            <div className="relative w-full max-w-[460px]">
+              
+              {/* Main Card Container */}
+              <div className="relative rounded-2xl border border-border bg-background shadow-md p-3 sm:p-4 overflow-visible">
                 
-                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-emerald-500 to-[#1E3A6E] dark:to-emerald-400 h-2 rounded-full transition-all duration-1000" 
-                    style={{ width: `${LIVE_DOSSIER_MOCK.progressPercent}%` }}
-                  ></div>
-                </div>
-
-                <div className="grid grid-cols-5 text-[9px] sm:text-[10px] text-center text-slate-500 dark:text-slate-400 mt-2.5 font-medium gap-0.5">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">Filed ✓</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold"><span className="hidden sm:inline">Scrutiny</span><span className="sm:hidden">Scrut.</span> ✓</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold"><span className="hidden sm:inline">Inspect</span><span className="sm:hidden">Insp.</span> ✓</span>
-                  <span className="text-[#1E3A6E] dark:text-amber-400 font-bold underline"><span className="hidden sm:inline">Legal (Active)</span><span className="sm:hidden">Legal</span></span>
-                  <span className="text-slate-400"><span className="hidden sm:inline">Issuance</span><span className="sm:hidden">Issue</span></span>
-                </div>
-              </div>
-
-              {/* Real-time Clearances List */}
-              <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs my-3">
-                {LIVE_DOSSIER_MOCK.clearances.map((c, i) => (
-                  <div key={i} className="py-2.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300 truncate">
-                      {c.isDone ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      ) : (
-                        <Clock className="w-4 h-4 text-[#ff7700] shrink-0 animate-pulse" />
-                      )}
-                      <span className="truncate">{c.name}</span>
+                {/* 3D Visual Frame */}
+                <div className="relative rounded-xl overflow-hidden border border-border aspect-square flex items-center justify-center bg-background">
+                  <img 
+                    src={hero3dImage} 
+                    alt="SARAL Maharashtra Digital Industrial Clearance Portal" 
+                    className="w-full h-full object-cover object-center"
+                  />
+                  
+                  {/* System Status HUD Pill at Bottom of Image */}
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-2 rounded-lg bg-background/95 border border-border text-foreground text-[11px] shadow-sm">
+                    <div className="flex items-center gap-2 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-india-orange animate-pulse"></span>
+                      <span className="font-semibold">Maharashtra Single Window</span>
                     </div>
-
-                    <span className={`text-[11px] font-semibold px-2 py-0.5 rounded shrink-0 ${
-                      c.isDone 
-                        ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60' 
-                        : 'text-[#ff7700] bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 font-bold'
-                    }`}>
-                      {c.status}
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-india-blue/10 text-india-blue font-bold border border-india-blue/30">
+                      100% Online
                     </span>
                   </div>
-                ))}
-              </div>
+                </div>
 
-              {/* Cryptographic Badge */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                <span className="flex items-center gap-1 font-mono">
-                  <QrCode className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  SHA-256 Token
-                </span>
-                <span className="font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                  Apex RTS Guarantee
-                </span>
+                {/* Floating Badge 1: Top-Right */}
+                <div className="absolute -top-3 -right-2 sm:-top-3 sm:-right-3 bg-background border border-border shadow-md rounded-xl p-2.5 flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-india-blue/10 text-india-blue flex items-center justify-center font-bold shrink-0 border border-india-blue/30">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                  <div className="pr-1">
+                    <p className="text-[10px] uppercase font-bold text-foreground/50 leading-tight">Direct Approvals</p>
+                    <p className="text-xs font-bold text-foreground leading-tight">No Office Visits</p>
+                  </div>
+                </div>
+
+                {/* Floating Badge 2: Bottom-Left */}
+                <div className="absolute -bottom-3 -left-2 sm:-bottom-3 sm:-left-3 bg-background border border-border shadow-md rounded-xl p-2.5 flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-india-orange/10 text-india-orange flex items-center justify-center font-bold shrink-0 border border-india-orange/30">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="pr-1">
+                    <p className="text-[10px] uppercase font-bold text-foreground/50 leading-tight">Verified Documents</p>
+                    <p className="text-xs font-bold text-foreground leading-tight">QR Code Protected</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

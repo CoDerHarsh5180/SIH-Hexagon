@@ -253,7 +253,7 @@ export const SmartDiscoverySection = () => {
 
               <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
-                  onClick={() => navigate('/user/approvals')}
+                  onClick={() => navigate('/approvals')}
                   className="w-full py-3.5 bg-[#ff7700] hover:bg-[#e06600] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md transition-colors cursor-pointer"
                 >
                   <FolderPlus className="w-4 h-4" />

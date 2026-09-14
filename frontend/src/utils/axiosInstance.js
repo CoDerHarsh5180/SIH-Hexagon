@@ -2,7 +2,7 @@ import axios from 'axios';
 import { BASE_URL } from './apiPath';
 
 /**
- * Pre-configured Axios instance for DocFlow API communications.
+ * Pre-configured Axios instance for SARAL API communications.
  * - Injects Base URL from environment or default
  * - Attaches JWT Bearer token from localStorage on authenticated requests
  * - Uniformly extracts error messages and manages session expiries

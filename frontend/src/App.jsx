@@ -45,7 +45,9 @@ import NotificationsPage from './pages/CommonPages/NotificationsPage';
 import NotFoundPage from './pages/CommonPages/NotFoundPage';
 import BackgroundFlagDecor from './components/common/BackgroundFlagDecor';
 import { AuthProvider } from './context/AuthContext';
-
+import LandingPage from './pages/LandingPage';
+import PublicDashboardPage from './pages/PublicDashboard/PublicDashboardPage';
+import PublicLayout from './layouts/PublicLayout/page';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 import './App.css';
@@ -58,10 +60,18 @@ function App() {
         <BackgroundFlagDecor />
 
       <Routes>
-        {/* Default Landing / Auth Redirect */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        {/* ── PUBLIC CITIZEN & DISCOVERY ROUTES ── */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<PublicDashboardPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+
+        {/* Public Discovery Services (Navbars + Footers via PublicLayout) */}
+        <Route element={<PublicLayout />}>
+          <Route path="/approvals" element={<AskForApprovalPage />} />
+          <Route path="/approvals/list" element={<ListOfApprovalsPage />} />
+          <Route path="/gov-benefits" element={<GovBenefitsPage />} />
+        </Route>
 
         {/* ── USER PORTAL ROUTES (PROTECTED: USER) ── */}
         <Route element={<ProtectedRoute allowedRoles={['USER']} />}>

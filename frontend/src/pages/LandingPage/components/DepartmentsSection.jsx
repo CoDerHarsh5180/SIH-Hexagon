@@ -7,53 +7,53 @@ import {
   Landmark, 
   Utensils, 
   ShieldCheck,
-  CheckCircle2,
-  ExternalLink,
   ArrowRight
 } from 'lucide-react';
 import { INTEGRATED_DEPARTMENTS } from '../data/landingData';
 
 export const DepartmentsSection = () => {
   const navigate = useNavigate();
+
   const getDeptIcon = (iconName) => {
+    const iconClass = "w-6 h-6 text-india-orange";
     switch (iconName) {
       case 'Leaf':
-        return <Leaf className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />;
+        return <Leaf className={iconClass} />;
       case 'ShieldCheck':
-        return <ShieldCheck className="w-6 h-6 text-[#ff7700]" />;
+        return <ShieldCheck className={iconClass} />;
       case 'Building2':
-        return <Building2 className="w-6 h-6 text-[#1E3A6E] dark:text-blue-400" />;
+        return <Building2 className={iconClass} />;
       case 'Flame':
-        return <Flame className="w-6 h-6 text-[#ff7700]" />;
+        return <Flame className={iconClass} />;
       case 'Landmark':
-        return <Landmark className="w-6 h-6 text-[#1E3A6E] dark:text-blue-400" />;
+        return <Landmark className={iconClass} />;
       case 'Utensils':
-        return <Utensils className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />;
+        return <Utensils className={iconClass} />;
       default:
-        return <Building2 className="w-6 h-6 text-[#1E3A6E]" />;
+        return <Building2 className={iconClass} />;
     }
   };
 
   return (
-    <section className="py-16 bg-slate-50 dark:bg-[#141414] border-b border-slate-200 dark:border-[#3a445a] transition-colors duration-300" id="departments">
+    <section className="py-16 bg-background border-b border-border transition-colors duration-300" id="departments">
       <div className="max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-[#1E3A6E] dark:text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
+            <div className="inline-flex items-center gap-1.5 text-india-orange text-xs font-bold uppercase tracking-wider mb-2">
               <Building2 className="w-4 h-4" />
-              <span>Inter-Agency Statutory Coalition</span>
+              <span>Government Authorities</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               Integrated Maharashtra Departments
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-              Real-time synchronization across all key industrial inspection desks under Maharashtra Right to Services Act.
+            <p className="text-sm text-muted-foreground mt-1">
+              Connect directly with all key departments through a single platform without having to visit each office individually.
             </p>
           </div>
 
-          <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#222222] border border-slate-200 dark:border-[#333333] px-3.5 py-1.5 rounded-full self-start md:self-auto shadow-2xs flex items-center gap-1.5">
+          <div className="text-xs font-semibold text-foreground bg-muted border border-border px-3.5 py-1.5 rounded-full self-start md:self-auto shadow-2xs flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>All 6 Desks Active with Deemed SLA</span>
+            <span>All Desks Connected Online</span>
           </div>
         </div>
 
@@ -62,23 +62,22 @@ export const DepartmentsSection = () => {
           {INTEGRATED_DEPARTMENTS.map((dept, idx) => (
             <div
               key={idx}
-              onClick={() => navigate('/user/approvals/list', { state: { filterDept: dept.code } })}
-              className="bg-white dark:bg-[#222222] p-5 rounded-2xl border border-slate-200 dark:border-[#333333] shadow-xs flex flex-col items-center text-center hover:border-[#1E3A6E] dark:hover:border-emerald-500 hover:shadow-md transition-all duration-200 group cursor-pointer"
+              onClick={() => navigate('/approvals/list', { state: { filterDept: dept.code } })}
+              className="bg-card text-card-foreground p-5 rounded-xl border border-border shadow-xs flex flex-col items-center text-center hover:border-india-orange/60 hover:shadow-xs transition-all duration-200 group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-india-orange/10 border border-india-orange/20 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                 {getDeptIcon(dept.iconName)}
               </div>
 
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#1E3A6E] dark:group-hover:text-emerald-400 transition-colors">
+              <h4 className="text-sm font-bold text-foreground group-hover:text-india-orange transition-colors">
                 {dept.code}
               </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 h-8">
+              <span className="text-[10px] font-semibold text-india-blue mt-0.5">
+                {dept.tag}
+              </span>
+              <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 h-8">
                 {dept.name}
               </p>
-
-              <span className="mt-4 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
-                {dept.sla}
-              </span>
             </div>
           ))}
         </div>
