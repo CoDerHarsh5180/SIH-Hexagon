@@ -25,14 +25,42 @@ export const evaluateQuestionnaire = async (req, res) => {
       totalCapitalInvestmentInr = 0,
       workforceCount = 0,
       stage = 'pre-construction',
+      enterpriseDescription = '',
+      isCompanyRegistered = true,
+      hasUdyam = false,
     } = req.body;
 
     const sectorLower = (sector || '').toLowerCase();
     const subSectorLower = (subSector || '').toLowerCase();
     const pollutionUpper = (pollutionTier || 'ORANGE').toUpperCase();
     const landTypeStr = landType || 'MIDC Industrial Allotted Plot';
+    const descriptionLower = (enterpriseDescription || '').toLowerCase();
 
     const mandatoryApprovals = [];
+
+    // 0. Prerequisite: If Company Registration / Udyam is missing or required
+    if (isCompanyRegistered === false || hasUdyam === false) {
+      mandatoryApprovals.push({
+        approvalId: 'appr-00',
+        id: 'appr-00',
+        title: 'Enterprise Registration & Udyam MSME Certification',
+        docName: 'Enterprise Registration & Udyam MSME Certification',
+        department: 'Ministry of MSME / Directorate of Industries',
+        authority: 'Ministry of MSME & District Industries Centre (DIC)',
+        category: 'Corporate & Legal',
+        statutoryAct: 'Micro, Small and Medium Enterprises Development (MSMED) Act, 2006',
+        estimatedFeeInr: 0,
+        fee: 0,
+        maxSlaDays: 7,
+        slaDays: 7,
+        urgency: 'Step 1 Prerequisite',
+        tag: 'warning',
+        reason: 'Statutory prerequisite: Registered entity status (Udyam MSME registration or MCA incorporation) is required before statutory permissions, factory power tariffs, or MPCB clearances can be processed.',
+        aiReason: 'Statutory prerequisite: Registered entity status (Udyam MSME registration or MCA incorporation) is required before statutory permissions, factory power tariffs, or MPCB clearances can be processed.',
+        requiredDocs: ['PAN Card of Directors/Promoter', 'Aadhaar Card of Signatory', 'Bank Account Proof'],
+        requiresInspection: false,
+      });
+    }
 
     // 1. MPCB Consent to Establish (CTE) - Mandatory for all manufacturing & industrial units
     let mpcbFee = 15000;
@@ -277,6 +305,155 @@ export const evaluateQuestionnaire = async (req, res) => {
       });
     }
 
+    // 10. MoEF River Basin / Eco-Zone / CRZ Clearance
+    const envProximityStr = (req.body.isForestOrRiverNearby || '').toString();
+    if (envProximityStr && envProximityStr !== 'No') {
+      mandatoryApprovals.push({
+        approvalId: 'appr-10',
+        id: 'appr-10',
+        title: 'MoEF Eco-Zone / River Proximity Clearance',
+        docName: 'MoEF Eco-Zone / River Proximity Clearance',
+        department: 'Ministry of Environment, Forest and Climate Change (MoEF&CC)',
+        authority: 'MoEF&CC / State Environment Appraisal Committee (SEAC)',
+        category: 'Environment & Ecology',
+        statutoryAct: 'Environment (Protection) Act, 1986 & River Regulation Zone (RRZ) Notification',
+        estimatedFeeInr: 25000,
+        fee: 25000,
+        maxSlaDays: 60,
+        slaDays: 60,
+        urgency: 'Mandatory',
+        tag: 'warning',
+        reason: `Your facility site is declared within 500m proximity to a sensitive zone (${envProximityStr}), requiring environmental screening and river catchment buffer clearance.`,
+        aiReason: `Your facility site is declared within 500m proximity to a sensitive zone (${envProximityStr}), requiring environmental screening and river catchment buffer clearance.`,
+        requiredDocs: ['Site Plan / Layout', 'Environment Impact Assessment (EIA) Report', 'Eco-Zone Proximity Certificate'],
+        requiresInspection: true,
+      });
+    }
+
+    // 11. Collector / SDO Non-Agricultural (NA) Order (Under Sec 44 MLRC)
+    const hasNaOrderVal = req.body.hasNaOrder;
+    if (landTypeStr.includes('Agricultural') && (hasNaOrderVal === false || hasNaOrderVal === 'No')) {
+      mandatoryApprovals.push({
+        approvalId: 'appr-11',
+        id: 'appr-11',
+        title: 'Non-Agricultural (NA) Conversion Order (Sec 44 MLRC)',
+        docName: 'Non-Agricultural (NA) Conversion Order (Sec 44 MLRC)',
+        department: 'Revenue & Forest Department, Govt. of Maharashtra',
+        authority: 'Sub-Divisional Officer (SDO) / District Collector',
+        category: 'Land & Revenue',
+        statutoryAct: 'Maharashtra Land Revenue Code (MLRC), 1966',
+        estimatedFeeInr: 15000,
+        fee: 15000,
+        maxSlaDays: 60,
+        slaDays: 60,
+        urgency: 'Step 1 Prerequisite',
+        tag: 'warning',
+        reason: 'Plot is on Agricultural land without an NA order. Conversion to industrial land use under Sec 44 MLRC must precede any civil building permission.',
+        aiReason: 'Plot is on Agricultural land without an NA order. Conversion to industrial land use under Sec 44 MLRC must precede any civil building permission.',
+        requiredDocs: ['7/12 Land Extract', 'Village Map with Plot Demarcation', 'Talathi No-Dues Certificate'],
+        requiresInspection: true,
+      });
+    }
+
+    // 12. Central Ground Water Authority (CGWA) NOC
+    const waterSourceStr = req.body.waterSource || '';
+    if (waterSourceStr.includes('Groundwater') || waterSourceStr.includes('Borewell')) {
+      mandatoryApprovals.push({
+        approvalId: 'appr-12',
+        id: 'appr-12',
+        title: 'Central Ground Water Authority (CGWA) NOC',
+        docName: 'Central Ground Water Authority (CGWA) NOC',
+        department: 'Central Ground Water Authority (CGWA)',
+        authority: 'Ministry of Jal Shakti / CGWA Regional Directorate',
+        category: 'Water Resources',
+        statutoryAct: 'Environment (Protection) Act, 1986 & CGWA Guidelines 2020',
+        estimatedFeeInr: 10000,
+        fee: 10000,
+        maxSlaDays: 45,
+        slaDays: 45,
+        urgency: 'Mandatory',
+        tag: 'info',
+        reason: 'Extraction of groundwater via on-site borewells for industrial/commercial operations requires statutory CGWA abstraction permission and mandatory digital water flow meter.',
+        aiReason: 'Extraction of groundwater via on-site borewells for industrial/commercial operations requires statutory CGWA abstraction permission and mandatory digital water flow meter.',
+        requiredDocs: ['Hydrogeological Survey Report', 'Borewell Construction Layout', 'Water Meter Installation Proof'],
+        requiresInspection: true,
+      });
+    }
+
+    // 13. PESO Storage License for Flammable Solvents / Petroleum / Gas
+    const storesFlammable = req.body.storesFlammableSolvents === true || req.body.storesFlammableSolvents === 'Yes';
+    if (storesFlammable) {
+      mandatoryApprovals.push({
+        approvalId: 'appr-13',
+        id: 'appr-13',
+        title: 'PESO Flammable Chemicals & Petroleum Storage License',
+        docName: 'PESO Flammable Chemicals & Petroleum Storage License',
+        department: 'Petroleum and Explosives Safety Organisation (PESO)',
+        authority: 'Petroleum and Explosives Safety Organisation (PESO)',
+        category: 'Explosives & Chemical Safety',
+        statutoryAct: 'Petroleum Act, 1934 & Petroleum Rules, 2002',
+        estimatedFeeInr: 18000,
+        fee: 18000,
+        maxSlaDays: 30,
+        slaDays: 30,
+        urgency: 'Mandatory',
+        tag: 'warning',
+        reason: 'On-site storage and handling of class A/B flammable solvents, LPG cascades, or volatile hydrocarbons requires PESO premises layout approval and static tanker certification.',
+        aiReason: 'On-site storage and handling of class A/B flammable solvents, LPG cascades, or volatile hydrocarbons requires PESO premises layout approval and static tanker certification.',
+        requiredDocs: ['PESO Storage Layout Plan', 'Safety Equipment & Flame Arrestor Certificate', 'Site Safety Clearance'],
+        requiresInspection: true,
+      });
+    }
+
+    // 14. EPFO & ESIC Statutory Labor Registration (If workforce >= 20)
+    if (Number(workforceCount) >= 20) {
+      mandatoryApprovals.push({
+        approvalId: 'appr-14',
+        id: 'appr-14',
+        title: 'EPFO & ESIC Statutory Social Security Registration',
+        docName: 'EPFO & ESIC Statutory Social Security Registration',
+        department: 'Ministry of Labour and Employment',
+        authority: 'Employees Provident Fund Organisation (EPFO) & ESIC Corporation',
+        category: 'Labor Welfare & Social Security',
+        statutoryAct: 'Employees Provident Funds Act, 1952 & ESI Act, 1948',
+        estimatedFeeInr: 0,
+        fee: 0,
+        maxSlaDays: 10,
+        slaDays: 10,
+        urgency: 'Mandatory',
+        tag: 'info',
+        reason: `With an operational headcount of ${workforceCount} workers (threshold >= 20), statutory EPFO employer registration and ESIC medical coverage enrollment are mandatory.`,
+        aiReason: `With an operational headcount of ${workforceCount} workers (threshold >= 20), statutory EPFO employer registration and ESIC medical coverage enrollment are mandatory.`,
+        requiredDocs: ['Identity Proof (Aadhaar/PAN)', 'Specimen Signature Card', 'List of Directors/Partners'],
+        requiresInspection: false,
+      });
+    }
+
+    // 15. DGFT Importer-Exporter Code (IEC) (If export unit)
+    const isExport = req.body.isExportOriented === true || req.body.isExportOriented === 'Yes';
+    if (isExport) {
+      mandatoryApprovals.push({
+        approvalId: 'appr-15',
+        id: 'appr-15',
+        title: 'DGFT Importer-Exporter Code (IEC) Registration',
+        docName: 'DGFT Importer-Exporter Code (IEC) Registration',
+        department: 'Directorate General of Foreign Trade (DGFT)',
+        authority: 'Directorate General of Foreign Trade (DGFT)',
+        category: 'Foreign Trade & Commerce',
+        statutoryAct: 'Foreign Trade (Development and Regulation) Act, 1992',
+        estimatedFeeInr: 500,
+        fee: 500,
+        maxSlaDays: 5,
+        slaDays: 5,
+        urgency: 'Mandatory',
+        tag: 'info',
+        reason: 'Export of manufactured commodities outside India requires mandatory 10-digit PAN-linked Importer Exporter Code from DGFT.',
+        aiReason: 'Export of manufactured commodities outside India requires mandatory 10-digit PAN-linked Importer Exporter Code from DGFT.',
+        requiredDocs: ['Identity Proof (Aadhaar/PAN)', 'Bank Account Proof', 'Incorporation Certificate'],
+        requiresInspection: false,
+      });
+    }
+
     const totalEstimatedFeeInr = mandatoryApprovals.reduce((acc, curr) => acc + curr.estimatedFeeInr, 0);
     const estimatedTimelineDays = Math.max(...mandatoryApprovals.map((m) => m.maxSlaDays), 30);
 
@@ -295,7 +472,15 @@ export const evaluateQuestionnaire = async (req, res) => {
       hasBoiler,
       hasDGSet,
       generatesHazardousWaste,
-      pollutionTier: pollutionTier || 'Orange',
+      pollutionTier: pollutionTier ? (pollutionTier.charAt(0).toUpperCase() + pollutionTier.slice(1).toLowerCase()) : 'Orange',
+      projectNature: req.body.projectNature || 'greenfield',
+      constitution: req.body.constitution || 'Private Limited Company',
+      hasNaOrder: hasNaOrderVal !== false && hasNaOrderVal !== 'No',
+      waterSource: waterSourceStr || 'MIDC Piped Water Network',
+      storesFlammableSolvents: storesFlammable,
+      isFoodProduct: req.body.isFoodProduct === true || req.body.isFoodProduct === 'Yes',
+      isExportOriented: isExport,
+      buildingHeight: req.body.buildingHeight || 'Under 15 Meters (Standard)',
       totalCapitalInvestmentInr,
       workforceCount,
       recommendedApprovals: mandatoryApprovals.map((m) => ({
@@ -310,7 +495,6 @@ export const evaluateQuestionnaire = async (req, res) => {
       })),
       totalEstimatedFees: totalEstimatedFeeInr,
       maxSlaDays: estimatedTimelineDays,
-      totalClearancesCount: mandatoryApprovals.length,
     });
 
     const responsePayload = {
@@ -362,6 +546,7 @@ export const calculateFees = async (req, res) => {
 
     // Fallback dictionary for known codes if catalog doesn't have custom item
     const fallbackFees = {
+      'appr-00': { title: 'Enterprise Registration & Udyam MSME Certification', fee: 0, authority: 'Ministry of MSME' },
       'appr-01': { title: 'Consent to Establish (CTE) — Pollution Board', fee: 15000, authority: 'MPCB' },
       'appr-02': { title: 'Provisional Fire Safety NOC', fee: 7500, authority: 'Maharashtra Fire Services' },
       'appr-03': { title: 'Factory Building Plan Approval', fee: 20000, authority: 'Municipal Corporation / MIDC' },
@@ -371,6 +556,12 @@ export const calculateFees = async (req, res) => {
       'appr-07': { title: 'Diesel Generator (DG Set) Installation Sanction', fee: 3500, authority: 'CEI' },
       'appr-08': { title: 'Boiler / Pressure Vessel Registration & Fitness', fee: 8000, authority: 'Steam Boilers' },
       'appr-09': { title: 'Hazardous Waste Management Authorization (Form 1)', fee: 10000, authority: 'MPCB' },
+      'appr-10': { title: 'MoEF Eco-Zone / River Proximity Clearance', fee: 25000, authority: 'MoEF&CC' },
+      'appr-11': { title: 'Non-Agricultural (NA) Conversion Order', fee: 15000, authority: 'Revenue Dept / SDO' },
+      'appr-12': { title: 'Central Ground Water Authority (CGWA) NOC', fee: 10000, authority: 'CGWA' },
+      'appr-13': { title: 'PESO Flammable Chemicals & Petroleum Storage License', fee: 18000, authority: 'PESO' },
+      'appr-14': { title: 'EPFO & ESIC Statutory Social Security Registration', fee: 0, authority: 'EPFO & ESIC' },
+      'appr-15': { title: 'DGFT Importer-Exporter Code (IEC) Registration', fee: 500, authority: 'DGFT' },
       'DOC-MPCB-001': { title: 'Consent to Establish (CTE) - Orange Category', fee: 15000, authority: 'MPCB' },
     };
 
@@ -438,6 +629,7 @@ export const getRequiredDocuments = async (req, res) => {
     const catalogDocs = await ApprovalCatalog.find({ id: { $in: approvalIds } });
 
     const fallbackDocMap = {
+      'appr-00': ['PAN Card of Directors/Promoter', 'Aadhaar Card of Signatory', 'Bank Account Proof'],
       'appr-01': ['Site Plan / Layout', 'Identity Proof (Aadhaar/PAN)', 'Process Flow Diagram'],
       'appr-02': ['Site Plan / Layout', 'Building Elevation Drawings', 'Fire Hydrant Layout'],
       'appr-03': ['Site Plan / Layout', 'Structural Engineer Certificate', '7/12 Land Extract'],
@@ -447,6 +639,12 @@ export const getRequiredDocuments = async (req, res) => {
       'appr-07': ['DG Acoustic Enclosure Certificate', 'Electrical Contractor Certificate'],
       'appr-08': ['IBR Manufacturer Certificate', 'Boiler Operator Competency Card'],
       'appr-09': ['Hazardous Waste Storage Layout', 'Common Hazardous Waste TSDF Membership'],
+      'appr-10': ['Site Plan / Layout', 'Environment Impact Assessment (EIA) Report', 'Eco-Zone Proximity Certificate'],
+      'appr-11': ['7/12 Land Extract', 'Village Map with Plot Demarcation', 'Talathi No-Dues Certificate'],
+      'appr-12': ['Hydrogeological Survey Report', 'Borewell Construction Layout', 'Water Meter Installation Proof'],
+      'appr-13': ['PESO Storage Layout Plan', 'Safety Equipment & Flame Arrestor Certificate', 'Site Safety Clearance'],
+      'appr-14': ['Identity Proof (Aadhaar/PAN)', 'Specimen Signature Card', 'List of Directors/Partners'],
+      'appr-15': ['Identity Proof (Aadhaar/PAN)', 'Bank Account Proof', 'Incorporation Certificate'],
       'DOC-MPCB-001': ['Site Plan', 'Identity Proof', 'Process Flow Diagram'],
     };
 
@@ -476,8 +674,13 @@ export const getRequiredDocuments = async (req, res) => {
       'Site Plan': 'LAND',
       '7/12 Land Extract': 'LAND',
       '7/12 Land Record': 'LAND',
+      'Village Map with Plot Demarcation': 'LAND',
+      'Talathi No-Dues Certificate': 'LAND',
       'Identity Proof (Aadhaar/PAN)': 'IDENTITY',
       'Identity Proof': 'IDENTITY',
+      'PAN Card of Directors/Promoter': 'IDENTITY',
+      'Aadhaar Card of Signatory': 'IDENTITY',
+      'Bank Account Proof': 'FINANCIAL',
       'Process Flow Diagram': 'TECHNICAL',
       'Building Elevation Drawings': 'TECHNICAL',
       'Fire Hydrant Layout': 'TECHNICAL',
@@ -494,6 +697,16 @@ export const getRequiredDocuments = async (req, res) => {
       'Boiler Operator Competency Card': 'LEGAL',
       'Hazardous Waste Storage Layout': 'TECHNICAL',
       'Common Hazardous Waste TSDF Membership': 'ENVIRONMENT',
+      'Environment Impact Assessment (EIA) Report': 'ENVIRONMENT',
+      'Eco-Zone Proximity Certificate': 'ENVIRONMENT',
+      'Hydrogeological Survey Report': 'TECHNICAL',
+      'Borewell Construction Layout': 'TECHNICAL',
+      'Water Meter Installation Proof': 'TECHNICAL',
+      'PESO Storage Layout Plan': 'TECHNICAL',
+      'Safety Equipment & Flame Arrestor Certificate': 'TECHNICAL',
+      'Site Safety Clearance': 'TECHNICAL',
+      'Specimen Signature Card': 'LEGAL',
+      'Incorporation Certificate': 'LEGAL',
     };
 
     const requiredDocuments = Object.keys(docNeededForMap).map((docName) => ({

@@ -6,3 +6,4 @@ export { default as SelectFilter } from './SelectFilter';
 export { default as Modal } from './Modal';
 export { default as EmptyState } from './EmptyState';
 export { AIAdvisorPanel } from './AIAdvisorPanel';
+export { Navbar, MobileDrawer, NavLinks, NavBrand, NavActions } from '../navbar';

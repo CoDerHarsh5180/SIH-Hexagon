@@ -11,6 +11,7 @@ import benefitsRoutes from './routes/benefitsRoutes.js';
 import notificationsRoutes from './routes/notificationsRoutes.js';
 import localAuthRoutes from './routes/localAuthRoutes.js';
 import mainAuthRoutes from './routes/mainAuthRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/benefits', benefitsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/local-auth', localAuthRoutes);
 app.use('/api/main-auth', mainAuthRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // 404 Catch-All Route
 app.use((req, res, next) => {

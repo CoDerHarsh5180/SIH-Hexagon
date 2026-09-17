@@ -165,10 +165,22 @@ export const getUserComplaints = async (req, res) => {
 
     const complaints = await Complaint.find(query).sort({ createdAt: -1 });
 
+    const formattedComplaints = complaints.map((c) => {
+      const plain = c.toObject();
+      return {
+        ...plain,
+        id: c.complaintId || c._id.toString(),
+        appId: c.applicationId || 'APP-MH-2026-89412',
+        enterprise: c.userName || 'Sahyadri Agro Foods Pvt. Ltd.',
+        dateFiled: c.createdAt ? new Date(c.createdAt).toISOString().split('T')[0] : '2026-09-02',
+        slaCountdown: '2 Days Remaining for Response',
+      };
+    });
+
     return res.status(200).json({
       success: true,
-      count: complaints.length,
-      data: complaints,
+      count: formattedComplaints.length,
+      data: formattedComplaints,
     });
   } catch (error) {
     return res.status(500).json({

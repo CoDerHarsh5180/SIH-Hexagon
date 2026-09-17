@@ -2,14 +2,108 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader, AIAdvisorPanel } from '../../../components/ui';
-import { Bot, Check, Sparkles, Clock } from 'lucide-react';
 import { approvalsService } from '../../../services/approvalsService';
+
 // ─────────────────────────────────────────────────────────────
-// INSIGHT DATA
+// STATUTORY INSIGHT DATA (NSWS & MAITRI REPOSITORY)
 // INSIGHTS[field][value]  → per-option insight
 // INSIGHTS._field[field]  → per-field insight (for text inputs)
 // ─────────────────────────────────────────────────────────────
 const INSIGHTS = {
+  projectNature: {
+    greenfield: {
+      title: 'Greenfield Project (New Industrial Setup)',
+      body: 'Greenfield projects start from bare ground or an empty shed. All statutory permissions—CTE, Building Sanction, Fire NOC, and Environmental clearance—must be secured afresh before any physical erection begins.',
+      points: [
+        'Mandatory sequence: Land Title/NA → CTE → Building Plan → Fire NOC',
+        'Requires clean site layout demarcating setbacks and green belt',
+        'Eligible for Maharashtra Package Scheme of Incentives (PSI 2019)',
+      ],
+      tag: 'info',
+    },
+    brownfield: {
+      title: 'Brownfield Project (Expansion / Diversification)',
+      body: 'Brownfield projects utilize existing premises. You will require Amendment to CTE and DISH Factory License renewal reflecting increased capacity, new machinery, or modified effluent loads.',
+      points: [
+        'Requires existing CTE/CTO copies and baseline discharge records',
+        'No new land NA order required if built within existing sanctioned perimeter',
+        'Faster approval cycle if pollution load index does not increase',
+      ],
+      tag: 'tip',
+    },
+  },
+
+  constitution: {
+    'Private Limited Company': {
+      title: 'Private Limited Company (MCA Registered)',
+      body: 'Recognized corporate entity under Companies Act, 2013. Offers limited liability protection, simplified banking approvals, and higher institutional investor readiness.',
+      points: [
+        'Requires CIN (Corporate Identification Number) and Board Resolution',
+        'Mandatory statutory audit and ROC annual filings',
+        'Eligible for direct MIDC allotment in company name',
+      ],
+      tag: 'info',
+    },
+    'Partnership Firm': {
+      title: 'Partnership Firm (Registrar of Firms - RoF)',
+      body: 'Formed under Indian Partnership Act, 1932. Must possess a registered Partnership Deed with RoF Maharashtra for statutory property and licensing transfers.',
+      points: [
+        'Registered partnership deed required by DIC and MSEDCL',
+        'Partners jointly and severally liable for enterprise obligations',
+      ],
+      tag: 'info',
+    },
+    'Sole Proprietorship': {
+      title: 'Sole Proprietorship',
+      body: 'Simplest business constitution. Ideal for micro-scale manufacturing units. Registered via Udyam MSME and Shop & Establishment Act.',
+      points: [
+        'Proprietor PAN card serves as the tax and license anchor',
+        'No separate ROC corporate registration fees required',
+        'Personal liability for all statutory dues and bank debts',
+      ],
+      tag: 'tip',
+    },
+    'Limited Liability Partnership (LLP)': {
+      title: 'Limited Liability Partnership (LLP)',
+      body: 'Combines corporate limited liability with the internal operational flexibility of a partnership under the LLP Act, 2008.',
+      points: [
+        'Requires LLPIN registered with Ministry of Corporate Affairs',
+        'Low compliance burden compared to Pvt Ltd',
+      ],
+      tag: 'info',
+    },
+    'Public Limited': {
+      title: 'Public Limited Company',
+      body: 'High-scale entity subject to stringent MCA and SEBI disclosures. Mandatory for projects seeking public capital or large infrastructure scale.',
+      points: [
+        'Mandatory minimum 3 directors and 7 shareholders',
+        'Extensive corporate governance and public filing obligations',
+      ],
+      tag: 'warning',
+    },
+  },
+
+  isCompanyRegistered: {
+    'Yes': {
+      title: 'Registered Enterprise Status',
+      body: 'Your business has legal standing via Udyam MSME certificate or MCA incorporation. All department applications can reference your verified CIN/Udyam number.',
+      points: [
+        'Instant validation across MAITRI single-window departments',
+        'Qualifies for MSME delayed payment protection and concessional fees',
+      ],
+      tag: 'tip',
+    },
+    'No': {
+      title: 'Statutory Registration Required',
+      body: 'Unregistered units cannot secure industrial power tariffs, MPCB CTE, or factory building sanctions under Maharashtra industrial policy.',
+      points: [
+        'AI engine adds Udyam MSME / MCA Registration as Step 1 prerequisite',
+        'Registration is 100% online, free of cost, and issued in 24–48 hours',
+      ],
+      tag: 'warning',
+    },
+  },
+
   stage: {
     'pre-construction': {
       title: 'Pre-Construction Stage',
@@ -48,56 +142,56 @@ const INSIGHTS = {
 
   district: {
     'Pune': {
-      title: 'Pune District',
-      body: 'MPCB Pune Regional Office supports full online portal filing — typically 20% faster than counter submission. SDO clearances are at the Collector Complex, Shivajinagar.',
+      title: 'Pune District Industrial Desk',
+      body: 'MPCB Pune Regional Office supports full online portal filing — typically 20% faster than counter submission. Dedicated single-window desks at Chakan, Ranjangaon, and Talegaon.',
       points: ['Helpline: 020-2612-7881', 'MIDC Chakan, Ranjangaon, Talegaon have dedicated windows'],
       tag: 'tip',
     },
     'Thane': {
-      title: 'Thane District',
-      body: 'MPCB Thane Sub-Regional Office has a dedicated fast-track window for Green and White category industries. Applications processed at Naupada office.',
+      title: 'Thane District Industrial Desk',
+      body: 'MPCB Thane Sub-Regional Office has a dedicated fast-track window for Green and White category industries. Fast processing at Naupada zonal center.',
       points: ['Helpline: 022-2534-7777', 'Green/White fast-track — typically 15 days'],
       tag: 'tip',
     },
     'Mumbai Suburban': {
-      title: 'Mumbai Suburban',
-      body: 'High scrutiny due to coastal zone regulations. Allow 15 extra working days for CRZ compliance verification by MoEF.',
+      title: 'Mumbai Suburban District',
+      body: 'High environmental scrutiny due to coastal zone regulations. Allow 15 extra working days for CRZ compliance verification by MoEF & MCZMA.',
       points: ['Helpline: 022-2642-7731', 'CRZ clearance adds significant time if site is near coast'],
       tag: 'warning',
     },
     'Aurangabad (Chhatrapati Sambhajinagar)': {
-      title: 'Aurangabad District',
-      body: 'Shendra MIDC applicants benefit from priority single-window processing via the MAITRI portal — one of the most industry-friendly districts.',
+      title: 'Aurangabad District Industrial Desk',
+      body: 'Shendra and Waluj MIDC applicants benefit from priority single-window processing via the MAITRI portal — one of the fastest industrial clearance hubs.',
       points: ['Helpline: 0240-2481-556', 'Shendra MIDC has an in-estate inspection facility'],
       tag: 'tip',
     },
     'Nagpur': {
-      title: 'Nagpur District',
-      body: 'Butibori MIDC has a dedicated on-site industrial desk for faster clearance. Sub-Regional MPCB office is at Civil Lines.',
+      title: 'Nagpur District Industrial Desk',
+      body: 'Butibori MIDC has a dedicated on-site industrial desk for faster clearance. Sub-Regional MPCB office is located at Civil Lines.',
       points: ['Helpline: 0712-2560-881', 'Butibori MIDC desk handles permits in-estate'],
       tag: 'info',
     },
     'Nashik': {
-      title: 'Nashik District',
-      body: 'Satpur and Ambad MIDC zones have streamlined online application processes. MPCB sub-regional office is at Canada Corner.',
+      title: 'Nashik District Industrial Desk',
+      body: 'Satpur, Ambad, and Sinnar MIDC zones have streamlined online application processes with Canada Corner MPCB office.',
       points: ['Helpline: 0253-2310-762', 'Online portal preferred for all submissions'],
       tag: 'info',
     },
     'Raigad': {
-      title: 'Raigad District',
-      body: 'Coastal Regulation Zone rules apply if your site is near the coastline or any creek. EIA may be required by MoEF.',
+      title: 'Raigad District (Coastal & Industrial)',
+      body: 'Coastal Regulation Zone (CRZ) rules apply if your site is near the coastline or creek. Environmental clearances require State SEIAA screening.',
       points: ['Helpline: 02141-222-561', 'Factor 30 extra days if CRZ proximity is triggered'],
       tag: 'warning',
     },
     'Kolhapur': {
       title: 'Kolhapur District',
-      body: 'Standard processing timeline. MPCB District Office is at Tarabai Park.',
+      body: 'Standard processing timeline. MPCB District Office is at Tarabai Park handling Shiroli and Gokul Shirgaon industrial areas.',
       points: ['Helpline: 0231-2650-711'],
       tag: 'info',
     },
     'Solapur': {
       title: 'Solapur District',
-      body: 'Standard processing timeline. MIDC Chincholi applications are routed through Pune Regional Office.',
+      body: 'Textile and engineering hub. MIDC Chincholi applications are processed with state DIC incentives.',
       points: ['Helpline: 0217-2720-445'],
       tag: 'info',
     },
@@ -105,334 +199,583 @@ const INSIGHTS = {
 
   landType: {
     'MIDC Industrial Allotted Plot': {
-      title: 'MIDC Plot — Fastest Path',
-      body: 'MIDC allotment letter itself serves as the legal land title. No separate Non-Agricultural (NA) conversion is needed — eliminates the SDO office visit entirely.',
+      title: 'MIDC Plot — Deemed Industrial Zone',
+      body: 'MIDC allotment letter itself serves as the legal land title. No separate Non-Agricultural (NA) conversion is needed under Section 44 MLRC — saves 60–90 days.',
       points: [
-        'No NA conversion required — saves 60–90 days',
-        'MIDC provides internal roads, power, and water infrastructure',
-        'CTE application can begin on the same day as plot possession',
+        'No NA conversion required — eliminates District Collector visit',
+        'MIDC provides internal roads, HT power grid, and water infrastructure',
+        'CTE application can begin immediately upon plot possession',
       ],
       tag: 'tip',
     },
     'Private Industrial Park': {
-      title: 'Private Industrial Park',
-      body: 'Verify that the Industrial Park master layout has approval from the Town Planning Authority. Individual plots get a derivative sanction from this master approval.',
+      title: 'Private Industrial Park / SEZ',
+      body: 'Verify that the Industrial Park master layout has approval from Town Planning Authority. Individual plots get a derivative sanction from this master layout approval.',
       points: [
-        'Ask park developer for Master Layout Approval certificate',
-        'Individual plot NA is derived from master — faster than standalone',
-        "Building plan submitted to park's designated authority, not BMC",
+        'Request master layout approval from the developer',
+        'Individual plot NA is derived from master — faster than standalone land',
+        'Common ETP/CETP infrastructure can often be shared',
       ],
       tag: 'info',
     },
-    'Private Agricultural Land (Requires NA conversion)': {
-      title: 'Agricultural Land — NA Required',
-      body: 'You must obtain Non-Agricultural (NA) conversion from the Sub-Divisional Officer (SDO) before any construction begins. This is a significant prerequisite step.',
+    'Agricultural Land': {
+      title: 'Agricultural Land — Section 44 MLRC Conversion Mandatory',
+      body: 'You must obtain Non-Agricultural (NA) conversion from the Sub-Divisional Officer (SDO) or District Collector before any civil construction or factory erection.',
       points: [
-        'File 7/12 Extract + Village Map + No-dues cert from talathi',
-        'SDO processing time: 60–90 days',
-        'No CTE or building plan will be accepted without NA order',
-        'Budget ₹20,000–₹50,000 in conversion premium charges',
+        'Requires 7/12 Extract, Village Demarcation Map, and Talathi no-dues cert',
+        'SDO processing turnaround: 45–60 days',
+        'Building sanction cannot be granted without final NA Order',
+        'Conversion premium and non-agricultural assessment tax apply',
       ],
       tag: 'warning',
     },
     'Leased Commercial Premises': {
-      title: 'Leased Premises',
-      body: 'The Factory License validity will be capped to match your lease period. All clearances must be renewed or transferred when the lease is renewed or transferred.',
+      title: 'Leased Industrial Premises / Shed',
+      body: 'Factory License and CTE validity will be capped to match your lease term. All clearances must be renewed or amended when the lease deed is renewed.',
       points: [
-        'Lease deed must be registered and notarized',
-        'MPCB CTE will be issued only for the lease duration',
-        'Get NOC from landlord for each clearance application',
+        'Lease deed must be registered with the Sub-Registrar of Assurances',
+        'Landlord NOC required for all statutory applications',
+        'Check that the premise holds previous industrial occupancy certificate',
       ],
       tag: 'info',
     },
   },
 
-  businessType: {
-    'food_processing': {
-      title: 'Food & Beverage Processing',
-      body: 'FSSAI is the primary additional regulator beyond standard MPCB clearances. Your facility will undergo annual hygiene inspections and must maintain manufacturing logs.',
-      points: [
-        'FSSAI State Manufacturing License mandatory before first sale',
-        'HACCP / ISO 22000 food safety plan strongly recommended',
-        'ETP required for dairy or fruit pulp effluent',
-      ],
-      tag: 'info',
+  hasNaOrder: {
+    'Yes': {
+      title: 'NA Order Secured',
+      body: 'Your agricultural land has already been legally converted for industrial usage under Sec 44 MLRC. You can directly proceed with Building Plan approval.',
+      points: ['Attach Collector NA Order with building plan blueprint'],
+      tag: 'tip',
     },
-    'chemical_pharma': {
-      title: 'Chemical & Pharmaceuticals',
-      body: 'The most complex regulatory stack in Maharashtra. Expect enhanced MPCB scrutiny, PESO oversight for solvents, and mandatory online effluent monitoring.',
+    'No': {
+      title: 'NA Order Required (Step 1 Clearance)',
+      body: 'Without an official NA order from the SDO/Collector, civil engineering blueprints and factory plans cannot be accepted by local planning authorities.',
       points: [
-        'Drug License from Maharashtra FDA if manufacturing APIs',
-        'PESO license mandatory if flammable solvents are stored',
-        'Online CETP connection required for effluent discharge',
-        'Hazardous Waste Authorization (Form 1) from MPCB',
+        'Added to your statutory clearances checklist automatically',
+        'Estimated fee: ₹15,000 + land conversion premium',
       ],
       tag: 'warning',
-    },
-    'textile_garments': {
-      title: 'Textile & Garmenting',
-      body: 'Category depends heavily on your process. Stitching-only units are typically White/Green. Dyeing and washing units fall in Orange/Red and need ZLD compliance.',
-      points: [
-        'Dyeing units: Zero Liquid Discharge (ZLD) may be mandatory',
-        'Labour Welfare Board registration if workers > 25',
-        'CETP membership required for dyeing effluent units',
-      ],
-      tag: 'info',
-    },
-    'engineering_metal': {
-      title: 'Engineering & Metal Works',
-      body: 'Sheet metal and assembly units are relatively straightforward. Electroplating and foundry units are hazardous and face significantly higher regulatory scrutiny.',
-      points: [
-        'Electroplating: Hazardous Waste Authorization mandatory',
-        'Foundry: chimney height clearance from MPCB',
-        'Pressure vessels: Boiler Inspector certification',
-        'High-voltage equipment: Chief Electrical Inspectorate clearance',
-      ],
-      tag: 'warning',
-    },
-    'cold_storage': {
-      title: 'Cold Storage & Agro Warehouse',
-      body: 'FSSAI storage license is needed for food-grade cold storage. Units using ammonia refrigerants are treated as hazardous plants with additional compliance.',
-      points: [
-        'FSSAI Storage License for food-grade products',
-        'Ammonia refrigerant → treated as hazardous plant',
-        'HT power connection mandatory for loads above 300 HP',
-        'Emergency response plan for ammonia leak required',
-      ],
-      tag: 'info',
     },
   },
 
-  pollutionTier: {
-    WHITE: {
-      title: 'White Category — Simplest Track',
-      body: 'White category only needs an online intimation to MPCB. No formal NOC issued, no field inspection. The fastest regulatory path available.',
-      points: ['7–15 days processing', 'Fee: ₹2,000 – ₹5,000', 'No field inspector visit required'],
-      tag: 'tip',
-    },
-    GREEN: {
-      title: 'Green Category',
-      body: 'Green category gets a dedicated fast-track lane at most MPCB offices. Consent is issued after desk review only — no site visit.',
-      points: ['15–30 days processing', 'Fee: ₹5,000 – ₹15,000', 'Desk review only — no field inspection'],
-      tag: 'tip',
-    },
-    ORANGE: {
-      title: 'Orange Category',
-      body: 'Desk review followed by a mandatory field inspection by an MPCB officer. Your ETP/STP must be installed and operational before the site visit.',
-      points: ['30–45 days processing', 'Fee: ₹15,000 – ₹50,000', 'ETP must be commissioned before site inspection'],
+  buildingHeight: {
+    'Under 15 Meters (Standard)': {
+      title: 'Standard Industrial Shed (<= 15m)',
+      body: 'Single or double-height factory shed. Evaluated under standard fire hydrant and emergency exit norms without high-rise committee scrutiny.',
+      points: ['Standard provisional fire NOC applies'],
       tag: 'info',
     },
-    RED: {
-      title: 'Red Category — High Scrutiny',
-      body: 'Requires a public notice period, environmental hearing, and lab-tested inspection. Engaging a certified Environmental Consultant is strongly recommended.',
-      points: ['45–90 days processing', 'Fee: ₹50,000 – ₹2,00,000', 'Environmental hearing is mandatory before consent'],
+    'Above 15 Meters (High-Rise)': {
+      title: 'High-Rise Industrial Structure (> 15m)',
+      body: 'Structures exceeding 15 meters in height require High-Rise Fire Safety Committee review under National Building Code (NBC) 2016 Part 4.',
+      points: [
+        'Mandatory dual fire escape staircases and external fire lifts',
+        'Dedicated 6-meter peripheral access road for fire tenders',
+        'Higher safety audit scrutiny before Occupancy Certificate',
+      ],
       tag: 'warning',
     },
   },
 
   isForestOrRiverNearby: {
     'No': {
-      title: 'No Environmental Proximity',
-      body: 'Your site has no river basin or eco-zone proximity. Standard MPCB clearance applies without any additional environmental steps.',
-      points: ['No MoEF clearance required', 'Standard MPCB timeline applies'],
+      title: 'No Sensitive Environmental Zone Proximity',
+      body: 'Your site does not border river catchments or protected eco-zones. Standard MPCB pollution clearance timeline applies.',
+      points: ['No MoEF or River Regulation clearance needed'],
       tag: 'tip',
     },
-    'Yes (River Basin)': {
-      title: 'River Basin Proximity Detected',
-      body: 'Your site may fall under River Regulation Zone (RRZ) rules. A River Impact Assessment and MoEF clearance could be required before MPCB issues CTE.',
-      points: ['MoEF online application required', 'Add 60–90 extra days to your timeline'],
+    'Yes (River Basin within 500m)': {
+      title: 'River Regulation Zone (RRZ) Proximity',
+      body: 'Site falls within 500m of a notified river basin. River Impact Assessment and stringent zero-discharge standards will be enforced by MPCB.',
+      points: [
+        'Effluent discharge into river catchment strictly forbidden',
+        'Must install Zero Liquid Discharge (ZLD) or connect to municipal sewer',
+        'Adds 45–60 days to environmental clearance turnaround',
+      ],
       tag: 'warning',
     },
-    'Yes (Protected Eco-Zone)': {
-      title: 'Protected Eco-Zone Proximity',
-      body: 'Forest Clearance under the Forest Conservation Act, 1980 may be mandatory. This is a central government clearance via the MoEF & CC portal.',
-      points: ['Forest Clearance via MoEF & CC portal', 'Adds 60–120 days to timeline', 'Qualified ecologist survey required'],
+    'Yes (Protected Eco-Zone / Forest within 500m)': {
+      title: 'Eco-Sensitive Zone (ESZ) / Forest Proximity',
+      body: 'Site is within 500m of a notified sanctuary, national park, or reserved forest. Forest Clearance via MoEF & CC Parivesh portal is mandatory.',
+      points: [
+        'Central government MoEF clearance required',
+        'Red category industries generally prohibited within 1km ESZ',
+        'Requires certified GPS buffer map by Chief Conservator of Forests',
+      ],
+      tag: 'warning',
+    },
+    'Yes (Coastal Regulation Zone - CRZ)': {
+      title: 'Coastal Regulation Zone (CRZ) Notification',
+      body: 'Located near tidal water bodies, creeks, or sea coastline. Maharashtra Coastal Zone Management Authority (MCZMA) recommendation required.',
+      points: [
+        'MCZMA online portal application required',
+        'Strict restrictions on permanent civil construction within CRZ buffer',
+      ],
       tag: 'warning',
     },
   },
 
-  hasDieselGenerator: {
+  businessType: {
+    'food_processing': {
+      title: 'Food & Beverage Sector',
+      body: 'FSSAI (Food Safety and Standards Authority of India) is the core statutory regulator alongside MPCB. All food handlers must undergo medical fitness tests.',
+      points: [
+        'FSSAI State / Central Manufacturing License mandatory before trial batch',
+        'Water test report according to IS 10500 potable norms required',
+        'Organic trade effluent requires specialized biochemical ETP',
+      ],
+      tag: 'info',
+    },
+    'chemical_pharma': {
+      title: 'Chemical, Dyes & Pharmaceuticals',
+      body: 'Highest regulatory scrutiny in Maharashtra. Involves MPCB Red Category, PESO clearance for flammable solvents, and hazardous waste TSDF membership.',
+      points: [
+        'PESO license for solvents and pressurized vessels',
+        'Hazardous Waste Management Authorization (Form 1)',
+        'Mandatory online continuous effluent monitoring system (OCEMS)',
+      ],
+      tag: 'warning',
+    },
+    'textile_garments': {
+      title: 'Textile, Spinning & Garmenting',
+      body: 'Garment stitching has low pollution footprint (White/Green). Wet dyeing, bleaching, and washing require Zero Liquid Discharge (ZLD) or CETP connection.',
+      points: [
+        'Dyeing units: ZLD mandatory in water-stressed districts',
+        'CETP membership letter required before MPCB CTE',
+      ],
+      tag: 'info',
+    },
+    'engineering_metal': {
+      title: 'Automobile & Heavy Engineering',
+      body: 'Includes sheet metal, fabrication, CNC machining, casting, and surface finishing. Electroplating and foundry activities trigger specialized clearances.',
+      points: [
+        'Electroplating: Acid bath hazardous waste authorization',
+        'Foundry & Furnaces: Chimney emission scrubbers and stack height norms',
+        'Electrical connected load typically requires HT substation',
+      ],
+      tag: 'info',
+    },
+    'cold_storage': {
+      title: 'Cold Storage & Agro Warehouse',
+      body: 'Units utilizing ammonia refrigerants are classed under hazardous chemical storage with mandatory disaster management protocols.',
+      points: [
+        'FSSAI Food Storage License for agro commodities',
+        'Ammonia gas leak safety plan and breathing apparatus on-site',
+        'Heavy continuous HT power requirement from MSEDCL',
+      ],
+      tag: 'info',
+    },
+  },
+
+  isFoodProduct: {
     'Yes': {
-      title: 'DG Set Installation',
-      body: 'A Diesel Generating set requires sanction from the Chief Electrical Inspectorate (CEI). An acoustic enclosure test and earthing report must be submitted.',
-      points: ['CEI application → Form C approval', 'Acoustic enclosure must meet CPCB noise norms', 'Annual fitness test by CEI thereafter'],
+      title: 'Food Safety Compliance (FSSAI)',
+      body: 'Statutory prerequisite under Food Safety and Standards Act, 2006. FSSAI State Manufacturing License must be in hand before any commercial sale or dispatch.',
+      points: [
+        'Requires list of food categories and FoSCoS portal filing',
+        'Potable water test report from NABL accredited laboratory',
+      ],
       tag: 'info',
     },
     'No': {
-      title: 'No DG Set',
-      body: 'No DG Set means no CEI sanction needed for backup power. Your electrical compliance only covers the MSEDCL sanctioned load.',
-      points: ['Simpler electrical compliance', 'MSEDCL load sanction is sufficient'],
+      title: 'Non-Food Operations',
+      body: 'Your products are non-edible. FSSAI food licensing regulations do not apply to this facility.',
+      points: ['Eliminates FSSAI inspection and fee requirement'],
       tag: 'tip',
+    },
+  },
+
+  storesFlammableSolvents: {
+    'Yes': {
+      title: 'PESO Flammable & Petroleum Storage Clearance',
+      body: 'Under Petroleum Act 1934 and Petroleum Rules 2002, storage of Class A/B petroleum, industrial solvents, or compressed gas requires prior PESO license.',
+      points: [
+        'PESO approval required before constructing solvent storage tank farm',
+        'Flameproof electrical fittings and flame arrestors mandatory',
+        'Inspection by PESO controller prior to commissioning',
+      ],
+      tag: 'warning',
+    },
+    'No': {
+      title: 'No Flammable Chemical Solvents',
+      body: 'Facility does not store bulk volatile hydrocarbons or pressurized gases. PESO approval layer is bypassed.',
+      points: ['Simpler site plan and lower fire insurance premium'],
+      tag: 'tip',
+    },
+  },
+
+  generatesHazardousWaste: {
+    'Yes': {
+      title: 'Hazardous Waste Management Authorization (Form 1)',
+      body: 'Mandatory under Hazardous and Other Wastes Rules, 2016. Units generating spent acids, paint sludge, ETP filter cake, or chemical barrels must hold Form 1 authorization.',
+      points: [
+        'Dedicated hazardous waste storage shed with impervious concrete flooring',
+        'Agreement with common TSDF facility (e.g. MEPL Ranjangaon/Taloja)',
+        'Maintenance of Form 3 daily waste register on-site',
+      ],
+      tag: 'warning',
+    },
+    'No': {
+      title: 'Non-Hazardous Industrial Waste',
+      body: 'Facility produces standard municipal or recyclable scrap only. No specialized hazardous waste storage shed or TSDF agreement required.',
+      points: ['Standard MPCB consent without hazardous authorization'],
+      tag: 'tip',
+    },
+  },
+
+  isExportOriented: {
+    'Yes': {
+      title: 'DGFT Importer-Exporter Code (IEC)',
+      body: 'Exporting physical commodities abroad requires a 10-digit PAN-based IEC issued by the Directorate General of Foreign Trade (DGFT).',
+      points: [
+        'Fast online issuance within 24 hours',
+        'Required for customs ICEGATE port clearance and GST zero-rating (LUT)',
+      ],
+      tag: 'info',
+    },
+    'No': {
+      title: 'Domestic Market Distribution Only',
+      body: 'Manufactured products will be sold within Indian state borders. DGFT IEC registration is not required at this stage.',
+      points: ['Can be applied at any future expansion point'],
+      tag: 'tip',
+    },
+  },
+
+  connectedPowerKw: {
+    title: 'Connected Electricity Load (HP / kW)',
+    body: 'Load up to 70 HP (52 kW) is serviced on standard Low-Tension (LT) supply. Loads exceeding 70 HP mandate High-Tension (HT) 11kV/22kV dedicated substation transformer and Chief Electrical Inspectorate (CEI) safety sanction.',
+    points: [
+      '<= 70 HP: LT connection, rapid energization by MSEDCL',
+      '> 70 HP: HT substation sanction and dedicated transformer needed',
+      'CEI earthing test report and earth pits inspection mandatory',
+    ],
+    tag: 'info',
+  },
+
+  hasDieselGenerator: {
+    'Yes': {
+      title: 'Backup DG Set Installation (CEI Sanction)',
+      body: 'Installing a captive diesel generator set requires Form C inspection and sanction from the Chief Electrical Inspectorate (CEI).',
+      points: [
+        'Acoustic enclosure compliant with CPCB noise norms (<= 75 dB at 1m)',
+        'Dual independent earthing pits for alternator and neutral',
+        "Submission of DG test certificate by certified 'A' class contractor",
+      ],
+      tag: 'info',
+    },
+    'No': {
+      title: 'No Captive Generator',
+      body: 'No DG Set planned. CEI generator clearance is not required for backup power.',
+      points: ['Reduced electrical inspection turnaround'],
+      tag: 'tip',
+    },
+  },
+
+  waterSource: {
+    'MIDC Piped Water Network': {
+      title: 'MIDC Industrial Water Supply',
+      body: 'Fastest and most reliable option. Water allotment is processed directly through MIDC engineering division without Central Ground Water Authority scrutiny.',
+      points: [
+        'Piped connection at plot boundary',
+        'No groundwater depletion or CGWA NOC required',
+      ],
+      tag: 'tip',
+    },
+    'Municipal Corporation / Local Body': {
+      title: 'Municipal / Nagar Palika Water Connection',
+      body: 'Supply provided by local municipal authority. Subject to local municipal industrial tariff and pipeline extension permissions.',
+      points: ['Local body water connection sanction required'],
+      tag: 'info',
+    },
+    'Groundwater Extraction (Borewell)': {
+      title: 'Groundwater Borewell (CGWA NOC Mandatory)',
+      body: 'Extracting groundwater for commercial or industrial operations requires statutory NOC from Central Ground Water Authority (CGWA) under Jal Shakti guidelines.',
+      points: [
+        'CGWA NOC added to statutory clearances checklist',
+        'Mandatory installation of digital water flow meter with telemetry',
+        'Hydrogeological survey report must be attached with application',
+      ],
+      tag: 'warning',
+    },
+    'River / Surface Water': {
+      title: 'Surface Water / River Intake',
+      body: 'Pumping water directly from rivers, canals, or dams requires Water Resources Department (Irrigation Dept) extraction sanction.',
+      points: ['Requires Irrigation Department agreement and water royalty deposit'],
+      tag: 'warning',
+    },
+  },
+
+  pollutionTier: {
+    WHITE: {
+      title: 'White Category (Practically Non-Polluting)',
+      body: 'White category only requires an online intimation letter to MPCB. No formal consent fee, no site inspection, and no renewal hassle.',
+      points: ['7–15 days processing', 'Fee: ₹3,500 intimation', 'No field inspector visit required'],
+      tag: 'tip',
+    },
+    GREEN: {
+      title: 'Green Category (Low Pollution Index)',
+      body: 'Green category benefits from fast-track processing across all Maharashtra district offices. Issued after desk review of process flowchart.',
+      points: ['15–25 days processing', 'Fee: ₹8,000 standard', 'Minimal site scrutiny'],
+      tag: 'tip',
+    },
+    ORANGE: {
+      title: 'Orange Category (Medium Pollution Index)',
+      body: 'Standard manufacturing unit producing industrial effluent or stack emissions. Mandatory pre-commissioning field inspection by an MPCB sub-regional officer.',
+      points: ['30–45 days processing', 'Fee: ₹15,000 – ₹50,000', 'ETP/STP must be commissioned before inspection'],
+      tag: 'info',
+    },
+    RED: {
+      title: 'Red Category (High Pollution Index)',
+      body: 'Highest pollution potential. Requires public consultation, environmental impact assessment (EIA), and strict effluent standards.',
+      points: ['45–60 days processing', 'Fee: ₹50,000 – ₹2,00,000', 'State appraisal committee review mandatory'],
+      tag: 'warning',
     },
   },
 
   hasBoilerOrFurnace: {
     'Yes': {
-      title: 'Boiler / Furnace Present',
-      body: 'Boilers fall under the Indian Boilers Act. Inspection by the Directorate of Steam Boilers is mandatory before commissioning.',
-      points: ['Boiler registration with Directorate of Steam Boilers', 'Annual fitness certificate required', 'Certified IBR boiler operator must be on-site'],
-      tag: 'info',
+      title: 'Boiler / Pressure Vessel Inspection (IBR 1923)',
+      body: 'Operating steam boilers or high-pressure thermic heaters falls under the Indian Boilers Act, 1923, administered by the Directorate of Steam Boilers.',
+      points: [
+        'IBR certified manufacturer test certificates mandatory',
+        'Hydrostatic pressure test conducted on-site by boiler inspector',
+        'Certified boiler attendant must be physically present during operation',
+      ],
+      tag: 'warning',
     },
     'No': {
-      title: 'No Boiler or Furnace',
-      body: 'The Directorate of Steam Boilers has no jurisdiction over your plant. This removes one compliance layer from your setup.',
-      points: ['No Boiler Inspectorate visit needed', 'Simplifies annual compliance calendar'],
+      title: 'No Steam Boilers or Pressure Furnaces',
+      body: 'Directorate of Steam Boilers has no jurisdiction over this plant, eliminating this inspection layer.',
+      points: ['No boiler inspector visit required'],
       tag: 'tip',
     },
   },
 
-  // Per-field insights for text input labels
+  proposedWorkers: {
+    title: 'Workforce Headcount Compliance Thresholds',
+    body: 'Industrial labor regulations scale directly with headcount: >= 10 workers using power triggers the Factories Act 1948 (DISH Form 1). >= 20 workers triggers mandatory EPFO (Provident Fund) and ESIC (Medical Insurance) registration.',
+    points: [
+      '>= 10 workers: DISH Factory License (Form 1) mandatory',
+      '>= 20 workers: Statutory EPFO & ESIC social security enrollment',
+      '>= 50 workers: Canteen facility & safety committee mandatory',
+    ],
+    tag: 'info',
+  },
+
   _field: {
-    midcAreaName: {
-      title: 'MIDC Zone Name',
-      body: 'This routes your application file to the correct MIDC Division Office. Different zones have separate Single Window desks — Chakan, Shendra, and Butibori each have their own processing units with different turnaround times.',
-      points: ['Ensures your file reaches the right zonal officer', 'Incorrect zone name is a common cause of file returns'],
-      tag: 'info',
-    },
     plotAreaSqMtr: {
-      title: 'Total Plot Area',
-      body: 'Used to calculate FSI/FAR (Floor Space Index) by the Municipal Corporation, and to determine your environmental footprint fee slab by the MPCB. Enter the full land parcel area as per your title document.',
-      points: ['Drives FSI/FAR computation for building plan', 'MPCB uses this to set your pollution fee bracket'],
+      title: 'Total Land Parcel Area',
+      body: 'Enter the exact plot area in square meters as recorded on your MIDC Allotment Letter or 7/12 Land Extract. This drives Floor Space Index (FSI) calculations and MPCB green belt requirements.',
+      points: ['Minimum 33% area must be reserved for green belt in Orange/Red units'],
       tag: 'info',
     },
     builtUpAreaSqMtr: {
-      title: 'Proposed Built-Up Area',
-      body: 'The fire department uses this to verify hydrant coverage, emergency exit widths, and evacuation capacity. Municipal Corporation uses it to calculate Building Plan sanction fees.',
-      points: ['Fire NOC compliance is area-dependent', 'Building plan fee = (rate per sq.m) × builtUpArea'],
+      title: 'Total Covered Built-Up Area',
+      body: 'The covered factory shed, admin block, and warehouse area. Built-up area exceeding 500 sq.m triggers mandatory Provisional Fire Safety NOC.',
+      points: ['Fire hydrant loops and fire tender access road are verified based on built-up area'],
       tag: 'info',
     },
     plantMachineryCostCrores: {
-      title: 'Plant & Machinery Cost',
-      body: 'This value directly determines your MSME classification — Micro (up to ₹1 Cr), Small (₹1–10 Cr), Medium (₹10–50 Cr). Classification affects MPCB fee slabs, subsidy eligibility, and single-window priority processing.',
-      points: ['Up to ₹1 Cr → Micro Enterprise', '₹1–10 Cr → Small Enterprise', '₹10–50 Cr → Medium Enterprise'],
+      title: 'Plant & Machinery Capital Investment',
+      body: 'Government classification for MSMEs under the MSMED Act 2006: Micro (up to ₹1 Cr), Small (₹1 to ₹10 Cr), Medium (₹10 to ₹50 Cr). Influences government subsidy eligibility and clearance fees.',
+      points: ['Classifies enterprise scale on your Udyam Certificate'],
       tag: 'info',
     },
     totalInvestmentCrores: {
-      title: 'Total Project Cost',
-      body: 'Used by MPCB for overall environmental fee calculation and by DIC (District Industries Centre) for subsidy registration. Keep this figure consistent across all government applications — discrepancies can trigger re-verification.',
-      points: ['Must match figures in your DPR (Detailed Project Report)', 'Inconsistent values across forms cause file returns'],
-      tag: 'info',
-    },
-    proposedWorkers: {
-      title: 'Workforce / Employee Count',
-      body: 'If you employ more than 10 workers with electrical power, the Factories Act, 1948 applies fully. Above 250 workers, additional welfare compliance is mandatory — canteen, crèche, and a designated Welfare Officer.',
-      points: ['>10 workers + electrical power → Factories Act applies', '>250 workers → canteen, crèche, Welfare Officer mandatory', 'Headcount affects your Factory License fee slab'],
-      tag: 'info',
-    },
-    connectedPowerKw: {
-      title: 'Connected Electricity Load',
-      body: 'Loads above 70 HP require a High Tension (HT) service connection from MSEDCL, which requires a separately sanctioned substation. Loads at or below 70 HP use a standard LT (Low Tension) connection — simpler and approved faster.',
-      points: ['≤ 70 HP → LT connection, standard process', '> 70 HP → HT substation sanction from MSEDCL', 'HT connection requires separate CEI approval'],
+      title: 'Total Project Cost (Land + Building + Machinery)',
+      body: 'Total project investment including civil works, land purchase, and utilities. Used by MPCB to determine the statutory Consent to Establish (CTE) fee slab.',
+      points: ['Must match figures in your Detailed Project Report (DPR)'],
       tag: 'info',
     },
     waterRequirementKld: {
-      title: 'Daily Water Usage (KLD)',
-      body: 'MPCB uses daily water consumption to determine your ETP (Effluent Treatment Plant) capacity requirement. Usage above 10 KLD typically mandates a full ETP installation on-site verified by an inspector.',
-      points: ['> 10 KLD → full ETP on-site is mandatory', 'MPCB inspector checks actual vs. declared usage', 'Declared KLD sets your effluent discharge standards'],
+      title: 'Daily Water Consumption (KLD)',
+      body: 'Enter the estimated kilolitres per day (KLD) needed for cooling, process, boiler feed, and domestic sanitary use. Higher consumption triggers dedicated Effluent Treatment Plant (ETP) capacity verification.',
+      points: ['Usage above 10 KLD mandates continuous flow monitoring'],
       tag: 'info',
     },
-    subType: {
-      title: 'Factory Sub-Activity',
-      body: 'Narrows down which regulatory sub-department handles your file. For example, dairy units have a dedicated FSSAI dairy cell, while API manufacturers are handled by a specialized pharma inspection unit within MPCB.',
-      points: ['Determines the sub-department officer assigned', 'Affects which inspection checklist is used on-site'],
+    midcAreaName: {
+      title: 'MIDC Industrial Estate / Zone Name',
+      body: 'Specify the designated MIDC industrial cluster (e.g. Chakan Phase 2, Ranjangaon, Shendra, Butibori, Ambad). Routes your file directly to the zonal MIDC Special Planning Authority (SPA).',
+      points: ['Assures prompt routing to the zonal MIDC executive engineer'],
       tag: 'info',
     },
   },
 };
 
-// ─────────────────────────────────────────────────────────────
-// getInsight — replace body with an API call to integrate backend
-// getInsight(field, value) stays the same signature
-// ─────────────────────────────────────────────────────────────
 const getInsight = (field, value) => {
-  const data =
-    field === '_field'
-      ? INSIGHTS._field?.[value]
-      : INSIGHTS[field]?.[value];
+  const data = field === '_field' ? INSIGHTS._field?.[value] : INSIGHTS[field]?.[value];
   if (!data) return null;
   return { ...data, field, value, timestamp: new Date() };
 };
 
 // ─────────────────────────────────────────────────────────────
-// Form Schema
+// KYA Master Schema
 // ─────────────────────────────────────────────────────────────
-const approvalFormSchema = {
-  stages: [
-    { id: 'pre-construction', label: 'Pre-Construction', tagline: 'Planning stage, land purchase, building layouts & preliminary clearances', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-    { id: 'pre-operational', label: 'Pre-Operational', tagline: 'Building finished, machinery installation, power/water connection & trial runs', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-    { id: 'established', label: 'Established / Expansion', tagline: 'Currently running plant adding new sheds, extra power load or product lines', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+const KYA_SCHEMA = {
+  projectNatures: [
+    { id: 'greenfield', label: 'New Factory (Greenfield)', desc: 'Starting a brand new factory on a new plot or shed' },
+    { id: 'brownfield', label: 'Expanding Old Factory (Brownfield)', desc: 'Adding new machines, extra sheds, or increasing capacity in existing unit' },
   ],
-  districts: ['Pune', 'Thane', 'Mumbai Suburban', 'Aurangabad (Chhatrapati Sambhajinagar)', 'Nagpur', 'Nashik', 'Kolhapur', 'Solapur', 'Raigad'],
-  landOwnershipTypes: ['MIDC Industrial Allotted Plot', 'Private Industrial Park', 'Private Agricultural Land (Requires NA conversion)', 'Leased Commercial Premises'],
+  constitutions: [
+    'Private Limited Company (Pvt Ltd)',
+    'Partnership Firm',
+    'Proprietorship (Single Owner)',
+    'Limited Liability Partnership (LLP)',
+    'Public Limited Company',
+  ],
+  stages: [
+    { id: 'pre-construction', label: 'Before Construction (Planning)', tagline: 'Need land permissions, factory building map pass & Pollution Board CTE' },
+    { id: 'pre-operational', label: 'Construction Done (Fitting Machines)', tagline: 'Building is ready, setting up machinery, power & water connections' },
+    { id: 'established', label: 'Running Factory (Expansion)', tagline: 'Factory is working; adding more machines, power load or new sheds' },
+  ],
+  districts: [
+    'Pune',
+    'Thane',
+    'Mumbai Suburban',
+    'Aurangabad (Chhatrapati Sambhajinagar)',
+    'Nagpur',
+    'Nashik',
+    'Kolhapur',
+    'Solapur',
+    'Raigad',
+  ],
+  landOwnershipTypes: [
+    'MIDC Industrial Allotted Plot',
+    'Private Industrial Park',
+    'Agricultural Land (Farm Land)',
+    'Rented / Leased Commercial Premises',
+  ],
+  buildingHeights: [
+    'Under 15 Meters (Standard Factory Shed)',
+    'Above 15 Meters (Multi-floor / High-Rise)',
+  ],
+  ecoZones: [
+    'No (Normal Industrial Zone)',
+    'Yes (Near River / Water Canal within 500m)',
+    'Yes (Near Forest or Sanctuary within 500m)',
+    'Yes (Near Sea Coast / CRZ Area)',
+  ],
   businessTypes: [
-    { id: 'food_processing', label: 'Food & Beverage Processing' },
-    { id: 'chemical_pharma', label: 'Chemical, Dyes & Pharmaceuticals' },
-    { id: 'textile_garments', label: 'Textile, Spinning & Garmenting' },
-    { id: 'engineering_metal', label: 'Automobile & Heavy Engineering' },
+    { id: 'food_processing', label: 'Food, Dairy & Beverages' },
+    { id: 'chemical_pharma', label: 'Chemicals, Dyes & Medicines' },
+    { id: 'textile_garments', label: 'Cloth, Garments & Spinning' },
+    { id: 'engineering_metal', label: 'Automobile, Metal & Machinery' },
     { id: 'cold_storage', label: 'Cold Storage & Agro Warehouse' },
   ],
   subClassifications: {
-    food_processing: ['Dairy Products & Milk Chilling', 'Bakery & Confectionery', 'Fruit Pulp & Canning', 'Grain Milling & Spices'],
-    chemical_pharma: ['Bulk Drug Actives (APIs)', 'Specialty Industrial Chemicals', 'Paint & Varnish Synthesis', 'Formulations & Packaging'],
-    textile_garments: ['Yarn Dyeing & Washing', 'Fabric Weaving Only', 'Readymade Garment Stitching'],
-    engineering_metal: ['Electroplating & Heat Treatment', 'Foundry & Casting', 'Sheet Metal Fabrication & Assembly'],
-    cold_storage: ['Controlled Atmosphere Cold Storage', 'Dry Agricultural Logistics Shed'],
+    food_processing: ['Dairy & Milk Products', 'Bakery & Snacks', 'Fruit Pulp & Canning', 'Atta / Dal / Spices Milling'],
+    chemical_pharma: ['Bulk Drug Medicines (APIs)', 'Industrial Chemicals & Acids', 'Paints & Varnishes', 'Tablets / Liquid Packaging'],
+    textile_garments: ['Cloth Dyeing & Washing', 'Fabric Weaving Only', 'Readymade Garment Stitching'],
+    engineering_metal: ['Electroplating & Metal Coating', 'Foundry & Iron Casting', 'Sheet Metal Fabrication & Auto Parts'],
+    cold_storage: ['Cold Storage for Fruits & Vegetables', 'Dry Godown & Warehouse'],
   },
+  waterSources: [
+    'MIDC Pipeline Supply',
+    'Nagar Palika / Municipal Water',
+    'Borewell (Groundwater Pump)',
+    'River / Canal Water',
+  ],
   pollutionCategories: [
-    { code: 'WHITE', label: 'White (Practically Non-Polluting)', desc: 'Needs simple intimation, no formal NOC' },
-    { code: 'GREEN', label: 'Green (Low Pollution Index)', desc: 'Rapid consent within 15 to 30 days' },
-    { code: 'ORANGE', label: 'Orange (Medium Pollution Index)', desc: 'Standard CTE with strict effluent/air norms' },
-    { code: 'RED', label: 'Red (High Pollution Index)', desc: 'Detailed environmental screening & public scrutiny' },
+    { code: 'WHITE', label: 'White Category (Very Low Pollution)', desc: 'Zero smoke/effluent. Only online notice to MPCB needed.' },
+    { code: 'GREEN', label: 'Green Category (Low Pollution)', desc: 'Small pollution footprint. Quick consent in 15 to 25 days.' },
+    { code: 'ORANGE', label: 'Orange Category (Medium Pollution)', desc: 'General factory with smoke or dirty water. Needs ETP plant.' },
+    { code: 'RED', label: 'Red Category (Heavy / Chemical Pollution)', desc: 'High pollution risk. Detailed government checks required.' },
   ],
 };
 
-// ─────────────────────────────────────────────────────────────
-// FieldLabel — clickable label that triggers AI insight
-// ─────────────────────────────────────────────────────────────
-const FieldLabel = ({ children, onClick }) => {
+const STEP_LABELS = [
+  '1. Entity & Land',
+  '2. Sector & Operations',
+  '3. Utilities & Water',
+  '4. Safety & Labour',
+];
+
+const StepTab = ({ step, label, active, done, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex-1 py-2.5 px-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs ${
+      active
+        ? 'bg-india-blue text-white shadow-sm'
+        : done
+        ? 'text-india-blue bg-india-blue/10 hover:bg-india-blue/20'
+        : 'text-foreground/60 hover:text-foreground hover:bg-muted/40'
+    }`}
+  >
+    <span
+      className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center shrink-0 font-bold ${
+        active
+          ? 'bg-white text-india-blue'
+          : done
+          ? 'bg-india-blue text-white'
+          : 'border border-foreground/30 text-foreground/60'
+      }`}
+    >
+      {done && !active ? '✓' : step}
+    </span>
+    <span className="truncate hidden sm:inline">{label}</span>
+    <span className="sm:hidden">{step}</span>
+  </button>
+);
+
+const FieldLabel = ({ children, onClick, required = false }) => {
   if (!onClick) {
     return (
-      <label className="block text-xs font-semibold text-foreground/60 mb-1.5">{children}</label>
+      <label className="block text-xs font-semibold text-foreground/70 mb-1.5">
+        {children} {required && <span className="text-india-orange font-bold">*</span>}
+      </label>
     );
   }
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group flex items-center gap-1 mb-1.5 cursor-pointer text-left"
+      className="group flex items-center gap-1.5 mb-1.5 cursor-pointer text-left w-full"
     >
-      <span className="text-xs font-semibold text-foreground/60 group-hover:text-india-blue transition-colors border-b border-dashed border-transparent group-hover:border-india-blue/50">
-        {children}
+      <span className="text-xs font-semibold text-foreground/80 group-hover:text-india-blue transition-colors border-b border-dashed border-transparent group-hover:border-india-blue/50">
+        {children} {required && <span className="text-india-orange font-bold">*</span>}
       </span>
-      <span className="text-[9px] font-bold text-india-blue/0 group-hover:text-india-blue/70 transition-all uppercase tracking-wider translate-x-0 group-hover:translate-x-0.5 duration-150">
-        AI ↗
+      <span className="text-[9px] font-bold text-india-blue/60 group-hover:text-india-blue transition-all uppercase tracking-wider bg-india-blue/5 px-1.5 py-0.5 rounded border border-india-blue/20 shrink-0">
+        AI Clause ↗
       </span>
     </button>
   );
 };
 
-// ─────────────────────────────────────────────────────────────
-// Tag badge
-// ─────────────────────────────────────────────────────────────
+const YesNoToggle = ({ value, onChange }) => (
+  <div className="flex gap-1.5 shrink-0">
+    {['Yes', 'No'].map((opt) => (
+      <button
+        key={opt}
+        type="button"
+        onClick={() => onChange(opt)}
+        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+          value === opt
+            ? 'border-india-blue bg-india-blue text-white shadow-sm'
+            : 'border-border text-foreground/60 hover:border-foreground/30 hover:bg-muted/40'
+        }`}
+      >
+        {opt}
+      </button>
+    ))}
+  </div>
+);
 
-
-// ─────────────────────────────────────────────────────────────
-// AI Advisor Panel
-// ─────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────
-// Local form sub-components
-// ─────────────────────────────────────────────────────────────
 const FormSelect = ({ value, onChange, options, labelKey = null, valueKey = null }) => (
   <select
     value={value}
     onChange={(e) => onChange(e.target.value)}
-    className="w-full bg-background border border-border rounded-lg p-2.5 text-foreground text-xs focus:outline-none focus:border-india-blue transition-colors"
+    className="w-full bg-background border border-border rounded-lg p-2.5 text-foreground text-xs focus:outline-none focus:border-india-blue focus:ring-1 focus:ring-india-blue transition-colors"
   >
     {options.map((opt) => {
       const val = valueKey ? opt[valueKey] : opt;
       const label = labelKey ? opt[labelKey] : opt;
-      return <option key={val} value={val}>{label}</option>;
+      return (
+        <option key={val} value={val}>
+          {label}
+        </option>
+      );
     })}
   </select>
 );
@@ -444,63 +787,11 @@ const FormInput = ({ type = 'text', value, onChange, placeholder, step }) => (
     value={value}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className="w-full bg-background border border-border rounded-lg p-2.5 text-foreground text-xs focus:outline-none focus:border-india-blue transition-colors"
+    className="w-full bg-background border border-border rounded-lg p-2.5 text-foreground text-xs focus:outline-none focus:border-india-blue focus:ring-1 focus:ring-india-blue transition-colors"
   />
 );
 
-const STEP_LABELS = ['Stage & Land', 'Enterprise & Activity', 'Utilities & Environment'];
-
-const StepTab = ({ step, label, active, done, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex-1 py-2 px-1 rounded-md font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer text-xs ${
-      active ? 'bg-india-blue text-white' : done ? 'text-india-blue bg-india-blue/10' : 'text-foreground/50 hover:text-foreground'
-    }`}
-  >
-    <span className={`w-4 h-4 rounded-full border text-[10px] flex items-center justify-center shrink-0 ${
-      active ? 'border-white/60' : done ? 'border-india-blue' : 'border-current'
-    }`}>
-      {done && !active ? '✓' : step}
-    </span>
-    <span className="truncate">{label}</span>
-  </button>
-);
-
-const YesNoToggle = ({ value, onChange }) => (
-  <div className="flex gap-2">
-    {['Yes', 'No'].map((opt) => (
-      <button
-        key={opt}
-        type="button"
-        onClick={() => onChange(opt)}
-        className={`px-3 py-1 rounded-lg text-xs font-bold border transition-colors ${
-          value === opt ? 'border-india-blue bg-india-blue/10 text-india-blue' : 'border-border text-foreground/60 hover:border-foreground/30'
-        }`}
-      >
-        {opt}
-      </button>
-    ))}
-  </div>
-);
-
-
-// ─────────────────────────────────────────────────────────────
-// Main Page
-// ─────────────────────────────────────────────────────────────
 const MAX_HISTORY = 3;
-
-const DISTRICT_MAP = {
-  pune: 'Pune',
-  thane: 'Thane',
-  csn: 'Aurangabad (Chhatrapati Sambhajinagar)',
-  nagpur: 'Nagpur',
-  nashik: 'Nashik',
-  kolhapur: 'Kolhapur',
-  solapur: 'Solapur',
-  raigad: 'Raigad',
-  amravati: 'Nagpur',
-  palghar: 'Thane',
-};
 
 export const AskForApprovalPage = () => {
   const navigate = useNavigate();
@@ -512,34 +803,53 @@ export const AskForApprovalPage = () => {
   const resolvedInitialDistrict = () => {
     const raw = location.state?.initialDistrict;
     if (!raw) return 'Pune';
-    return DISTRICT_MAP[raw.toLowerCase()] || raw;
+    return raw;
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // NSWS / MAITRI STRUCTURED FORM STATE (NO OPEN ESSAY PROMPTS)
+  // ─────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
+    // Module 1: Enterprise Nature & Land Location
+    projectNature: 'greenfield',
+    constitution: 'Private Limited Company',
+    isCompanyRegistered: 'Yes',
     stage: 'pre-construction',
     district: resolvedInitialDistrict(),
     landType: 'MIDC Industrial Allotted Plot',
     midcAreaName: 'MIDC Chakan Phase 2',
+    hasNaOrder: 'Yes',
     plotAreaSqMtr: '2500',
     builtUpAreaSqMtr: '1400',
+    buildingHeight: 'Under 15 Meters (Standard)',
     isForestOrRiverNearby: 'No',
+
+    // Module 2: Sector & Operational Triggers
     businessType: 'food_processing',
     subType: 'Fruit Pulp & Canning',
-    totalInvestmentCrores: '8.5',
-    plantMachineryCostCrores: '4.2',
-    proposedWorkers: '35',
-    connectedPowerKw: '180',
-    waterRequirementKld: '15',
+    isFoodProduct: 'Yes',
+    storesFlammableSolvents: 'No',
     generatesHazardousWaste: 'No',
-    hasBoilerOrFurnace: 'No',
+    isExportOriented: 'No',
+    plantMachineryCostCrores: '4.2',
+    totalInvestmentCrores: '8.5',
+
+    // Module 3: Utilities & Infrastructure
+    connectedPowerKw: '180',
     hasDieselGenerator: 'Yes',
+    waterSource: 'MIDC Piped Water Network',
+    waterRequirementKld: '15',
+    dischargesEffluent: 'Yes',
+
+    // Module 4: Safety, Labour & Environmental Classification
     pollutionTier: 'ORANGE',
+    hasBoilerOrFurnace: 'No',
+    proposedWorkers: '35',
   });
 
   const [activeInsight, setActiveInsight] = useState(null);
   const [insightHistory, setInsightHistory] = useState([]);
 
-  // Fire insight without changing formData (for label clicks)
   const showInsight = (field, value) => {
     const insight = getInsight(field, value);
     if (!insight) return;
@@ -549,33 +859,72 @@ export const AskForApprovalPage = () => {
     setActiveInsight(insight);
   };
 
-  // Update form field + trigger insight for option clicks
   const update = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     showInsight(field, value);
   };
 
+  const fi = (fieldKey) => () => showInsight('_field', fieldKey);
+
+  const calculatedMsmeScale = () => {
+    const mach = Number(formData.plantMachineryCostCrores) || 0;
+    if (mach <= 1) return 'Micro Enterprise';
+    if (mach <= 10) return 'Small Enterprise';
+    if (mach <= 50) return 'Medium Enterprise';
+    return 'Large Industrial Undertaking';
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // SUBMIT EVALUATION TO BACKEND ENGINE
+  // ─────────────────────────────────────────────────────────────
   const handleFinishAndSubmit = async () => {
     setEvaluating(true);
     const evaluationPayload = {
-      sector: formData.businessType,
-      subSector: formData.subType,
-      enterpriseScale: Number(formData.totalInvestmentCrores) < 1 ? 'MICRO' : Number(formData.totalInvestmentCrores) < 10 ? 'SMALL' : 'MEDIUM',
+      projectNature: formData.projectNature,
+      constitution: formData.constitution,
+      isCompanyRegistered: formData.isCompanyRegistered === 'Yes',
+      hasUdyam: formData.isCompanyRegistered === 'Yes',
+      stage: formData.stage,
       district: formData.district,
       landType: formData.landType,
+      midcAreaName: formData.midcAreaName,
+      hasNaOrder: formData.hasNaOrder === 'Yes',
       plotAreaSqM: Number(formData.plotAreaSqMtr) || 0,
       builtUpAreaSqM: Number(formData.builtUpAreaSqMtr) || 0,
-      connectedPowerLoadKW: Number(formData.connectedPowerKw) || 0,
-      dailyWaterConsumptionKLD: Number(formData.waterRequirementKld) || 0,
-      hasBoiler: formData.hasBoilerOrFurnace === 'Yes',
-      hasDGSet: formData.hasDieselGenerator === 'Yes',
+      buildingHeight: formData.buildingHeight,
+      isForestOrRiverNearby: formData.isForestOrRiverNearby,
+
+      sector: formData.businessType,
+      subSector: formData.subType,
+      isFoodProduct: formData.isFoodProduct === 'Yes',
+      storesFlammableSolvents: formData.storesFlammableSolvents === 'Yes',
       generatesHazardousWaste: formData.generatesHazardousWaste === 'Yes',
-      pollutionTier: formData.pollutionTier,
+      isExportOriented: formData.isExportOriented === 'Yes',
       totalCapitalInvestmentInr: (Number(formData.totalInvestmentCrores) || 0) * 10000000,
+      plantMachineryCostCrores: Number(formData.plantMachineryCostCrores) || 0,
+      enterpriseScale:
+        Number(formData.plantMachineryCostCrores) <= 1
+          ? 'MICRO'
+          : Number(formData.plantMachineryCostCrores) <= 10
+          ? 'SMALL'
+          : Number(formData.plantMachineryCostCrores) <= 50
+          ? 'MEDIUM'
+          : 'LARGE',
+
+      connectedPowerLoadKW: Number(formData.connectedPowerKw) || 0,
+      hasDGSet: formData.hasDieselGenerator === 'Yes',
+      waterSource: formData.waterSource,
+      dailyWaterConsumptionKLD: Number(formData.waterRequirementKld) || 0,
+      dischargesEffluent: formData.dischargesEffluent === 'Yes',
+
+      pollutionTier: formData.pollutionTier,
+      hasBoiler: formData.hasBoilerOrFurnace === 'Yes',
       workforceCount: Number(formData.proposedWorkers) || 0,
     };
 
-    const targetListRoute = location.pathname.startsWith('/user') ? '/user/approvals/list' : '/approvals/list';
+    const targetListRoute = location.pathname.startsWith('/user')
+      ? '/user/approvals/list'
+      : '/approvals/list';
 
     try {
       const res = await approvalsService.evaluateQuestionnaire(evaluationPayload);
@@ -588,19 +937,19 @@ export const AskForApprovalPage = () => {
     }
   };
 
-  // Shorthand for field-level insight (text input labels)
-  const fi = (fieldKey) => () => showInsight('_field', fieldKey);
-
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-5 sm:space-y-6">
       {/* Header */}
       <div className="border-b border-border pb-4 sm:pb-6">
         <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span className="text-[15px] font-semibold text-foreground/60 uppercase">Single Window Clearance</span>
+          <span className="text-xs font-bold text-india-blue uppercase tracking-wider bg-india-blue/10 px-2 py-0.5 rounded">
+            Government Single Window System
+          </span>
+          <span className="text-xs text-foreground/50">• Check Required Government Permissions</span>
         </div>
         <PageHeader
-          title="Ask For Approvals"
-          subtitle="Answer questions about your enterprise. Click any field label to get AI guidance on what it means."
+          title="Find Approvals for Your Factory"
+          subtitle="Answer a few simple questions about your factory. We will find every government clearance, license, and NOC you need in Maharashtra."
           className="pb-0 border-b-0"
         />
       </div>
@@ -608,10 +957,10 @@ export const AskForApprovalPage = () => {
       {/* Advisory Banner if accessed directly */}
       {advisoryBanner && (
         <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-base">📋</span>
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg">📋</span>
             <p>
-              <strong>Questionnaire Required:</strong> The <em>List of Approvals</em> is generated dynamically based on your industrial parameters. Please complete this 3-step questionnaire to formulate your customized statutory clearances list.
+              <strong>Please fill these details:</strong> To give you the exact list of government permissions and fees, please answer these basic factory details first.
             </p>
           </div>
           <button
@@ -623,262 +972,729 @@ export const AskForApprovalPage = () => {
         </div>
       )}
 
-      {/* Two-column layout */}
+      {/* Two-column layout: Form & AI Advisor */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {/* ── FORM ── */}
+        {/* ── QUESTIONNAIRE FORM CONTAINER ── */}
         <div className="lg:col-span-2 space-y-5">
           {/* Step Tabs */}
-          <div className="flex gap-1 p-1 rounded-lg border border-border bg-background">
+          <div className="flex gap-1.5 p-1.5 rounded-xl border border-border bg-card/40 backdrop-blur">
             {STEP_LABELS.map((label, i) => (
-              <StepTab key={i} step={i + 1} label={label} active={currentSection === i + 1} done={currentSection > i + 1} onClick={() => setCurrentSection(i + 1)} />
+              <StepTab
+                key={i}
+                step={i + 1}
+                label={label}
+                active={currentSection === i + 1}
+                done={currentSection > i + 1}
+                onClick={() => setCurrentSection(i + 1)}
+              />
             ))}
           </div>
 
           {/* Form Card */}
-          <div className="border border-border rounded-xl bg-background p-4 sm:p-6">
-
-            {/* SECTION 1 */}
+          <div className="border border-border rounded-2xl bg-card p-4 sm:p-6 shadow-sm">
+            {/* ════════════════════════════════════════════════════════════
+                MODULE 1: ENTERPRISE CONSTITUTION & LAND PARCEL
+               ════════════════════════════════════════════════════════════ */}
             {currentSection === 1 && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-foreground">Section 1: Enterprise Stage & Land Location</h2>
-                  <p className="text-xs text-foreground/50 mt-0.5">Clearances differ widely depending on your stage.</p>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-bold text-foreground">
+                      Step 1: Business Type & Land Details
+                    </h2>
+                    <span className="text-[11px] font-mono font-bold text-india-blue bg-india-blue/10 px-2 py-0.5 rounded">
+                      Step 1 of 4
+                    </span>
+                  </div>
+                  <p className="text-xs text-foreground/60 mt-0.5">
+                    Tell us about your company setup, registration, and factory land.
+                  </p>
                 </div>
 
-                {/* Stage */}
+                {/* Project Nature: Greenfield vs Brownfield */}
                 <div>
-                  <FieldLabel onClick={() => showInsight('stage', formData.stage)}>
-                    Current Operational Stage <span className="text-india-blue">*</span>
+                  <FieldLabel onClick={() => showInsight('projectNature', formData.projectNature)} required>
+                    Is this a New Factory or Expanding an Old One?
                   </FieldLabel>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {approvalFormSchema.stages.map((st) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {KYA_SCHEMA.projectNatures.map((pn) => (
                       <div
-                        key={st.id}
-                        onClick={() => update('stage', st.id)}
-                        className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                          formData.stage === st.id ? 'border-india-blue bg-india-blue/5' : 'border-border hover:border-foreground/30'
+                        key={pn.id}
+                        onClick={() => update('projectNature', pn.id)}
+                        className={`border rounded-xl p-3.5 cursor-pointer transition-all ${
+                          formData.projectNature === pn.id
+                            ? 'border-india-blue bg-india-blue/5 ring-1 ring-india-blue'
+                            : 'border-border hover:border-foreground/30'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 ${
-                            formData.stage === st.id ? 'border-india-blue text-india-blue' : 'border-border text-foreground/40'
-                          }`}>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={st.icon} />
-                            </svg>
-                          </div>
-                          <span className="text-xs font-bold text-foreground">{st.label}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-foreground">{pn.label}</span>
+                          <span
+                            className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[8px] ${
+                              formData.projectNature === pn.id
+                                ? 'border-india-blue bg-india-blue text-white'
+                                : 'border-border'
+                            }`}
+                          >
+                            {formData.projectNature === pn.id && '✓'}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-foreground/50 mt-2 leading-tight">{st.tagline}</p>
+                        <p className="text-[11px] text-foreground/60 mt-1">{pn.desc}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Legal Constitution & Registered Status */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <FieldLabel onClick={() => showInsight('district', formData.district)}>
-                      Target District <span className="text-india-blue">*</span>
+                    <FieldLabel onClick={() => showInsight('constitution', formData.constitution)} required>
+                      Company Ownership Type
                     </FieldLabel>
-                    <FormSelect value={formData.district} onChange={(v) => update('district', v)} options={approvalFormSchema.districts} />
+                    <FormSelect
+                      value={formData.constitution}
+                      onChange={(v) => update('constitution', v)}
+                      options={KYA_SCHEMA.constitutions}
+                    />
                   </div>
                   <div>
-                    <FieldLabel onClick={() => showInsight('landType', formData.landType)}>
-                      Land Ownership Type <span className="text-india-blue">*</span>
+                    <FieldLabel onClick={() => showInsight('stage', formData.stage)} required>
+                      Current Factory Stage
                     </FieldLabel>
-                    <FormSelect value={formData.landType} onChange={(v) => update('landType', v)} options={approvalFormSchema.landOwnershipTypes} />
+                    <FormSelect
+                      value={formData.stage}
+                      onChange={(v) => update('stage', v)}
+                      options={KYA_SCHEMA.stages}
+                      valueKey="id"
+                      labelKey="label"
+                    />
                   </div>
                 </div>
 
-                {formData.landType.includes('MIDC') && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border border-india-blue/20 rounded-lg p-3 bg-india-blue/5">
-                    <FieldLabel onClick={fi('midcAreaName')}>MIDC Estate / Zone Name</FieldLabel>
-                    <FormInput value={formData.midcAreaName} onChange={(v) => update('midcAreaName', v)} placeholder="e.g. Chakan Phase 2, Shendra" />
+                {/* Registration Check */}
+                <div className="p-3.5 rounded-xl border border-border bg-card/30 flex items-center justify-between gap-3">
+                  <div>
+                    <FieldLabel onClick={() => showInsight('isCompanyRegistered', formData.isCompanyRegistered)}>
+                      Is your company already registered with Government (Udyam MSME or MCA / ROC)?
+                    </FieldLabel>
+                    <span className="text-[11px] text-foreground/50 block">
+                      If No, we will first help you get your free Udyam MSME registration online.
+                    </span>
+                  </div>
+                  <YesNoToggle
+                    value={formData.isCompanyRegistered}
+                    onChange={(v) => update('isCompanyRegistered', v)}
+                  />
+                </div>
+
+                {/* District and Land Tenure */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <FieldLabel onClick={() => showInsight('district', formData.district)} required>
+                      Factory Location (District)
+                    </FieldLabel>
+                    <FormSelect
+                      value={formData.district}
+                      onChange={(v) => update('district', v)}
+                      options={KYA_SCHEMA.districts}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel onClick={() => showInsight('landType', formData.landType)} required>
+                      Factory Land Type
+                    </FieldLabel>
+                    <FormSelect
+                      value={formData.landType}
+                      onChange={(v) => update('landType', v)}
+                      options={KYA_SCHEMA.landOwnershipTypes}
+                    />
+                  </div>
+                </div>
+
+                {/* Conditional MIDC Estate Name */}
+                {formData.landType === 'MIDC Industrial Allotted Plot' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3.5 rounded-xl border border-india-blue/30 bg-india-blue/5">
+                    <FieldLabel onClick={fi('midcAreaName')}>
+                      MIDC Area / Estate Name
+                    </FieldLabel>
+                    <FormInput
+                      value={formData.midcAreaName}
+                      onChange={(v) => update('midcAreaName', v)}
+                      placeholder="e.g. Chakan Phase 2, Ranjangaon, Butibori"
+                    />
+                    <span className="text-[10px] text-foreground/50 mt-1 block">
+                      Government MIDC industrial land. You do not need a Collector NA order.
+                    </span>
                   </motion.div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Conditional Agricultural Land NA Check */}
+                {formData.landType.includes('Agricultural') && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel onClick={() => showInsight('hasNaOrder', formData.hasNaOrder)}>
+                        Do you have Non-Agricultural (NA) Order from District Collector / SDO?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        If No, farm land must first be converted to Non-Agricultural (NA) for factory use.
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.hasNaOrder}
+                      onChange={(v) => update('hasNaOrder', v)}
+                    />
+                  </motion.div>
+                )}
+
+                {/* Area and Heights */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <FieldLabel onClick={fi('plotAreaSqMtr')}>Plot Area (Sq. Meters)</FieldLabel>
-                    <FormInput type="number" value={formData.plotAreaSqMtr} onChange={(v) => update('plotAreaSqMtr', v)} />
+                    <FieldLabel onClick={fi('plotAreaSqMtr')} required>
+                      Total Plot Area (in Sq. Meters)
+                    </FieldLabel>
+                    <FormInput
+                      type="number"
+                      value={formData.plotAreaSqMtr}
+                      onChange={(v) => update('plotAreaSqMtr', v)}
+                      placeholder="2500"
+                    />
                   </div>
                   <div>
-                    <FieldLabel onClick={fi('builtUpAreaSqMtr')}>Built-Up Area (Sq. Meters)</FieldLabel>
-                    <FormInput type="number" value={formData.builtUpAreaSqMtr} onChange={(v) => update('builtUpAreaSqMtr', v)} />
+                    <FieldLabel onClick={fi('builtUpAreaSqMtr')} required>
+                      Covered / Shed Area (in Sq. Meters)
+                    </FieldLabel>
+                    <FormInput
+                      type="number"
+                      value={formData.builtUpAreaSqMtr}
+                      onChange={(v) => update('builtUpAreaSqMtr', v)}
+                      placeholder="1400"
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel onClick={() => showInsight('buildingHeight', formData.buildingHeight)}>
+                      Building Height
+                    </FieldLabel>
+                    <FormSelect
+                      value={formData.buildingHeight}
+                      onChange={(v) => update('buildingHeight', v)}
+                      options={KYA_SCHEMA.buildingHeights}
+                    />
                   </div>
                 </div>
 
-                <div className="border border-border rounded-lg p-3">
+                {/* Eco-Zone / River / Forest Proximity */}
+                <div className="p-3.5 rounded-xl border border-border">
                   <FieldLabel onClick={() => showInsight('isForestOrRiverNearby', formData.isForestOrRiverNearby)}>
-                    Is site within 500m of a River or Forest?
+                    Is your factory near any River, Forest, or Sea Coast?
                   </FieldLabel>
-                  <div className="flex flex-wrap gap-4 mt-1">
-                    {['No', 'Yes (River Basin)', 'Yes (Protected Eco-Zone)'].map((opt) => (
-                      <label key={opt} className="flex items-center gap-1.5 cursor-pointer" onClick={() => update('isForestOrRiverNearby', opt)}>
-                        <input type="radio" name="forestRiver" checked={formData.isForestOrRiverNearby === opt} onChange={() => {}} className="text-india-blue" />
-                        <span className="text-xs text-foreground">{opt}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <FormSelect
+                    value={formData.isForestOrRiverNearby}
+                    onChange={(v) => update('isForestOrRiverNearby', v)}
+                    options={KYA_SCHEMA.ecoZones}
+                  />
+                  <span className="text-[10px] text-foreground/50 mt-1 block">
+                    Factories within 500 meters of rivers or forests need an extra environmental check.
+                  </span>
                 </div>
 
-                <div className="pt-4 border-t border-border flex justify-end">
-                  <button type="button" onClick={() => setCurrentSection(2)} className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer">
-                    Save & Continue →
+                <div className="pt-3 border-t border-border flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSection(2)}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-india-blue text-white text-xs font-bold hover:bg-india-blue/90 transition-all cursor-pointer shadow-sm"
+                  >
+                    Next: What Will You Make? →
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {/* SECTION 2 */}
+            {/* ════════════════════════════════════════════════════════════
+                MODULE 2: SECTOR & OPERATIONAL STATUTORY TRIGGERS
+               ════════════════════════════════════════════════════════════ */}
             {currentSection === 2 && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-foreground">Section 2: Enterprise Sector & Activity</h2>
-                  <p className="text-xs text-foreground/50 mt-0.5">Identifies department jurisdiction — FSSAI, Labour, Chemicals wing etc.</p>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-bold text-foreground">
+                      Step 2: Factory Product & Machinery
+                    </h2>
+                    <span className="text-[11px] font-mono font-bold text-india-blue bg-india-blue/10 px-2 py-0.5 rounded">
+                      Step 2 of 4
+                    </span>
+                  </div>
+                  <p className="text-xs text-foreground/60 mt-0.5">
+                    What items will your factory make, and what chemicals or machines will you use?
+                  </p>
                 </div>
 
+                {/* Sector and Sub-sector */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <FieldLabel onClick={() => showInsight('businessType', formData.businessType)}>
-                      Primary Sector <span className="text-india-blue">*</span>
+                    <FieldLabel onClick={() => showInsight('businessType', formData.businessType)} required>
+                      Main Industry Category
                     </FieldLabel>
                     <FormSelect
                       value={formData.businessType}
                       onChange={(v) => {
                         update('businessType', v);
-                        setFormData((p) => ({ ...p, subType: approvalFormSchema.subClassifications[v][0] }));
+                        const firstSub = KYA_SCHEMA.subClassifications[v]?.[0] || '';
+                        setFormData((p) => ({
+                          ...p,
+                          businessType: v,
+                          subType: firstSub,
+                          isFoodProduct: v === 'food_processing' ? 'Yes' : 'No',
+                        }));
                       }}
-                      options={approvalFormSchema.businessTypes}
+                      options={KYA_SCHEMA.businessTypes}
                       valueKey="id"
                       labelKey="label"
                     />
                   </div>
                   <div>
-                    <FieldLabel onClick={fi('subType')}>
-                      Sub-Activity <span className="text-india-blue">*</span>
+                    <FieldLabel onClick={fi('subType')} required>
+                      What exactly will you manufacture?
                     </FieldLabel>
-                    <FormSelect value={formData.subType} onChange={(v) => update('subType', v)} options={approvalFormSchema.subClassifications[formData.businessType] || []} />
+                    <FormSelect
+                      value={formData.subType}
+                      onChange={(v) => update('subType', v)}
+                      options={KYA_SCHEMA.subClassifications[formData.businessType] || []}
+                    />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <FieldLabel onClick={fi('plantMachineryCostCrores')}>Machinery Cost (Rs Crore)</FieldLabel>
-                    <FormInput type="number" step="0.1" value={formData.plantMachineryCostCrores} onChange={(v) => update('plantMachineryCostCrores', v)} />
+                {/* Repeated Specific Statutory Questions */}
+                <div className="border border-border rounded-xl divide-y divide-border overflow-hidden">
+                  {/* Trigger 1: Food / FSSAI */}
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel onClick={() => showInsight('isFoodProduct', formData.isFoodProduct)}>
+                        Will you make, pack, or store any Food, Milk, or Drinks?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        If Yes, FSSAI Food Safety License will be required.
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.isFoodProduct}
+                      onChange={(v) => update('isFoodProduct', v)}
+                    />
                   </div>
-                  <div>
-                    <FieldLabel onClick={fi('totalInvestmentCrores')}>Total Project Cost (Rs Crore)</FieldLabel>
-                    <FormInput type="number" step="0.1" value={formData.totalInvestmentCrores} onChange={(v) => update('totalInvestmentCrores', v)} />
+
+                  {/* Trigger 2: Solvents / PESO */}
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel onClick={() => showInsight('storesFlammableSolvents', formData.storesFlammableSolvents)}>
+                        Will you store dangerous chemicals, Petrol, Diesel tanks, or Gas cylinders?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        If Yes, PESO Petroleum & Explosive Safety permit will be added.
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.storesFlammableSolvents}
+                      onChange={(v) => update('storesFlammableSolvents', v)}
+                    />
                   </div>
-                  <div>
-                    <FieldLabel onClick={fi('proposedWorkers')}>Workforce Headcount</FieldLabel>
-                    <FormInput type="number" value={formData.proposedWorkers} onChange={(v) => update('proposedWorkers', v)} />
+
+                  {/* Trigger 3: Hazardous Waste / Sludge */}
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel onClick={() => showInsight('generatesHazardousWaste', formData.generatesHazardousWaste)}>
+                        Does work involve chemical electroplating, acid washing, or toxic chemical waste?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        If Yes, MPCB Hazardous Waste permission and waste disposal center tie-up is required.
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.generatesHazardousWaste}
+                      onChange={(v) => update('generatesHazardousWaste', v)}
+                    />
+                  </div>
+
+                  {/* Trigger 4: Export Unit / DGFT */}
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel onClick={() => showInsight('isExportOriented', formData.isExportOriented)}>
+                        Do you plan to export your goods to other countries?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        If Yes, we will add the 1-day DGFT Import-Export Code (IEC).
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.isExportOriented}
+                      onChange={(v) => update('isExportOriented', v)}
+                    />
                   </div>
                 </div>
 
-                <div className="border border-india-blue/20 bg-india-blue/5 rounded-lg p-3 text-xs flex items-center gap-2">
-                  <Check className="w-4 h-4 text-india-blue shrink-0" />
-                  <span className="text-foreground/80">
-                    Based on Rs {formData.plantMachineryCostCrores} Cr outlay, this qualifies under <strong className="text-india-blue">Small Enterprise MSME</strong> norms.
+                {/* Capital Investments & MSME Scale */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <FieldLabel onClick={fi('plantMachineryCostCrores')} required>
+                      Machinery & Equipment Cost (in ₹ Crores)
+                    </FieldLabel>
+                    <FormInput
+                      type="number"
+                      step="0.1"
+                      value={formData.plantMachineryCostCrores}
+                      onChange={(v) => update('plantMachineryCostCrores', v)}
+                    />
+                  </div>
+                  <div>
+                    <FieldLabel onClick={fi('totalInvestmentCrores')} required>
+                      Total Project Cost (Land + Building + Machinery) (in ₹ Crores)
+                    </FieldLabel>
+                    <FormInput
+                      type="number"
+                      step="0.1"
+                      value={formData.totalInvestmentCrores}
+                      onChange={(v) => update('totalInvestmentCrores', v)}
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic MSME Classification Callout */}
+                <div className="p-3 rounded-xl bg-muted/40 border border-border flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-foreground/60">Your Government Enterprise Size:</span>
+                    <strong className="text-foreground ml-2 font-bold">{calculatedMsmeScale()}</strong>
+                  </div>
+                  <span className="text-[10px] text-india-blue font-bold uppercase tracking-wide bg-india-blue/10 px-2 py-0.5 rounded">
+                    MSME Act
                   </span>
                 </div>
 
-                <div className="pt-4 border-t border-border flex justify-between gap-2">
-                  <button type="button" onClick={() => setCurrentSection(1)} className="px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border cursor-pointer">← Back</button>
-                  <button type="button" onClick={() => setCurrentSection(3)} className="px-6 py-2.5 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer">Continue →</button>
+                <div className="pt-3 border-t border-border flex justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSection(1)}
+                    className="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/40 transition-colors cursor-pointer"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSection(3)}
+                    className="px-6 py-2.5 rounded-xl bg-india-blue text-white text-xs font-bold hover:bg-india-blue/90 transition-all cursor-pointer shadow-sm"
+                  >
+                    Next: Power & Water Details →
+                  </button>
                 </div>
               </motion.div>
             )}
 
-            {/* SECTION 3 */}
+            {/* ════════════════════════════════════════════════════════════
+                MODULE 3: UTILITIES, POWER & WATER INFRASTRUCTURE
+               ════════════════════════════════════════════════════════════ */}
             {currentSection === 3 && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-foreground">Section 3: Utilities & Environmental Parameters</h2>
-                  <p className="text-xs text-foreground/50 mt-0.5">Required by MSEDCL, Water Board, and MPCB.</p>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-bold text-foreground">
+                      Step 3: Electricity, Water & Generators
+                    </h2>
+                    <span className="text-[11px] font-mono font-bold text-india-blue bg-india-blue/10 px-2 py-0.5 rounded">
+                      Step 3 of 4
+                    </span>
+                  </div>
+                  <p className="text-xs text-foreground/60 mt-0.5">
+                    MSEDCL electricity connection, water supply, and generator permits.
+                  </p>
                 </div>
 
+                {/* Electricity Load & HT Substation check */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <FieldLabel onClick={fi('connectedPowerKw')}>Connected Electricity Load (HP / kVA)</FieldLabel>
-                    <FormInput type="number" value={formData.connectedPowerKw} onChange={(v) => update('connectedPowerKw', v)} />
-                    <span className="text-[10px] text-foreground/40 mt-1 block">Loads &gt; 70 HP require HT substation sanction.</span>
+                    <FieldLabel onClick={() => showInsight('connectedPowerKw', formData.connectedPowerKw)} required>
+                      Required Electricity Power Load (HP / kW)
+                    </FieldLabel>
+                    <FormInput
+                      type="number"
+                      value={formData.connectedPowerKw}
+                      onChange={(v) => update('connectedPowerKw', v)}
+                      placeholder="180"
+                    />
+                    <span className="text-[10px] text-foreground/50 mt-1 block">
+                      Power above 70 HP needs an MSEDCL high-voltage (HT) transformer substation.
+                    </span>
                   </div>
                   <div>
-                    <FieldLabel onClick={fi('waterRequirementKld')}>Water Usage (KLD)</FieldLabel>
-                    <FormInput type="number" value={formData.waterRequirementKld} onChange={(v) => update('waterRequirementKld', v)} />
+                    <FieldLabel onClick={fi('waterRequirementKld')} required>
+                      Daily Water Needed (in KLD - 1000 Litres/Day)
+                    </FieldLabel>
+                    <FormInput
+                      type="number"
+                      value={formData.waterRequirementKld}
+                      onChange={(v) => update('waterRequirementKld', v)}
+                      placeholder="15"
+                    />
+                    <span className="text-[10px] text-foreground/50 mt-1 block">
+                      Total water for factory processing, machine cooling, and workers.
+                    </span>
                   </div>
                 </div>
 
+                {/* Interrelated Alert for High-Tension Load */}
+                {Number(formData.connectedPowerKw) > 70 && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3.5 rounded-xl border border-india-blue/30 bg-india-blue/5 text-xs space-y-1">
+                    <span className="text-[10px] font-bold text-india-blue uppercase tracking-wider block">
+                      ⚡ High Voltage Electricity Substation Required
+                    </span>
+                    <p className="text-foreground/70 text-[11px] leading-relaxed">
+                      Your power load ({formData.connectedPowerKw} HP) is more than 70 HP. MSEDCL requires a dedicated 11kV/22kV transformer with Electrical Inspector (CEI) earth pit testing.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Primary Water Source */}
                 <div>
-                  <FieldLabel onClick={() => showInsight('pollutionTier', formData.pollutionTier)}>
-                    Pollution Category <span className="text-india-blue">*</span>
+                  <FieldLabel onClick={() => showInsight('waterSource', formData.waterSource)} required>
+                    Where will you get water from?
                   </FieldLabel>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {approvalFormSchema.pollutionCategories.map((cat) => (
+                  <FormSelect
+                    value={formData.waterSource}
+                    onChange={(v) => update('waterSource', v)}
+                    options={KYA_SCHEMA.waterSources}
+                  />
+                </div>
+
+                {/* CGWA Groundwater Trigger Alert */}
+                {formData.waterSource.includes('Borewell') && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs space-y-1">
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                      💧 Central Ground Water Authority (CGWA) Permission Required
+                    </span>
+                    <p className="text-foreground/70 text-[11px] leading-relaxed">
+                      Using borewell water for factory work requires permission from the Ground Water Authority (CGWA) and a digital water meter.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* DG Set & Effluent Toggles */}
+                <div className="border border-border rounded-xl divide-y divide-border overflow-hidden">
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel onClick={() => showInsight('hasDieselGenerator', formData.hasDieselGenerator)}>
+                        Will you install a Diesel Generator (DG Set) for power backup?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        Requires Electrical Inspector (CEI) soundproof canopy and earthing test.
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.hasDieselGenerator}
+                      onChange={(v) => update('hasDieselGenerator', v)}
+                    />
+                  </div>
+
+                  <div className="p-3.5 flex items-center justify-between gap-3">
+                    <div>
+                      <FieldLabel>
+                        Will your factory release any dirty / chemical water?
+                      </FieldLabel>
+                      <span className="text-[11px] text-foreground/50 block">
+                        If Yes, an on-site water cleaning plant (ETP) or MIDC drainage connection is needed.
+                      </span>
+                    </div>
+                    <YesNoToggle
+                      value={formData.dischargesEffluent}
+                      onChange={(v) => update('dischargesEffluent', v)}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-border flex justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSection(2)}
+                    className="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/40 transition-colors cursor-pointer"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSection(4)}
+                    className="px-6 py-2.5 rounded-xl bg-india-blue text-white text-xs font-bold hover:bg-india-blue/90 transition-all cursor-pointer shadow-sm"
+                  >
+                    Next: Workers & Pollution Category →
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════
+                MODULE 4: SAFETY, LABOUR & POLLUTION CLASSIFICATION
+               ════════════════════════════════════════════════════════════ */}
+            {currentSection === 4 && (
+              <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base sm:text-lg font-bold text-foreground">
+                      Step 4: Workers, Boilers & Pollution Level
+                    </h2>
+                    <span className="text-[11px] font-mono font-bold text-india-blue bg-india-blue/10 px-2 py-0.5 rounded">
+                      Step 4 of 4
+                    </span>
+                  </div>
+                  <p className="text-xs text-foreground/60 mt-0.5">
+                    Pollution board consent (CTE), Factory license (DISH), and PF/ESIC for workers.
+                  </p>
+                </div>
+
+                {/* MPCB Pollution Classification Cards */}
+                <div>
+                  <FieldLabel onClick={() => showInsight('pollutionTier', formData.pollutionTier)} required>
+                    Pollution Level of Your Industry (MPCB Category)
+                  </FieldLabel>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {KYA_SCHEMA.pollutionCategories.map((cat) => (
                       <div
                         key={cat.code}
                         onClick={() => update('pollutionTier', cat.code)}
-                        className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                          formData.pollutionTier === cat.code ? 'border-india-blue bg-india-blue/5' : 'border-border hover:border-foreground/30'
+                        className={`border rounded-xl p-3 cursor-pointer transition-all ${
+                          formData.pollutionTier === cat.code
+                            ? 'border-india-blue bg-india-blue/5 ring-1 ring-india-blue'
+                            : 'border-border hover:border-foreground/30'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-foreground">{cat.label}</span>
-                          <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded text-xs font-bold ${
-                            formData.pollutionTier === cat.code ? 'bg-india-blue text-white' : 'bg-border text-foreground/60'
-                          }`}>{cat.code}</span>
+                          <span
+                            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                              formData.pollutionTier === cat.code
+                                ? 'bg-india-blue text-white'
+                                : 'bg-muted text-foreground/60'
+                            }`}
+                          >
+                            {cat.code}
+                          </span>
                         </div>
-                        <p className="text-[11px] text-foreground/50 mt-1.5 leading-tight">{cat.desc}</p>
+                        <p className="text-[11px] text-foreground/50 mt-1">{cat.desc}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="border border-border rounded-lg overflow-hidden">
-                  {[
-                    { field: 'hasDieselGenerator', label: 'Installing a backup DG set?', hint: 'Requires Chief Electrical Inspectorate sanction.' },
-                    { field: 'hasBoilerOrFurnace', label: 'Steam boilers or furnace chimneys?', hint: 'Triggers Directorate of Steam Boilers inspection.' },
-                    { field: 'generatesHazardousWaste', label: 'Generates hazardous or chemical waste?', hint: 'Triggers MPCB Form 1 Authorization.' },
-                  ].map(({ field, label, hint }, i) => (
-                    <div key={field} className={`flex items-center justify-between gap-4 p-3.5 text-xs ${i > 0 ? 'border-t border-border' : ''}`}>
-                      <div>
-                        <FieldLabel onClick={() => showInsight(field, formData[field])}>
-                          {label}
-                        </FieldLabel>
-                        <span className="text-[11px] text-foreground/50">{hint}</span>
-                      </div>
-                      <YesNoToggle value={formData[field]} onChange={(v) => update(field, v)} />
-                    </div>
-                  ))}
+                {/* Steam Boilers / High Pressure Vessels */}
+                <div className="p-3.5 rounded-xl border border-border flex items-center justify-between gap-3">
+                  <div>
+                    <FieldLabel onClick={() => showInsight('hasBoilerOrFurnace', formData.hasBoilerOrFurnace)}>
+                      Will you use Steam Boilers, Steam Heaters, or High Pressure Tanks?
+                    </FieldLabel>
+                    <span className="text-[11px] text-foreground/50 block">
+                      Requires inspection from Directorate of Steam Boilers.
+                    </span>
+                  </div>
+                  <YesNoToggle
+                    value={formData.hasBoilerOrFurnace}
+                    onChange={(v) => update('hasBoilerOrFurnace', v)}
+                  />
                 </div>
 
-                {/* Dynamic Interrelated Question for Boilers */}
                 {formData.hasBoilerOrFurnace === 'Yes' && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border border-india-orange/30 bg-india-orange/5 rounded-lg p-3 text-xs space-y-2">
-                    <span className="text-[10px] font-bold text-india-orange uppercase tracking-wider block">Interrelated Safety Compliance: Boilers Act</span>
-                    <p className="text-foreground/70 text-[11px]">
-                      Since your facility involves steam boilers, an on-site hydrostatic pressure test and certified IBR boiler operator are statutory requirements before energization.
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/5 text-xs space-y-1">
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider block">
+                      🔥 Steam Boiler Inspection Required
+                    </span>
+                    <p className="text-foreground/70 text-[11px] leading-relaxed">
+                      Water pressure test and certified boiler operator are needed before starting the boiler.
                     </p>
                   </motion.div>
                 )}
 
-                {/* Dynamic Interrelated Question for High Connected Power */}
-                {Number(formData.connectedPowerKw) > 70 && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="border border-india-blue/30 bg-india-blue/5 rounded-lg p-3 text-xs space-y-1">
-                    <span className="text-[10px] font-bold text-india-blue uppercase tracking-wider block">Interrelated High-Tension (HT) Clearance</span>
-                    <p className="text-foreground/70 text-[11px]">
-                      Connected load ({formData.connectedPowerKw} HP) exceeds 70 HP: MSEDCL dedicated sub-station transformer sanction and CEI earth pit certification are automatically added to your required clearances checklist.
-                    </p>
-                  </motion.div>
-                )}
+                {/* Workforce Headcount */}
+                <div>
+                  <FieldLabel onClick={() => showInsight('proposedWorkers', formData.proposedWorkers)} required>
+                    How many total workers and staff will work in factory?
+                  </FieldLabel>
+                  <FormInput
+                    type="number"
+                    value={formData.proposedWorkers}
+                    onChange={(v) => update('proposedWorkers', v)}
+                    placeholder="35"
+                  />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                        Number(formData.proposedWorkers) >= 10
+                          ? 'bg-india-blue/15 text-india-blue border border-india-blue/30'
+                          : 'bg-muted text-foreground/40'
+                      }`}
+                    >
+                      {Number(formData.proposedWorkers) >= 10 ? '✓ Factory License Needed (10 or more workers)' : 'No Factory License (< 10 workers)'}
+                    </span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                        Number(formData.proposedWorkers) >= 20
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-muted text-foreground/40'
+                      }`}
+                    >
+                      {Number(formData.proposedWorkers) >= 20 ? '✓ PF & ESIC Required (20 or more workers)' : 'PF / ESIC (< 20 workers)'}
+                    </span>
+                  </div>
+                </div>
 
-                <div className="pt-4 border-t border-border flex justify-between gap-2">
-                  <button type="button" onClick={() => setCurrentSection(2)} className="px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border cursor-pointer">← Back</button>
-                  <button type="button" disabled={evaluating} onClick={handleFinishAndSubmit} className="px-6 py-2.5 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer disabled:opacity-50">
-                    {evaluating ? 'Analyzing Regulations...' : 'Generate Approvals Checklist →'}
+                {/* Pre-Submission Comprehensive Synthesis Box */}
+                <div className="p-4 rounded-xl border border-india-blue/30 bg-gradient-to-br from-india-blue/5 via-card to-background space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-india-blue uppercase tracking-wider flex items-center gap-1.5">
+                      <span>🏛️</span> Quick Factory Summary
+                    </span>
+                    <span className="text-[10px] font-mono text-foreground/50">Maharashtra Single Window</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                    <div className="p-2 rounded-lg bg-background/80 border border-border">
+                      <span className="text-foreground/50 block text-[9px] uppercase">Pollution Board</span>
+                      <strong className="text-foreground">MPCB CTE ({formData.pollutionTier})</strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background/80 border border-border">
+                      <span className="text-foreground/50 block text-[9px] uppercase">Factory License</span>
+                      <strong className="text-foreground">
+                        {Number(formData.proposedWorkers) >= 10 ? 'DISH Form 1 License' : 'Exempt (< 10)'}
+                      </strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background/80 border border-border">
+                      <span className="text-foreground/50 block text-[9px] uppercase">Power Connection</span>
+                      <strong className="text-foreground">
+                        {Number(formData.connectedPowerKw) > 70 ? 'MSEDCL HT Substation' : 'MSEDCL LT Connection'}
+                      </strong>
+                    </div>
+                    <div className="p-2 rounded-lg bg-background/80 border border-border">
+                      <span className="text-foreground/50 block text-[9px] uppercase">Food Safety</span>
+                      <strong className="text-foreground">
+                        {formData.isFoodProduct === 'Yes' ? 'FSSAI License' : 'Not Required'}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Buttons */}
+                <div className="pt-3 border-t border-border flex justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentSection(3)}
+                    className="px-4 py-2 rounded-xl border border-border text-xs font-semibold hover:bg-muted/40 transition-colors cursor-pointer"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    disabled={evaluating}
+                    onClick={handleFinishAndSubmit}
+                    className="px-6 py-2.5 rounded-xl bg-india-blue text-white text-xs font-bold hover:bg-india-blue/90 transition-all cursor-pointer shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {evaluating ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Finding All Your Approvals...
+                      </>
+                    ) : (
+                      'Show My Required Approvals & Fees →'
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -886,11 +1702,10 @@ export const AskForApprovalPage = () => {
           </div>
         </div>
 
-        {/* ── AI ADVISOR ── */}
+        {/* ── AI ADVISOR COMPLIANCE PANEL (RIGHT COLUMN) ── */}
         <div className="lg:col-span-1">
           <AIAdvisorPanel insight={activeInsight} history={insightHistory} />
         </div>
-
       </div>
     </div>
   );

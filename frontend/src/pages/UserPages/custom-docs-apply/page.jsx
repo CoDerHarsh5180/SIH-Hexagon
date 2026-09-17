@@ -101,8 +101,22 @@ export const CustomDocsApplyPage = () => {
     const fetchCatalog = async () => {
       try {
         const res = await approvalsService.getApprovalsCatalog();
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          setCatalog(res.data);
+        const data = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        if (data.length > 0) {
+          setCatalog(data.map((d) => ({
+            ...d,
+            id: d.approvalId || d._id || d.id,
+            title: d.title || d.name,
+            authorityName: d.authorityName || d.authority || d.department || 'Competent Authority',
+            authorityCategory: d.authorityCategory || d.category || 'Statutory Clearance',
+            type: d.type || d.category || 'Clearance',
+            feeEstimate: d.feeEstimate || (d.statutoryFee ? `₹${d.statutoryFee.toLocaleString()}` : '₹5,000'),
+            processingTimeDays: d.processingTimeDays || d.slaTimelineDays || 15,
+            supportedDistricts: d.supportedDistricts || ['All Districts', 'Pune', 'Mumbai City', 'Mumbai Suburban', 'Thane', 'Nagpur', 'Nashik', 'Aurangabad'],
+            prerequisites: d.prerequisites || (d.documentsRequired ? d.documentsRequired.map((x) => x.name || x) : ['Land Record / 7-12 Extract', 'Identity Proof']),
+            importance: d.importance || d.description || 'Mandatory statutory requirement under state regulations.',
+            description: d.description || 'Statutory clearance issued by state departmental authorities.',
+          })));
         }
       } catch (err) {
         console.warn('Using default custom approvals catalog:', err.message);
@@ -139,11 +153,16 @@ export const CustomDocsApplyPage = () => {
   };
 
   const filteredDocs = catalog.filter((doc) => {
+    const docTitle = (doc.title || doc.name || '').toLowerCase();
+    const authName = (doc.authorityName || doc.authority || doc.department || '').toLowerCase();
     const matchesSearch =
-      doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.authorityName.toLowerCase().includes(searchQuery.toLowerCase());
+      docTitle.includes(searchQuery.toLowerCase()) ||
+      authName.includes(searchQuery.toLowerCase());
     const matchesDistrict =
-      selectedDistrict === 'All Districts' || doc.supportedDistricts?.includes(selectedDistrict);
+      selectedDistrict === 'All Districts' ||
+      !doc.supportedDistricts ||
+      doc.supportedDistricts.includes('All Districts') ||
+      doc.supportedDistricts.includes(selectedDistrict);
     const matchesType = selectedDocType === 'All Types' || doc.type === selectedDocType;
     const matchesAuth = selectedAuth === 'All Authorities' || doc.authorityCategory === selectedAuth;
     return matchesSearch && matchesDistrict && matchesType && matchesAuth;
@@ -165,8 +184,8 @@ export const CustomDocsApplyPage = () => {
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-5 sm:space-y-6">
       <PageHeader
-        title="Custom Document Applications"
-        subtitle="Search and request any departmental clearance across Maharashtra districts."
+        title="Apply for Specific Clearance / NOC"
+        subtitle="Directly search and apply for individual government permits, NOCs, and factory licenses in Maharashtra."
       />
 
       {/* Filters */}
@@ -179,13 +198,13 @@ export const CustomDocsApplyPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <SelectFilter label="District (Maharashtra)" options={maharashtraDistricts} value={selectedDistrict} onChange={setSelectedDistrict} />
           <SelectFilter label="Document Type" options={docTypes} value={selectedDocType} onChange={setSelectedDocType} />
-          <SelectFilter label="Authority Classification" options={authorityTypes} value={selectedAuth} onChange={setSelectedAuth} />
+          <SelectFilter label="Government Department" options={authorityTypes} value={selectedAuth} onChange={setSelectedAuth} />
         </div>
       </div>
 
       {/* Results bar */}
       <div className="flex items-center justify-between text-xs text-foreground/50 pt-1">
-        <span>Available Clearances: <strong className="text-foreground">{filteredDocs.length}</strong></span>
+        <span>Available Approvals: <strong className="text-foreground">{filteredDocs.length}</strong></span>
         {hasActiveFilters && (
           <button onClick={resetFilters} className="text-india-blue hover:underline cursor-pointer font-semibold">
             Reset Filters
@@ -224,11 +243,11 @@ export const CustomDocsApplyPage = () => {
 
               <div className="grid grid-cols-2 gap-2 border-t border-b border-border py-2.5 text-[11px] font-mono">
                 <div>
-                  <span className="text-foreground/40 block text-[10px] uppercase tracking-wider">Processing</span>
+                  <span className="text-foreground/40 block text-[10px] uppercase tracking-wider">Time</span>
                   <span className="text-foreground font-bold">~{doc.processingTimeDays} Days</span>
                 </div>
                 <div>
-                  <span className="text-foreground/40 block text-[10px] uppercase tracking-wider">Dept Fee</span>
+                  <span className="text-foreground/40 block text-[10px] uppercase tracking-wider">Govt Fee</span>
                   <span className="text-foreground font-bold">{doc.feeEstimate}</span>
                 </div>
               </div>
@@ -240,7 +259,7 @@ export const CustomDocsApplyPage = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:border-india-blue hover:text-india-blue text-xs font-semibold text-foreground/60 transition-colors cursor-pointer"
               >
                 <Info className="w-3.5 h-3.5" />
-                Info
+                Details
               </button>
               <button
                 onClick={() => setApplyingDoc(doc)}
@@ -258,7 +277,7 @@ export const CustomDocsApplyPage = () => {
         isOpen={!!activeInfoDoc}
         onClose={() => setActiveInfoDoc(null)}
         maxWidth="sm:max-w-lg"
-        badge="Information & Purpose"
+        badge="Approval Details"
         title={activeInfoDoc?.title}
         footer={
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
@@ -278,15 +297,15 @@ export const CustomDocsApplyPage = () => {
           <div className="space-y-4 text-xs sm:text-sm text-foreground">
             <div>
               <h4 className="text-[10px] font-bold text-foreground/50 uppercase tracking-wider mb-1">
-                Regulatory Need & Importance
+                Why is this approval required?
               </h4>
               <p className="text-foreground/90 leading-relaxed">{activeInfoDoc.importance}</p>
             </div>
             <div className="border border-border rounded-lg p-3 space-y-2 text-xs font-mono">
               {[
-                { label: 'Authority', value: activeInfoDoc.authorityName },
-                { label: 'SLA', value: `${activeInfoDoc.processingTimeDays} working days` },
-                { label: 'Fee', value: activeInfoDoc.feeEstimate },
+                { label: 'Department', value: activeInfoDoc.authorityName },
+                { label: 'Expected Timeline', value: `${activeInfoDoc.processingTimeDays} working days` },
+                { label: 'Government Fee', value: activeInfoDoc.feeEstimate },
               ].map(({ label, value }) => (
                 <div key={label} className="flex flex-col sm:flex-row sm:justify-between gap-0.5 border-b border-border/40 last:border-0 pb-1.5 last:pb-0">
                   <span className="text-foreground/50">{label}:</span>
@@ -296,7 +315,7 @@ export const CustomDocsApplyPage = () => {
             </div>
             <div>
               <h4 className="text-[10px] font-bold text-foreground/50 uppercase tracking-wider mb-2">
-                Required Prerequisites
+                Documents You Will Need
               </h4>
               <ul className="space-y-1.5 pl-1">
                 {activeInfoDoc.prerequisites.map((item, i) => (
@@ -316,7 +335,7 @@ export const CustomDocsApplyPage = () => {
         isOpen={!!applyingDoc}
         onClose={() => setApplyingDoc(null)}
         maxWidth="sm:max-w-md"
-        title="Initiate Application"
+        title="Start Application"
         footer={
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2">
             <button onClick={() => setApplyingDoc(null)} className="w-full sm:w-auto px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border transition-colors cursor-pointer">
@@ -333,7 +352,7 @@ export const CustomDocsApplyPage = () => {
                   Submitting...
                 </>
               ) : (
-                'Confirm & Upload Docs'
+                'Confirm & Continue'
               )}
             </button>
           </div>
@@ -342,14 +361,14 @@ export const CustomDocsApplyPage = () => {
         {applyingDoc && (
           <>
             <p className="text-xs text-foreground/70 mt-1">
-              You are beginning a custom application for{' '}
+              You are starting an application for{' '}
               <span className="font-semibold text-foreground">{applyingDoc.title}</span>.
             </p>
             <div className="my-4 p-3 rounded-lg border border-india-blue/20 bg-india-blue/5 text-xs text-foreground space-y-1">
-              <p className="font-bold text-india-blue">Automated Authority Dispatch</p>
-              <p className="text-foreground/60">Targeted Body: {applyingDoc.authorityName}</p>
+              <p className="font-bold text-india-blue">Direct Department Submission</p>
+              <p className="text-foreground/60">Department: {applyingDoc.authorityName}</p>
               <p className="text-foreground/60">
-                Jurisdiction:{' '}
+                District:{' '}
                 {selectedDistrict === 'All Districts' ? 'Maharashtra State Default' : selectedDistrict}
               </p>
             </div>

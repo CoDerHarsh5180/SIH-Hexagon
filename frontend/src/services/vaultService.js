@@ -18,6 +18,16 @@ export const vaultService = {
     return await axiosInstance.post(API_PATHS.VAULT.UPLOAD_DOCUMENT, formData);
   },
 
+  scanAndUploadDocument: async (formData) => {
+    return await axiosInstance.post(API_PATHS.VAULT.SCAN_AND_UPLOAD_DOC, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  confirmDocument: async (payload) => {
+    return await axiosInstance.post(API_PATHS.VAULT.CONFIRM_DOCUMENT, payload);
+  },
+
   renewDocument: async (id, renewalData) => {
     return await axiosInstance.post(API_PATHS.VAULT.RENEW_DOCUMENT(id), renewalData);
   },
@@ -26,6 +36,10 @@ export const vaultService = {
     return await axiosInstance.get(API_PATHS.VAULT.DOWNLOAD_CERTIFICATE(id), {
       responseType: 'blob',
     });
+  },
+
+  getDocumentTypes: async () => {
+    return await axiosInstance.get(API_PATHS.VAULT.GET_DOCUMENT_TYPES);
   },
 };
 

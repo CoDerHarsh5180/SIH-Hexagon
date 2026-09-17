@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Modal } from '../../../components/ui';
 import { Check, ArrowRight, FileText, Database } from 'lucide-react';
-import { userSystemVault } from './mockApprovalsData';
 
 export const ApplyPaymentModal = ({
   isOpen,
   onClose,
   totalAmount,
   uniqueRequiredDocs,
-  globalUploadedDocs,
+  globalUploadedDocs = {},
   onRequiredDocUpload,
   onPaymentSuccess
 }) => {
@@ -38,30 +37,26 @@ export const ApplyPaymentModal = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      maxWidth={modalStep === 1 ? 'sm:max-w-lg' : 'sm:max-w-md'}
-      badge={modalStep === 1 ? 'Step 1 of 2' : 'Step 2 of 2'}
-      title={modalStep === 1 ? 'Required Documents Upload' : 'Government Fee Payment'}
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Apply for Approvals & Pay Government Fees">
       {paymentSuccess ? (
-        <div className="py-10 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-india-blue/10 text-india-blue flex items-center justify-center mx-auto">
+        <div className="py-8 text-center space-y-3">
+          <div className="w-12 h-12 bg-india-blue/10 text-india-blue rounded-full flex items-center justify-center mx-auto mb-2">
             <Check className="w-6 h-6" />
           </div>
-          <h4 className="text-base font-bold text-foreground">Payment Received & Files Verified</h4>
-          <p className="text-xs text-foreground/50">Forwarding to officer desk...</p>
+          <h3 className="text-base font-bold text-foreground">Submitting Your Applications...</h3>
+          <p className="text-xs text-foreground/60">
+            Payment reference saved. Forwarding your applications to the respective government departments...
+          </p>
         </div>
       ) : modalStep === 1 ? (
         <div className="space-y-4 py-2">
           <p className="text-xs text-foreground/70">
-            The system automatically pulled documents you already have in your vault. Please upload any missing documents below.
+            We have already attached documents found in your Document Locker. If any required document is missing, please upload it below.
           </p>
           <div className="space-y-2.5 max-h-[50vh] overflow-y-auto pr-2">
             {uniqueRequiredDocs.map((reqDoc, idx) => {
               const isUploaded = !!globalUploadedDocs[reqDoc];
-              const isFromVault = !!userSystemVault[reqDoc];
+              const isFromVault = isUploaded;
 
               return (
                 <div
@@ -83,7 +78,7 @@ export const ApplyPaymentModal = ({
                         </p>
                         {isFromVault && (
                           <span className="hidden sm:inline-block text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-india-blue text-white flex items-center gap-1">
-                            <Database className="w-2.5 h-2.5" /> Vault
+                            <Database className="w-2.5 h-2.5" /> In Locker
                           </span>
                         )}
                       </div>
@@ -99,7 +94,7 @@ export const ApplyPaymentModal = ({
                     <label className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer shrink-0 border ${
                       isUploaded ? 'border-india-blue/30 text-india-blue hover:bg-india-blue/10' : 'border-border text-foreground hover:bg-border/60'
                     }`}>
-                      <span>{isUploaded ? 'Re-upload' : 'Upload'}</span>
+                      <span>{isUploaded ? 'Change File' : 'Upload'}</span>
                       <input
                         type="file"
                         accept="application/pdf,image/*"
@@ -128,14 +123,14 @@ export const ApplyPaymentModal = ({
               onClick={() => setModalStep(2)}
               className="px-5 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer flex items-center gap-1.5"
             >
-              Proceed to Payment <ArrowRight className="w-3.5 h-3.5" />
+              Proceed to Fee Payment <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handlePaymentSubmit} className="space-y-4 text-xs">
           <div className="p-3 rounded-lg border border-border flex justify-between items-center bg-border/5">
-            <span className="text-foreground/60">Total Amount:</span>
+            <span className="text-foreground/60">Total Government Fees:</span>
             <span className="font-mono font-bold text-lg text-india-blue">
               ₹{totalAmount.toLocaleString('en-IN')}
             </span>
@@ -147,18 +142,18 @@ export const ApplyPaymentModal = ({
                 <path d="M2 2h8v8H2V2zm2 2v4h4V4H4zm10-2h8v8h-8V2zm2 2v4h4V4h-4zM2 14h8v8H2v-8zm2 2v4h4v-4H4zm14 0h4v4h-4v-4zm-4 4h2v2h-2v-2zm2-4h2v2h-2v-2zm-2-2h4v2h-4v-2zm4 6h2v2h-2v-2zm-6 0h2v2h-2v-2z" />
               </svg>
             </div>
-            <span className="text-[11px] font-mono text-foreground/40 mt-2">GPay / PhonePe / Paytm / BHIM</span>
-            <span className="text-[10px] text-foreground/30 mt-0.5">GRAS Maharashtra Treasury</span>
+            <span className="text-[11px] font-mono text-foreground/50 mt-2">Scan with GPay / PhonePe / Paytm / BHIM UPI</span>
+            <span className="text-[10px] text-foreground/40 mt-0.5">Official Government of Maharashtra Treasury (GRAS)</span>
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-foreground/60 mb-1.5">
-              UPI / Transaction Reference (UTR)
+              Enter UPI UTR Number / 12-Digit Reference No.
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. 423871928312"
+              placeholder="e.g. 423871928312 (From GPay / PhonePe / Bank SMS)"
               value={utrNumber}
               onChange={(e) => setUtrNumber(e.target.value)}
               className="w-full bg-background border border-border rounded-lg p-2.5 text-foreground font-mono text-xs focus:outline-none focus:border-india-blue transition-colors"
@@ -171,13 +166,13 @@ export const ApplyPaymentModal = ({
               onClick={() => setModalStep(1)}
               className="w-full sm:w-auto px-4 py-2 rounded-lg border border-border text-xs font-medium hover:bg-border cursor-pointer text-center"
             >
-              &larr; Back to Docs
+              &larr; Back to Documents
             </button>
             <button
               type="submit"
               className="w-full sm:w-auto px-5 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer text-center"
             >
-              Verify Payment & Submit
+              Submit Applications with Payment Details
             </button>
           </div>
         </form>

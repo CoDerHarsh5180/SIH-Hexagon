@@ -20,11 +20,22 @@ export const AuthProvider = ({ children }) => {
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
+        // If it's a stale fallback mock token from an old session, clear it to allow real auth
+        if (storedToken.startsWith('mock-token-') && !storedToken.includes('dev')) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         try {
           const res = await authService.getProfile();
-          if (res?.data) {
-            setUser(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data));
+          const liveUser = res?.data?.user || res?.data || res?.user;
+          if (liveUser) {
+            setUser(liveUser);
+            localStorage.setItem('user', JSON.stringify(liveUser));
           }
         } catch (err) {
           console.warn('[AuthContext] Could not fetch fresh profile on mount, using cached user if available:', err.message);
@@ -53,19 +64,8 @@ export const AuthProvider = ({ children }) => {
       }
       return res;
     } catch (err) {
-      console.warn('[AuthContext] Backend unavailable. Using offline preview session:', err.message);
-      // Generate offline preview credentials so user/developer can preview and test protected pages without a backend
-      const fallbackToken = `mock-token-${Date.now()}`;
-      const fallbackUser = {
-        name: credentials.email?.split('@')[0] || 'Demo Applicant',
-        email: credentials.email || 'user@saral.gov.in',
-        role: credentials.portalType || (credentials.email?.toLowerCase().includes('local') ? 'LOCAL_AUTH' : credentials.email?.toLowerCase().includes('admin') || credentials.email?.toLowerCase().includes('main') ? 'MAIN_AUTH' : 'USER'),
-      };
-      setToken(fallbackToken);
-      setUser(fallbackUser);
-      localStorage.setItem('token', fallbackToken);
-      localStorage.setItem('user', JSON.stringify(fallbackUser));
-      return { success: true, token: fallbackToken, user: fallbackUser, isOfflinePreview: true };
+      console.error('[AuthContext] Login error:', err.message);
+      throw err;
     }
   };
 
@@ -81,8 +81,11 @@ export const AuthProvider = ({ children }) => {
         ? 'officer.pune@collectorate.gov.in' 
         : targetRole === 'MAIN_AUTH' 
         ? 'director.industries@maharashtra.gov.in' 
-        : 'director@acme-enterprises.com',
+        : 'applicant@enterprise.gov.in',
       role: targetRole,
+      profileStatus: targetRole === 'USER' ? 'INCOMPLETE' : 'COMPLETED',
+      profileCompletion: targetRole === 'USER' ? 20 : 100,
+      verifiedDocuments: [],
     };
     setToken(devToken);
     setUser(devUser);
@@ -104,18 +107,8 @@ export const AuthProvider = ({ children }) => {
       }
       return res;
     } catch (err) {
-      console.warn('[AuthContext] Backend unavailable on register. Creating offline preview session:', err.message);
-      const fallbackToken = `mock-token-${Date.now()}`;
-      const fallbackUser = {
-        name: payload.enterpriseName || payload.name || 'New Enterprise',
-        email: payload.email || 'applicant@saral.gov.in',
-        role: 'USER',
-      };
-      setToken(fallbackToken);
-      setUser(fallbackUser);
-      localStorage.setItem('token', fallbackToken);
-      localStorage.setItem('user', JSON.stringify(fallbackUser));
-      return { success: true, token: fallbackToken, user: fallbackUser, isOfflinePreview: true };
+      console.error('[AuthContext] Registration error:', err.message);
+      throw err;
     }
   };
 

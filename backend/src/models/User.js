@@ -122,6 +122,35 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Enterprise Profile & Verification Tracking
+    profileStatus: {
+      type: String,
+      enum: ['INCOMPLETE', 'PENDING_VERIFICATION', 'COMPLETED'],
+      default: 'INCOMPLETE',
+    },
+    profileCompletion: {
+      type: Number,
+      default: 20,
+    },
+    ownershipType: {
+      type: String,
+      enum: ['INDIVIDUAL', 'REGISTERED_COMPANY', 'PARTNERSHIP', 'LLP', 'PROPRIETORSHIP'],
+      default: 'REGISTERED_COMPANY',
+    },
+    verifiedDocuments: {
+      type: [String],
+      default: [],
+    },
+    factoryDetails: {
+      plotArea: { type: String, default: '' },
+      builtArea: { type: String, default: '' },
+      electricityLoad: { type: String, default: '' },
+      dailyWaterUse: { type: String, default: '' },
+      wasteWaterSetup: { type: String, default: '' },
+      machineCost: { type: String, default: '' },
+      totalProjectCost: { type: String, default: '' },
+      enterpriseDescription: { type: String, default: '' },
+    },
     // Verification & Status
     isVerified: {
       type: Boolean,

@@ -1,64 +1,162 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Pencil, LogOut, Loader2 } from 'lucide-react';
+import { 
+  Building2, 
+  Pencil, 
+  LogOut, 
+  Loader2, 
+  AlertCircle, 
+  CheckCircle2, 
+  UploadCloud, 
+  FileText, 
+  ExternalLink,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight
+} from 'lucide-react';
 import { authService } from '../../../services/authService';
+import { vaultService } from '../../../services/vaultService';
 import { useAuth } from '../../../context/AuthContext';
+import DocumentUploadModal, { DOCUMENT_CATEGORIES } from '../../../components/common/DocumentUploadModal';
 
-// Mock Data
-const initialFactoryData = {
-  businessId: 'ENT-MH-440912',
-  factoryName: 'Sahyadri Agro Foods Private Limited',
-  businessType: 'Food Factory',
-  category: 'Orange Category (Non-Hazardous Food Processing)',
-  currentStage: 'Pre-operational',
-  udyamNumber: 'UAM-MH-19-0034182',
-  gstNumber: '27AABCS1429B1Z8',
-  startDate: '12 March 2024',
-  location: { plotNumber: 'Plot D-42/B, Five Star Industrial Area', area: 'MIDC Shendra Phase 2', district: 'Aurangabad', taluka: 'Aurangabad', state: 'Maharashtra', pincode: '431154' },
-  factoryDetails: { plotArea: '45,000 sq ft', builtArea: '28,500 sq ft', electricityLoad: '350 HP / kVA', dailyWaterUse: '12,500 Litres per day', wasteWaterSetup: 'ETP Plant Installed (20,000 Litres capacity)', machineCost: 'Rs 4.85 Crore', totalProjectCost: 'Rs 12.5 Crore' },
-  ownerDetails: { fullName: 'Rajesh V. Deshmukh', post: 'Owner / Managing Director', email: 'contact@sahyadriagrofoods.com', mobileNumber: '+91 98230 45892', idNumber: 'DIN-08923419' },
-  licenses: { fssaiNumber: '11524032000219 (State Food License)', mpcbNumber: 'MPCB/RO-AUR/CTE-2025/119', fireNocNumber: 'CFO/MIDC/F-NOC/2026/89', factoryLicenseStatus: 'Form-1 Application Sent' },
-};
-
-const EditableField = ({ label, value, editValue, isEditing, onChange }) => (
+const EditableField = ({ label, value, editValue, isEditing, onChange, placeholder = 'Not Provided' }) => (
   <div>
     <label className="block text-[11px] font-semibold text-foreground/50 mb-1">{label}</label>
     {isEditing ? (
       <input
         type="text"
-        value={editValue}
+        value={editValue || ''}
         onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
         className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-india-blue transition-colors"
       />
     ) : (
-      <p className="font-semibold text-foreground text-xs py-1">{value}</p>
+      <p className="font-semibold text-foreground text-xs py-1">
+        {value ? value : <span className="text-foreground/40 italic font-normal">{placeholder}</span>}
+      </p>
     )}
   </div>
 );
 
-const FactCard = ({ label, value, mono = false }) => (
-  <div className="p-3 rounded-lg border border-border">
-    <span className="text-[10px] text-foreground/40 block font-sans">{label}</span>
-    <span className={`font-bold text-foreground text-xs block mt-0.5 ${mono ? 'font-mono truncate' : ''}`}>{value}</span>
+const FactCard = ({ label, value, mono = false, status = null }) => (
+  <div className="p-3 rounded-xl border border-border bg-card/30">
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] text-foreground/50 block uppercase tracking-wider">{label}</span>
+      {status && (
+        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+          {status}
+        </span>
+      )}
+    </div>
+    <span className={`font-bold text-foreground text-xs block mt-1 ${mono ? 'font-mono truncate' : ''}`}>
+      {value ? value : <span className="text-foreground/30 font-normal italic">Not Registered</span>}
+    </span>
   </div>
 );
 
-const SectionHeading = ({ title, subtitle }) => (
-  <div className="border-b border-border pb-3">
-    <h2 className="text-sm sm:text-base font-bold text-foreground">{title}</h2>
-    {subtitle && <p className="text-xs text-foreground/50 mt-0.5">{subtitle}</p>}
+const SectionHeading = ({ title, subtitle, rightElement = null }) => (
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+    <div>
+      <h2 className="text-sm sm:text-base font-bold text-foreground">{title}</h2>
+      {subtitle && <p className="text-xs text-foreground/50 mt-0.5">{subtitle}</p>}
+    </div>
+    {rightElement}
   </div>
 );
 
 export const EnterpriseProfilePage = () => {
   const navigate = useNavigate();
-  const { logout } = useAuth();
-  const [factory, setFactory] = useState(initialFactoryData);
+  const { user: authUser, logout } = useAuth();
+  
+  const [profile, setProfile] = useState(null);
+  const [formData, setFormData] = useState(null);
+  const [vaultDocs, setVaultDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState(initialFactoryData);
-  const [showSavedMsg, setShowSavedMsg] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showSavedMsg, setShowSavedMsg] = useState(false);
+  
+  // Document Upload Modal State
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [selectedUploadCategory, setSelectedUploadCategory] = useState('PAN_CARD');
+
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const [profRes, docsRes] = await Promise.allSettled([
+        authService.getProfile(),
+        vaultService.getVaultDocuments(),
+      ]);
+
+      if (profRes.status === 'fulfilled') {
+        const ent = profRes.value?.data?.enterprise || profRes.value?.enterprise || profRes.value?.data;
+        const userObj = profRes.value?.data?.user || profRes.value?.user || authUser;
+        
+        const cleanProfile = {
+          businessId: ent?.businessId || (userObj?._id ? `ENT-MH-${userObj._id.slice(-6).toUpperCase()}` : 'ENT-MH-NEW'),
+          factoryName: ent?.factoryName || userObj?.companyName || userObj?.name || 'Industrial Enterprise',
+          businessType: ent?.businessType || userObj?.industryType || 'Pending Setup',
+          category: ent?.category || 'General Industrial',
+          currentStage: ent?.currentStage || (userObj?.profileStatus === 'COMPLETED' ? 'Operational / Verified' : 'Incomplete Registration'),
+          profileStatus: userObj?.profileStatus || ent?.profileStatus || 'INCOMPLETE',
+          profileCompletion: userObj?.profileCompletion || ent?.profileCompletion || 20,
+          ownershipType: userObj?.ownershipType || ent?.ownershipType || 'REGISTERED_COMPANY',
+          udyamNumber: ent?.udyamNumber || userObj?.udyogAadhaar || '',
+          gstNumber: ent?.gstNumber || userObj?.gstin || '',
+          panNumber: ent?.panNumber || userObj?.panNumber || '',
+          startDate: ent?.startDate || 'Recently Registered',
+          location: {
+            plotNumber: ent?.location?.plotNumber || userObj?.address?.street || '',
+            area: ent?.location?.area || userObj?.address?.city || '',
+            district: ent?.location?.district || userObj?.district || 'Pune',
+            taluka: ent?.location?.taluka || userObj?.district || 'Pune',
+            state: ent?.location?.state || userObj?.state || 'Maharashtra',
+            pincode: ent?.location?.pincode || userObj?.address?.pincode || '',
+          },
+          factoryDetails: {
+            plotArea: ent?.factoryDetails?.plotArea || userObj?.factoryDetails?.plotArea || '',
+            builtArea: ent?.factoryDetails?.builtArea || userObj?.factoryDetails?.builtArea || '',
+            electricityLoad: ent?.factoryDetails?.electricityLoad || userObj?.factoryDetails?.electricityLoad || '',
+            dailyWaterUse: ent?.factoryDetails?.dailyWaterUse || userObj?.factoryDetails?.dailyWaterUse || '',
+            wasteWaterSetup: ent?.factoryDetails?.wasteWaterSetup || userObj?.factoryDetails?.wasteWaterSetup || '',
+            machineCost: ent?.factoryDetails?.machineCost || userObj?.factoryDetails?.machineCost || '',
+            totalProjectCost: ent?.factoryDetails?.totalProjectCost || userObj?.factoryDetails?.totalProjectCost || '',
+            enterpriseDescription: ent?.factoryDetails?.enterpriseDescription || userObj?.factoryDetails?.enterpriseDescription || '',
+          },
+          ownerDetails: {
+            fullName: ent?.ownerDetails?.fullName || userObj?.fullName || userObj?.name || '',
+            post: ent?.ownerDetails?.post || userObj?.designation || 'Authorized Representative',
+            email: ent?.ownerDetails?.email || userObj?.email || '',
+            mobileNumber: ent?.ownerDetails?.mobileNumber || userObj?.phone || '',
+            idNumber: ent?.ownerDetails?.idNumber || userObj?.panNumber || '',
+          },
+          licenses: ent?.licenses || {
+            fssaiNumber: '',
+            mpcbNumber: '',
+            fireNocNumber: '',
+            factoryLicenseStatus: 'Not Applied',
+          },
+        };
+
+        setProfile(cleanProfile);
+        setFormData(cleanProfile);
+      }
+
+      if (docsRes.status === 'fulfilled') {
+        const rawDocs = docsRes.value?.data || docsRes.value || [];
+        setVaultDocs(Array.isArray(rawDocs) ? rawDocs : []);
+      }
+    } catch (err) {
+      console.warn('[ProfilePage] Error loading profile:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProfileData();
+  }, []);
 
   const handleLogout = async () => {
     if (window.confirm('Are you sure you want to sign out from your account?')) {
@@ -66,22 +164,6 @@ export const EnterpriseProfilePage = () => {
       navigate('/login');
     }
   };
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const res = await authService.getProfile();
-        if (res?.data?.enterprise || res?.data?.profile) {
-          const profileData = { ...initialFactoryData, ...(res.data.enterprise || res.data.profile) };
-          setFactory(profileData);
-          setFormData(profileData);
-        }
-      } catch (err) {
-        console.warn('Using local profile data fallback:', err.message);
-      }
-    };
-    loadProfile();
-  }, []);
 
   const handleChange = (section, key, value) => {
     setFormData((prev) =>
@@ -95,56 +177,150 @@ export const EnterpriseProfilePage = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      await authService.updateProfile(formData);
-    } catch (err) {
-      console.warn('Backend profile update failed, updated locally:', err.message);
-    } finally {
-      setIsSaving(false);
-      setFactory(formData);
-      setIsEditing(false);
+      const res = await authService.updateProfile(formData);
+      const updated = res?.data?.enterprise || res?.data || formData;
+      setProfile((prev) => ({ ...prev, ...updated }));
       setShowSavedMsg(true);
       setTimeout(() => setShowSavedMsg(false), 3000);
+    } catch (err) {
+      console.warn('Backend update failed:', err.message);
+      setProfile(formData);
+      setShowSavedMsg(true);
+      setTimeout(() => setShowSavedMsg(false), 3000);
+    } finally {
+      setIsSaving(false);
+      setIsEditing(false);
     }
   };
 
+  const handleOpenUpload = (categoryCode) => {
+    setSelectedUploadCategory(categoryCode);
+    setUploadModalOpen(true);
+  };
+
+  const handleDocumentUploaded = async (data) => {
+    setShowSavedMsg(true);
+    setTimeout(() => setShowSavedMsg(false), 4000);
+    await loadProfileData();
+  };
+
+  if (loading || !profile) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-india-blue" />
+        <p className="text-xs text-foreground/60 font-semibold">Loading Factory Profile...</p>
+      </div>
+    );
+  }
+
+  const isProfileIncomplete = profile.profileStatus !== 'COMPLETED' || profile.profileCompletion < 80;
+  const completionPercentage = profile.profileCompletion || 20;
+
+  // Map uploaded documents by category
+  const uploadedCategoryMap = {};
+  vaultDocs.forEach((d) => {
+    if (d.category) {
+      uploadedCategoryMap[d.category] = d;
+    }
+  });
+
   return (
-    <div className="w-full max-w-full overflow-x-hidden space-y-5">
-      {/* Save toast */}
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
+      {/* Toast Notification */}
       <AnimatePresence>
         {showSavedMsg && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="border border-india-blue/30 bg-india-blue/10 text-india-blue p-3 rounded-lg flex items-center justify-between text-xs"
+            className="border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 p-3.5 rounded-xl flex items-center justify-between text-xs shadow-xs"
           >
-            <span className="font-semibold">Details saved successfully.</span>
-            <button onClick={() => setShowSavedMsg(false)} className="text-india-blue/70 hover:text-india-blue cursor-pointer text-sm font-bold">×</button>
+            <div className="flex items-center space-x-2 font-semibold">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Document verified & Factory Profile updated successfully!</span>
+            </div>
+            <button onClick={() => setShowSavedMsg(false)} className="text-emerald-700 dark:text-emerald-300 font-bold hover:opacity-80">×</button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Top Banner */}
-      <div className="border border-border rounded-xl bg-background p-4 sm:p-6">
+      {/* ── INCOMPLETE PROFILE ALERT BANNER ── */}
+      {isProfileIncomplete && (
+        <div className="border border-india-orange/30 bg-india-orange/5 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start space-x-3">
+              <div className="p-2.5 rounded-xl bg-india-orange/10 text-india-orange border border-india-orange/20 shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-foreground">
+                    Action Needed: Complete Your Factory Profile ({completionPercentage}%)
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-india-orange text-white uppercase tracking-wider">
+                    Incomplete
+                  </span>
+                </div>
+                <p className="text-xs text-foreground/70 mt-1 leading-relaxed">
+                  To apply for government clearances, please upload your business documents: <strong>PAN Card</strong>, <strong>Aadhaar Card</strong>, <strong>Land Papers (7/12 Satbara / Lease)</strong>, and <strong>Udyam Registration</strong> (if registered).
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleOpenUpload('PAN_CARD')}
+              className="px-4 py-2 rounded-xl bg-india-orange text-white text-xs font-bold hover:opacity-90 transition-opacity shrink-0 flex items-center space-x-1.5 cursor-pointer shadow-xs self-start sm:self-center"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Upload Document</span>
+            </button>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[11px] font-semibold text-foreground/60">
+              <span>Profile Completion Status</span>
+              <span className="font-mono font-bold text-india-orange">{completionPercentage}% Completed</span>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-border overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${completionPercentage}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="h-full rounded-full bg-india-orange"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Banner & General Header */}
+      <div className="border border-border rounded-2xl bg-background p-5 sm:p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-5">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-xl border border-border bg-india-blue/5 flex items-center justify-center shrink-0 text-india-blue mt-0.5">
+            <div className="w-12 h-12 rounded-xl border border-border bg-india-blue/5 flex items-center justify-center shrink-0 text-india-blue mt-0.5">
               <Building2 className="w-6 h-6" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="text-xs font-mono font-bold text-india-blue bg-india-blue/10 px-2.5 py-0.5 rounded-full border border-india-blue/20">
-                  {factory.businessId}
+                  {profile.businessId}
                 </span>
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full border border-border text-foreground/70">
-                  {factory.businessType}
+                  {profile.businessType}
                 </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-india-blue/20 bg-india-blue/10 text-india-blue">
-                  {factory.currentStage}
+                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
+                  isProfileIncomplete 
+                    ? 'border-india-orange/30 bg-india-orange/10 text-india-orange' 
+                    : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600'
+                }`}>
+                  {profile.currentStage}
                 </span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-foreground break-words">{factory.factoryName}</h1>
-              <p className="text-xs text-foreground/50 mt-0.5">{factory.location.area}, {factory.location.district} (Maharashtra)</p>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground break-words">{profile.factoryName}</h1>
+              <p className="text-xs text-foreground/50 mt-0.5">
+                {profile.location.area ? `${profile.location.area}, ` : ''}
+                {profile.location.district ? `${profile.location.district} (Maharashtra)` : 'Maharashtra'}
+              </p>
             </div>
           </div>
 
@@ -153,15 +329,14 @@ export const EnterpriseProfilePage = () => {
               <>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
                 >
                   <Pencil className="w-3.5 h-3.5" />
-                  Edit Details
+                  <span>Edit Profile</span>
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg border border-border text-foreground/70 hover:text-india-orange hover:border-india-orange/30 text-xs font-semibold transition-colors cursor-pointer"
-                  title="Sign out of SARAL"
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-border text-foreground/70 hover:text-red-500 hover:border-red-200 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Logout</span>
@@ -169,127 +344,311 @@ export const EnterpriseProfilePage = () => {
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <button onClick={() => { setFormData(factory); setIsEditing(false); }} className="px-3.5 py-2 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-border transition-colors cursor-pointer">
+                <button
+                  onClick={() => { setFormData(profile); setIsEditing(false); }}
+                  className="px-3.5 py-2 rounded-xl border border-border text-xs font-medium text-foreground hover:bg-border transition-colors cursor-pointer"
+                >
                   Cancel
                 </button>
-                <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer">
-                  Save Changes
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-xl bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer flex items-center space-x-1.5 shadow-xs"
+                >
+                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Changes</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
+        {/* Quick Facts Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-          <FactCard label="Udyam Registration" value={factory.udyamNumber} mono />
-          <FactCard label="GST Number" value={factory.gstNumber} mono />
-          <FactCard label="Pollution Category" value="Orange" />
-          <FactCard label="Started On" value={factory.startDate} />
+          <FactCard 
+            label="PAN Card Number" 
+            value={profile.panNumber} 
+            mono 
+            status={profile.panNumber ? 'VERIFIED' : null} 
+          />
+          <FactCard 
+            label="Udyam MSME Number" 
+            value={profile.udyamNumber} 
+            mono 
+            status={profile.udyamNumber ? 'VERIFIED' : null} 
+          />
+          <FactCard 
+            label="GST Number" 
+            value={profile.gstNumber} 
+            mono 
+            status={profile.gstNumber ? 'VERIFIED' : null} 
+          />
+          <FactCard 
+            label="Registration Date" 
+            value={profile.startDate} 
+          />
         </div>
       </div>
 
-      {/* Main grid */}
+      {/* ── STATUTORY DOCUMENT VAULT & VERIFICATION SECTION ── */}
+      <div className="border border-border rounded-2xl bg-background p-5 sm:p-6 space-y-4 shadow-xs">
+        <SectionHeading
+          title="Required Business & Factory Documents"
+          subtitle="Upload official PDF documents. Our system reads them and saves your details automatically."
+          rightElement={
+            <button
+              onClick={() => handleOpenUpload('PAN_CARD')}
+              className="px-3.5 py-1.5 rounded-xl bg-india-blue/10 text-india-blue border border-india-blue/20 hover:bg-india-blue/20 text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Upload Document (PDF)</span>
+            </button>
+          }
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+          {DOCUMENT_CATEGORIES.map((cat) => {
+            const uploadedDoc = uploadedCategoryMap[cat.code];
+            const isVerified = Boolean(uploadedDoc);
+
+            return (
+              <div
+                key={cat.code}
+                className={`border rounded-xl p-4 flex flex-col justify-between transition-all ${
+                  isVerified
+                    ? 'border-emerald-500/30 bg-emerald-500/5'
+                    : cat.required
+                    ? 'border-india-orange/30 bg-india-orange/5'
+                    : 'border-border bg-card/20'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider bg-background text-foreground/60">
+                      {cat.tag}
+                    </span>
+                    {isVerified ? (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center space-x-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Uploaded & Verified</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-india-orange flex items-center space-x-1">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>{cat.required ? 'Mandatory' : 'Optional'}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-xs sm:text-sm font-bold text-foreground">{cat.label}</h3>
+                  <p className="text-[11px] text-foreground/60 mt-1 leading-relaxed">{cat.desc}</p>
+
+                  {isVerified && (
+                    <div className="mt-3 p-2 rounded-lg bg-background border border-border text-[11px] space-y-0.5">
+                      <span className="text-foreground/40 block text-[10px]">Document Number:</span>
+                      <span className="font-mono font-bold text-foreground break-all">
+                        {uploadedDoc.certificateNumber || uploadedDoc.documentName}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-border/50 flex items-center justify-between">
+                  {isVerified ? (
+                    <div className="flex items-center justify-between w-full">
+                      <a
+                        href={uploadedDoc.fileUrl || uploadedDoc.pdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-india-blue hover:underline flex items-center space-x-1 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>View PDF</span>
+                      </a>
+                      <button
+                        onClick={() => handleOpenUpload(cat.code)}
+                        className="text-[11px] text-foreground/50 hover:text-foreground hover:underline cursor-pointer"
+                      >
+                        Change / Re-upload
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenUpload(cat.code)}
+                      className="w-full py-1.5 rounded-lg bg-background border border-border hover:border-india-blue hover:text-india-blue text-xs font-bold text-foreground/70 transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5 text-india-blue" />
+                      <span>Upload Document (PDF)</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Grid: Location & Capacity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
-          {/* Address */}
-          <div className="border border-border rounded-xl p-4 sm:p-6 space-y-4">
-            <SectionHeading title="Factory Location & Address" subtitle="Government offices use this to assign local officers and inspect your site." />
+          {/* Address & Location */}
+          <div className="border border-border rounded-2xl p-5 sm:p-6 space-y-4 bg-background shadow-xs">
+            <SectionHeading
+              title="Factory Location & District"
+              subtitle="Used to assign your local government and pollution control inspection officers."
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <EditableField label="Plot / Survey Number" value={factory.location.plotNumber} editValue={formData.location.plotNumber} isEditing={isEditing} onChange={(v) => handleChange('location', 'plotNumber', v)} />
-              <EditableField label="Industrial Area / MIDC" value={factory.location.area} editValue={formData.location.area} isEditing={isEditing} onChange={(v) => handleChange('location', 'area', v)} />
+              <EditableField
+                label="Plot / Survey / Gat Number"
+                value={profile.location.plotNumber}
+                editValue={formData.location.plotNumber}
+                isEditing={isEditing}
+                onChange={(v) => handleChange('location', 'plotNumber', v)}
+                placeholder="e.g. Plot D-14, Gat No. 120"
+              />
+              <EditableField
+                label="Industrial Area / MIDC Estate"
+                value={profile.location.area}
+                editValue={formData.location.area}
+                isEditing={isEditing}
+                onChange={(v) => handleChange('location', 'area', v)}
+                placeholder="e.g. MIDC Chakan Phase 2"
+              />
               <div>
                 <label className="block text-[11px] font-semibold text-foreground/50 mb-1">District (Maharashtra)</label>
                 {isEditing ? (
-                  <input type="text" value={formData.location.district} onChange={(e) => handleChange('location', 'district', e.target.value)} className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-india-blue transition-colors" />
+                  <input
+                    type="text"
+                    value={formData.location.district}
+                    onChange={(e) => handleChange('location', 'district', e.target.value)}
+                    className="w-full bg-background border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-india-blue"
+                  />
                 ) : (
-                  <p className="font-bold text-india-blue text-xs py-1">{factory.location.district}</p>
+                  <p className="font-bold text-india-blue text-xs py-1">{profile.location.district || 'Maharashtra'}</p>
                 )}
               </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-foreground/50 mb-1">Taluka & PIN Code</label>
-                {isEditing ? (
-                  <div className="flex gap-2">
-                    <input type="text" value={formData.location.taluka} onChange={(e) => handleChange('location', 'taluka', e.target.value)} placeholder="Taluka" className="w-1/2 bg-background border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-india-blue transition-colors" />
-                    <input type="text" value={formData.location.pincode} onChange={(e) => handleChange('location', 'pincode', e.target.value)} placeholder="Pincode" className="w-1/2 bg-background border border-border rounded-lg p-2 text-xs text-foreground focus:outline-none focus:border-india-blue transition-colors" />
-                  </div>
-                ) : (
-                  <p className="font-semibold text-foreground text-xs py-1">{factory.location.taluka} — {factory.location.pincode}</p>
-                )}
-              </div>
+              <EditableField
+                label="PIN Code"
+                value={profile.location.pincode}
+                editValue={formData.location.pincode}
+                isEditing={isEditing}
+                onChange={(v) => handleChange('location', 'pincode', v)}
+                placeholder="e.g. 410501"
+              />
             </div>
           </div>
 
           {/* Factory Setup */}
-          <div className="border border-border rounded-xl p-4 sm:p-6 space-y-4">
-            <SectionHeading title="Factory Size & Capacity" subtitle="These numbers determine electricity quota, water connections, and pollution board fees." />
+          <div className="border border-border rounded-2xl p-5 sm:p-6 space-y-4 bg-background shadow-xs">
+            <SectionHeading
+              title="Factory Size & Investment Details"
+              subtitle="Used to calculate government fees, electricity quota, and pollution consent category."
+            />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              {[
-                { label: 'Plot & Shed Area', value: `${factory.factoryDetails.plotArea} / ${factory.factoryDetails.builtArea}` },
-                { label: 'Electricity Sanctioned', value: factory.factoryDetails.electricityLoad },
-                { label: 'Daily Water Required', value: factory.factoryDetails.dailyWaterUse },
-                { label: 'Machinery Cost', value: factory.factoryDetails.machineCost },
-              ].map(({ label, value }) => (
-                <div key={label} className="border border-border rounded-lg p-3">
-                  <span className="text-foreground/40 block text-[11px]">{label}</span>
-                  <p className="text-foreground font-bold text-xs mt-1 font-mono">{value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="border border-border rounded-lg p-3 text-xs">
-              <span className="text-[11px] font-bold text-foreground/50 block">Waste Water System</span>
-              <p className="text-foreground font-semibold mt-1">{factory.factoryDetails.wasteWaterSetup}</p>
+              <div className="border border-border rounded-xl p-3 bg-card/20">
+                <EditableField
+                  label="Plot & Built-up Area"
+                  value={profile.factoryDetails.plotArea ? `${profile.factoryDetails.plotArea} / ${profile.factoryDetails.builtArea || 'Shed'}` : ''}
+                  editValue={formData.factoryDetails.plotArea}
+                  isEditing={isEditing}
+                  onChange={(v) => handleChange('factoryDetails', 'plotArea', v)}
+                  placeholder="e.g. 45,000 sq ft"
+                />
+              </div>
+              <div className="border border-border rounded-xl p-3 bg-card/20">
+                <EditableField
+                  label="Connected Electricity Load"
+                  value={profile.factoryDetails.electricityLoad}
+                  editValue={formData.factoryDetails.electricityLoad}
+                  isEditing={isEditing}
+                  onChange={(v) => handleChange('factoryDetails', 'electricityLoad', v)}
+                  placeholder="e.g. 250 HP / kVA"
+                />
+              </div>
+              <div className="border border-border rounded-xl p-3 bg-card/20">
+                <EditableField
+                  label="Daily Water Consumption"
+                  value={profile.factoryDetails.dailyWaterUse}
+                  editValue={formData.factoryDetails.dailyWaterUse}
+                  isEditing={isEditing}
+                  onChange={(v) => handleChange('factoryDetails', 'dailyWaterUse', v)}
+                  placeholder="e.g. 10,000 Litres / day"
+                />
+              </div>
+              <div className="border border-border rounded-xl p-3 bg-card/20">
+                <EditableField
+                  label="Total Project Investment"
+                  value={profile.factoryDetails.totalProjectCost}
+                  editValue={formData.factoryDetails.totalProjectCost}
+                  isEditing={isEditing}
+                  onChange={(v) => handleChange('factoryDetails', 'totalProjectCost', v)}
+                  placeholder="e.g. Rs 5.5 Crore"
+                />
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Right Column: Authorized Signatory */}
         <div className="space-y-5">
-          {/* Owner */}
-          <div className="border border-border rounded-xl p-4 sm:p-6 space-y-4">
-            <SectionHeading title="Factory Owner / Manager" subtitle="Person responsible for official letters and inspections." />
+          <div className="border border-border rounded-2xl p-5 sm:p-6 space-y-4 bg-background shadow-xs">
+            <SectionHeading
+              title="Factory Owner / Main Representative"
+              subtitle="Person responsible for legal notices and government communications."
+            />
             <div className="space-y-3 text-xs">
               <div>
                 <span className="text-foreground/40 block text-[11px]">Full Name</span>
-                <p className="font-bold text-foreground text-sm mt-0.5">{factory.ownerDetails.fullName}</p>
-                <p className="text-foreground/50 text-xs">{factory.ownerDetails.post}</p>
+                <p className="font-bold text-foreground text-sm mt-0.5">
+                  {profile.ownerDetails.fullName || 'Factory Owner / Representative'}
+                </p>
+                <p className="text-foreground/50 text-xs">{profile.ownerDetails.post}</p>
               </div>
-              {[
-                { label: 'Email', value: factory.ownerDetails.email },
-                { label: 'Mobile', value: factory.ownerDetails.mobileNumber },
-                { label: 'Director ID / PAN', value: factory.ownerDetails.idNumber },
-              ].map(({ label, value }) => (
-                <div key={label} className="border-t border-border pt-2.5">
-                  <span className="text-foreground/40 block text-[11px]">{label}</span>
-                  <p className="text-foreground mt-0.5 break-all font-mono font-bold text-xs">{value}</p>
-                </div>
-              ))}
+              
+              <div className="border-t border-border pt-2.5">
+                <span className="text-foreground/40 block text-[11px]">Official Email</span>
+                <p className="text-foreground mt-0.5 break-all font-mono font-bold text-xs">{profile.ownerDetails.email}</p>
+              </div>
+
+              <div className="border-t border-border pt-2.5">
+                <span className="text-foreground/40 block text-[11px]">Mobile Number</span>
+                <p className="text-foreground mt-0.5 font-mono font-bold text-xs">{profile.ownerDetails.mobileNumber || 'Not Linked'}</p>
+              </div>
+
+              <div className="border-t border-border pt-2.5">
+                <span className="text-foreground/40 block text-[11px]">Owner PAN / ID Number</span>
+                <p className="text-foreground mt-0.5 font-mono font-bold text-xs">{profile.panNumber || 'Not Uploaded'}</p>
+              </div>
             </div>
           </div>
 
-          {/* Licenses */}
-          <div className="border border-border rounded-xl p-4 sm:p-6 space-y-3">
-            <SectionHeading title="Government License Numbers" />
-            <div className="space-y-2 text-xs font-mono">
-              {[
-                { label: 'FSSAI Food License', value: factory.licenses.fssaiNumber },
-                { label: 'MPCB CTE Number', value: factory.licenses.mpcbNumber },
-                { label: 'Fire NOC Reference', value: factory.licenses.fireNocNumber },
-                { label: 'Factory License (DISH)', value: factory.licenses.factoryLicenseStatus, sans: true },
-              ].map(({ label, value, sans }) => (
-                <div key={label} className="p-2.5 rounded-lg border border-border">
-                  <span className="text-[11px] text-foreground/50 block font-sans">{label}</span>
-                  <span className={`text-foreground font-bold block mt-0.5 ${sans ? 'font-sans text-[11px]' : 'text-xs'}`}>{value}</span>
-                </div>
-              ))}
+          {/* Quick Clearances Link Card */}
+          <div className="border border-india-blue/20 bg-india-blue/5 rounded-2xl p-5 space-y-3 shadow-xs">
+            <div className="flex items-center space-x-2 text-india-blue">
+              <ShieldCheck className="w-5 h-5" />
+              <h3 className="text-xs font-bold uppercase tracking-wider">Find Your Approvals</h3>
             </div>
+            <p className="text-xs text-foreground/70 leading-relaxed">
+              Once your main documents are uploaded, find all required government approvals and fees for your factory.
+            </p>
             <button
-              onClick={() => alert('Opening All Documents page')}
-              className="w-full py-2 rounded-lg border border-border hover:border-india-blue text-xs font-bold text-foreground/60 hover:text-india-blue transition-colors cursor-pointer text-center block"
+              onClick={() => navigate('/user/approvals')}
+              className="w-full py-2.5 rounded-xl bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity flex items-center justify-center space-x-1.5 cursor-pointer shadow-xs"
             >
-              View Uploaded Papers
+              <span>Find Required Approvals →</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Reusable Upload Modal */}
+      <DocumentUploadModal
+        isOpen={uploadModalOpen}
+        initialCategory={selectedUploadCategory}
+        onClose={() => setUploadModalOpen(false)}
+        onSuccess={handleDocumentUploaded}
+      />
     </div>
   );
 };

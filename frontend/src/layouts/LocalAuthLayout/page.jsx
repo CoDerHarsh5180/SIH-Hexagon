@@ -1,29 +1,38 @@
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
+import { Navbar, MobileDrawer } from '../../components/navbar';
+import { useAuth } from '../../context/AuthContext';
+import { notificationsService } from '../../services/notificationsService';
 
-// Navigation routes for Local Authority portal
 const localAuthNavLinks = [
-  { id: 'requests', label: 'Requests', path: '/local-auth/requests' },
-  { id: 'history', label: 'History', path: '/local-auth/history' },
-  { id: 'complaints', label: 'Complaints', path: '/local-auth/complaints' },
+  { id: 'All Requests', label: 'All Requests', path: '/local-auth/requests' },
+  { id: 'History', label: 'History', path: '/local-auth/history' },
+  { id: 'Complaints', label: 'Complaints', path: '/local-auth/complaints' },
+  { id: 'Profile', label: 'Profile', path: '/local-auth/profile' },
 ];
-
-// Local Authority officer metadata
-const mockLocalAuthData = {
-  officerDesignation: 'Verification Officer',
-  avatarUrl: '',
-  unreadNotifications: 5,
-};
 
 export const LocalAuthLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    notificationsService.getUnreadCount()
+      .then((res) => {
+        if (typeof res?.data?.count === 'number') {
+          setUnreadCount(res.data.count);
+        }
+      })
+      .catch(() => {});
+  }, [currentPath]);
 
   const handleNavClick = (path) => {
     navigate(path);
   };
+
+  const designation = user?.designation || user?.name || 'Scrutiny Officer';
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
@@ -33,9 +42,9 @@ export const LocalAuthLayout = ({ children }) => {
         onNavClick={handleNavClick}
         notificationPath="/local-auth/notifications"
         profilePath="/local-auth/profile"
-        unreadCount={mockLocalAuthData.unreadNotifications}
-        avatarUrl={mockLocalAuthData.avatarUrl}
-        avatarAlt={mockLocalAuthData.officerDesignation}
+        unreadCount={unreadCount}
+        avatarUrl={user?.avatar || ''}
+        avatarAlt={designation}
         notificationLabel="View Authority Notifications"
         mobileMenu={(isOpen, onNavClick) => (
           <MobileDrawer
@@ -45,25 +54,10 @@ export const LocalAuthLayout = ({ children }) => {
             onNavClick={handleNavClick}
           />
         )}
-      >
-        <NavLinks
-          links={localAuthNavLinks}
-          currentPath={currentPath}
-          onNavClick={handleNavClick}
-          layoutId="activeLocalAuthNav"
-        />
-      </Navbar>
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <motion.div
-          key={currentPath}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3 }}
-        >
-          {children || <Outlet />}
-        </motion.div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {children || <Outlet />}
       </main>
     </div>
   );

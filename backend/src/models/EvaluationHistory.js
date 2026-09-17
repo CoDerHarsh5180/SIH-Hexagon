@@ -61,8 +61,39 @@ const evaluationHistorySchema = new mongoose.Schema(
     },
     pollutionTier: {
       type: String,
-      enum: ['White', 'Green', 'Orange', 'Red'],
-      default: 'Green',
+      default: 'Orange',
+    },
+    projectNature: {
+      type: String,
+      default: 'greenfield',
+    },
+    constitution: {
+      type: String,
+      default: 'Private Limited Company',
+    },
+    hasNaOrder: {
+      type: Boolean,
+      default: true,
+    },
+    waterSource: {
+      type: String,
+      default: 'MIDC Piped Water Network',
+    },
+    storesFlammableSolvents: {
+      type: Boolean,
+      default: false,
+    },
+    isFoodProduct: {
+      type: Boolean,
+      default: false,
+    },
+    isExportOriented: {
+      type: Boolean,
+      default: false,
+    },
+    buildingHeight: {
+      type: String,
+      default: 'Under 15 Meters (Standard)',
     },
     totalCapitalInvestmentInr: {
       type: Number,

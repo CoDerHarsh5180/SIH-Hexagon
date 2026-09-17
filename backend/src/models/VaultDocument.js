@@ -19,13 +19,17 @@ const vaultDocumentSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ['LAND', 'ENVIRONMENT', 'LEGAL', 'IDENTITY', 'FINANCIAL', 'TECHNICAL', 'CLEARANCE', 'CERTIFICATE', 'OTHER'],
-      default: 'LAND',
+      default: 'OTHER',
+      trim: true,
       index: true,
     },
     fileUrl: {
       type: String,
       required: [true, 'Document file URL is required'],
+    },
+    cloudinaryPublicId: {
+      type: String,
+      trim: true,
     },
     fileName: {
       type: String,
@@ -35,6 +39,7 @@ const vaultDocumentSchema = new mongoose.Schema(
     },
     fileType: {
       type: String,
+      default: 'application/pdf',
     },
     certificateNumber: {
       type: String,
@@ -52,9 +57,17 @@ const vaultDocumentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['ACTIVE', 'EXPIRING_SOON', 'EXPIRED', 'RENEWAL_PENDING', 'RENEWED', 'ARCHIVED'],
-      default: 'ACTIVE',
+      enum: ['ACTIVE', 'VERIFIED', 'PENDING_VERIFICATION', 'EXPIRING_SOON', 'EXPIRED', 'RENEWAL_PENDING', 'RENEWED', 'ARCHIVED'],
+      default: 'VERIFIED',
       index: true,
+    },
+    isUserVerified: {
+      type: Boolean,
+      default: true,
+    },
+    extractedData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
     renewalHistory: [
       {
