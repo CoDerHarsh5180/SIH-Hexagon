@@ -4,30 +4,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 import { ChevronDown } from 'lucide-react';
 import { notificationsService } from '../../services/notificationsService';
+import { useAuth } from '../../context/AuthContext';
 
 // Primary navigation links
 const primaryNavLinks = [
   { id: 'dashboard', label: 'Dashboard', path: '/user/dashboard' },
-  { id: 'approvals', label: 'Know Your Approval', path: '/user/approvals' },
-  { id: 'pending-docs', label: 'Pending Docs', path: '/user/pending-docs' },
-  { id: 'your-docs', label: 'Your Docs', path: '/user/your-docs' }
+  { id: 'approvals', label: 'Know Your Approvals', path: '/user/approvals' },
+  { id: 'pending-docs', label: 'Action Needed', path: '/user/pending-docs' },
+  { id: 'your-docs', label: 'Document Locker', path: '/user/your-docs' }
 ];
 
 // Secondary links grouped under 'More' dropdown
 const moreNavLinks = [
-  { id: 'track', label: 'Track Documents', path: '/user/track' },
-  { id: 'custom-docs-apply', label: 'Custom Apply', path: '/user/custom-docs-apply' },
-  { id: 'query', label: 'Query', path: '/user/query' },
-  { id: 'complain', label: 'Complain', path: '/user/complain' },
-  { id: 'feedback', label: 'Feedback', path: '/user/feedback' },
-  { id: 'Government Benefits', label: 'Government Benefits', path: '/user/gov-benefits' },
+  { id: 'track', label: 'Track Applications', path: '/user/track' },
+  { id: 'custom-docs-apply', label: 'Apply for Specific NOC', path: '/user/custom-docs-apply' },
+  { id: 'Government Benefits', label: 'Government Subsidies', path: '/user/gov-benefits' },
+  { id: 'query', label: 'Ask Question / Helpdesk', path: '/user/query' },
+  { id: 'complain', label: 'Lodge Complaint', path: '/user/complain' },
+  { id: 'feedback', label: 'Give Feedback', path: '/user/feedback' },
 ];
 
-const mockUserData = {
-  name: 'User',
-  avatarUrl: '',
-  unreadNotifications: 3,
-};
 
 /** MoreDropdown — desktop secondary nav */
 const MoreDropdown = ({ currentPath, onNavClick }) => {
@@ -147,7 +143,10 @@ export const UserLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
-  const [unreadCount, setUnreadCount] = useState(mockUserData.unreadNotifications);
+  const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const userName = user?.companyName || user?.name || user?.fullName || 'Enterprise User';
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -157,7 +156,7 @@ export const UserLayout = ({ children }) => {
           setUnreadCount(res.data.count);
         }
       } catch (err) {
-        // graceful offline fallback
+        // Graceful offline fallback
       }
     };
     fetchUnread();
@@ -175,8 +174,8 @@ export const UserLayout = ({ children }) => {
         notificationPath="/user/notifications"
         profilePath="/user/profile"
         unreadCount={unreadCount}
-        avatarUrl={mockUserData.avatarUrl}
-        avatarAlt={mockUserData.name}
+        avatarUrl={user?.avatar || ''}
+        avatarAlt={userName}
         notificationLabel="View Notifications"
         mobileMenu={(isOpen, onNavClick) => (
           <MobileDrawer

@@ -114,6 +114,12 @@ const applicationSchema = new mongoose.Schema(
       required: [true, 'District is required'],
       index: true, // e.g. "Aurangabad", "Pune"
     },
+    authorityLevel: {
+      type: String,
+      enum: ['LOCAL', 'STATE', 'CENTRAL'],
+      default: 'LOCAL',
+      index: true, // e.g. "CENTRAL" for FSSAI/PESO, "STATE" for MPCB/Boilers, "LOCAL" for Municipal/DISH/MIDC
+    },
     isCustomApplication: {
       type: Boolean,
       default: false,

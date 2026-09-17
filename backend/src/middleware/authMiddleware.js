@@ -61,4 +61,25 @@ export const authorizeRoles = (...roles) => {
   };
 };
 
-export default { protect, authorizeRoles };
+export const optionalAuth = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  if (!token) return next();
+  try {
+    const secret = process.env.JWT_SECRET || 'saral_jwt_secret_key_2026_super_secure_key';
+    const decoded = jwt.verify(token, secret);
+    const user = await User.findById(decoded.id).select('-password');
+    if (user && user.isActive) {
+      req.user = user;
+    }
+  } catch (err) {
+    // Ignore invalid token in optionalAuth
+  }
+  next();
+};
+
+export default { protect, authorizeRoles, optionalAuth };

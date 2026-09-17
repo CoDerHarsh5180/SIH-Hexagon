@@ -63,17 +63,17 @@ export const ApprovalRow = ({
             className={`px-2.5 py-1 rounded-lg border text-xs font-semibold transition-colors cursor-pointer ${
               doc.alreadyHave
                 ? 'border-india-blue/30 bg-india-blue/10 text-india-blue'
-                : 'border-border text-foreground/50 hover:border-foreground/30'
+                : 'border-border text-foreground/60 hover:border-foreground/40'
             }`}
           >
-            {doc.alreadyHave ? '✓ Have it' : 'Already have?'}
+            {doc.alreadyHave ? '✓ Already Have' : 'Already have this?'}
           </button>
           {doc.alreadyHave && (
             <label
               onClick={(e) => e.stopPropagation()}
-              className="px-2.5 py-1 rounded-lg bg-border text-foreground/60 hover:bg-foreground/10 text-xs font-medium cursor-pointer transition-colors"
+              className="px-2.5 py-1 rounded-lg bg-border text-foreground/70 hover:bg-foreground/10 text-xs font-medium cursor-pointer transition-colors"
             >
-              <span>{doc.uploadedFile ? '📎 Attached' : 'Submit PDF'}</span>
+              <span>{doc.uploadedFile ? '📎 Attached' : 'Attach PDF'}</span>
               <input
                 type="file"
                 accept="application/pdf"

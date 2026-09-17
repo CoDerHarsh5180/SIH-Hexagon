@@ -54,6 +54,17 @@ export const GovBenefitsPage = () => {
     }
   ]);
 
+  const normalizeScheme = (s) => ({
+    id: s.id || s._id || 'SCHEME',
+    title: s.title || s.schemeTitle || 'Government Incentive Scheme',
+    category: s.category || 'Capital Subsidy',
+    sector: s.sector || (Array.isArray(s.targetSectors) ? s.targetSectors.join(', ') : s.targetSectors) || 'All Industrial Sectors',
+    benefits: s.benefits || (s.subsidyPercentage ? `${s.subsidyPercentage} subsidy (${s.maxCeilingAmount || 'Up to ₹3.5 Cr'})` : s.description) || 'Government capital subsidy and duty waiver',
+    eligibility: s.eligibility || (Array.isArray(s.eligibilityCriteria) ? s.eligibilityCriteria.join('; ') : s.eligibilityCriteria) || 'Valid Udyam MSME and factory setup in Maharashtra',
+    validTill: s.validTill || (s.validUntil ? new Date(s.validUntil).toLocaleDateString('en-IN') : (s.datePublished ? `Published: ${s.datePublished}` : 'Open-ended')),
+    status: s.status || 'ACTIVE'
+  });
+
   // Calculator inputs
   const [calcData, setCalcData] = useState({
     investmentCrores: 12.5,
@@ -70,8 +81,9 @@ export const GovBenefitsPage = () => {
     const fetchSchemes = async () => {
       try {
         const res = await benefitsService.getSchemes();
-        if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          setSchemesList(res.data);
+        const rawList = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        if (rawList.length > 0) {
+          setSchemesList(rawList.map(normalizeScheme));
         }
       } catch (err) {
         console.warn('Using fallback schemes list:', err.message);
@@ -89,8 +101,10 @@ export const GovBenefitsPage = () => {
     setApplyingSchemeId(scheme.id);
     try {
       await benefitsService.applyScheme(scheme.id, {
-        schemeTitle: scheme.title,
+        schemeTitle: scheme.title || scheme.schemeTitle,
         category: scheme.category,
+        machineryCostCrores: calcData.machineryCostCrores,
+        powerLoadHp: calcData.powerLoadHp,
         claimDate: new Date().toISOString(),
       });
       setAppliedSuccess(`Incentive claim docket generated for "${scheme.title}". Forwarded to Directorate of Industries.`);
@@ -107,9 +121,14 @@ export const GovBenefitsPage = () => {
   const eligibleSubsidyCrores = (calcData.machineryCostCrores * 0.35).toFixed(2);
   const electricitySavingsYearly = (calcData.powerLoadHp * 2400).toLocaleString('en-IN');
 
-  const filteredSchemes = schemesList.filter(
-    (s) => sectorFilter === 'ALL' || s.sector.toLowerCase().includes(sectorFilter.toLowerCase())
-  );
+  const filteredSchemes = schemesList.filter((s) => {
+    if (sectorFilter === 'ALL') return true;
+    const sectorStr = String(s.sector || (Array.isArray(s.targetSectors) ? s.targetSectors.join(' ') : '') || '').toLowerCase();
+    const categoryStr = String(s.category || '').toLowerCase();
+    const titleStr = String(s.title || s.schemeTitle || '').toLowerCase();
+    const filterLower = sectorFilter.toLowerCase();
+    return sectorStr.includes(filterLower) || categoryStr.includes(filterLower) || titleStr.includes(filterLower);
+  });
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-6">
@@ -124,7 +143,7 @@ export const GovBenefitsPage = () => {
         <div>
           <PageHeader
             title="Government Benefits & Industrial Incentives"
-            subtitle="Explore active Maharashtra industrial policy subsidies, evaluate eligibility, and run instant subsidy simulations."
+            subtitle="Check Maharashtra government subsidies, benefits, and incentives for your factory or calculate your savings."
             className="pb-0 border-b-0"
           />
         </div>
@@ -136,7 +155,7 @@ export const GovBenefitsPage = () => {
               activeTab === 'SCHEMES' ? 'bg-india-blue text-white shadow-xs' : 'text-foreground/70'
             }`}
           >
-            Policy Circulars
+            Government Schemes & Subsidies
           </button>
           <button
             onClick={() => setActiveTab('CALCULATOR')}
@@ -144,7 +163,7 @@ export const GovBenefitsPage = () => {
               activeTab === 'CALCULATOR' ? 'bg-india-blue text-white shadow-xs' : 'text-foreground/70'
             }`}
           >
-            Subsidy Calculator
+            Calculate My Subsidy
           </button>
         </div>
       </div>
@@ -167,53 +186,66 @@ export const GovBenefitsPage = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredSchemes.map((scheme) => (
-              <div
-                key={scheme.id}
-                className="border border-border rounded-xl p-5 bg-background hover:border-india-blue/40 transition-all flex flex-col justify-between space-y-3"
+          {filteredSchemes.length === 0 ? (
+            <div className="border border-border rounded-xl p-8 text-center bg-card/20 space-y-2">
+              <p className="text-sm font-semibold text-foreground">No government schemes found in this category.</p>
+              <p className="text-xs text-foreground/50">Select "ALL" to view all available Maharashtra state subsidies.</p>
+              <button
+                onClick={() => setSectorFilter('ALL')}
+                className="px-3.5 py-1.5 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 mt-2 cursor-pointer"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-mono font-bold text-india-blue bg-india-blue/10 px-2 py-0.5 rounded border border-india-blue/20">
-                      {scheme.category}
-                    </span>
-                    <span className="text-[10px] font-bold text-foreground/50">
-                      Valid: {scheme.validTill}
-                    </span>
+                Show All Schemes
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredSchemes.map((scheme) => (
+                <div
+                  key={scheme.id}
+                  className="border border-border rounded-xl p-5 bg-background hover:border-india-blue/40 transition-all flex flex-col justify-between space-y-3"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-mono font-bold text-india-blue bg-india-blue/10 px-2 py-0.5 rounded border border-india-blue/20">
+                        {scheme.category}
+                      </span>
+                      <span className="text-[10px] font-bold text-foreground/50">
+                        Valid: {scheme.validTill}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-foreground leading-snug">
+                      {scheme.title}
+                    </h3>
+                    <p className="text-xs text-foreground/60 mt-1">
+                      Applicable: {scheme.sector}
+                    </p>
+
+                    <div className="mt-3 bg-border/10 p-3 rounded-lg border border-border/50 text-xs space-y-1">
+                      <p className="text-foreground/80">
+                        <strong>Benefits:</strong> {scheme.benefits}
+                      </p>
+                      <p className="text-foreground/60 text-[11px]">
+                        <strong>Conditions:</strong> {scheme.eligibility}
+                      </p>
+                    </div>
                   </div>
 
-                  <h3 className="text-sm font-bold text-foreground leading-snug">
-                    {scheme.title}
-                  </h3>
-                  <p className="text-xs text-foreground/60 mt-1">
-                    Applicable: {scheme.sector}
-                  </p>
-
-                  <div className="mt-3 bg-border/10 p-3 rounded-lg border border-border/50 text-xs space-y-1">
-                    <p className="text-foreground/80">
-                      <strong>Benefits:</strong> {scheme.benefits}
-                    </p>
-                    <p className="text-foreground/60 text-[11px]">
-                      <strong>Conditions:</strong> {scheme.eligibility}
-                    </p>
+                  <div className="pt-2 border-t border-border/50 flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-foreground/40">{scheme.id}</span>
+                    <button
+                      onClick={() => handleApplyScheme(scheme)}
+                      disabled={applyingSchemeId === scheme.id}
+                      className="text-xs font-bold text-india-blue hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                    >
+                      <span>{applyingSchemeId === scheme.id ? 'Submitting Claim...' : 'Apply for Incentive'}</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-2 border-t border-border/50 flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-foreground/40">{scheme.id}</span>
-                  <button
-                    onClick={() => handleApplyScheme(scheme)}
-                    disabled={applyingSchemeId === scheme.id}
-                    className="text-xs font-bold text-india-blue hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                  >
-                    <span>{applyingSchemeId === scheme.id ? 'Submitting Claim...' : 'Apply for Incentive'}</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         /* Subsidy Calculator View */
@@ -221,7 +253,7 @@ export const GovBenefitsPage = () => {
           <div className="lg:col-span-2 border border-border rounded-xl bg-background p-5 sm:p-6 space-y-4 text-xs">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border pb-3">
               <Calculator className="w-4 h-4 text-india-blue" />
-              <span>Investment Parameters for Subsidy Simulation</span>
+              <span>Enter Factory Investment to Check Subsidies</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -296,7 +328,7 @@ export const GovBenefitsPage = () => {
           {/* Results Card */}
           <div className="border border-india-blue/40 bg-india-blue/5 rounded-xl p-5 space-y-4 text-xs">
             <h4 className="font-bold text-foreground text-sm uppercase tracking-wider">
-              Estimated Entitlement
+              Your Estimated Government Subsidies
             </h4>
 
             <div className="space-y-3">
@@ -307,7 +339,7 @@ export const GovBenefitsPage = () => {
                 <span className="text-xl font-mono font-bold text-india-blue block mt-1">
                   ₹ {eligibleSubsidyCrores} Crores
                 </span>
-                <span className="text-[10px] text-foreground/60">Disbursed over 7 fiscal annual installments</span>
+                <span className="text-[10px] text-foreground/60">Paid in yearly installments over 7 years</span>
               </div>
 
               <div className="border border-border bg-background p-3.5 rounded-lg">
@@ -317,7 +349,7 @@ export const GovBenefitsPage = () => {
                 <span className="text-xl font-mono font-bold text-foreground block mt-1">
                   ₹ {electricitySavingsYearly} / year
                 </span>
-                <span className="text-[10px] text-foreground/60">100% duty waiver for first 5 operational years</span>
+                <span className="text-[10px] text-foreground/60">Zero electricity duty for first 5 years</span>
               </div>
 
               <div className="border border-border bg-background p-3.5 rounded-lg">
@@ -325,7 +357,7 @@ export const GovBenefitsPage = () => {
                   Stamp Duty & Land Registration
                 </span>
                 <span className="text-base font-mono font-bold text-india-orange block mt-1">
-                  100% Waived in MIDC
+                  100% Free / Waived in MIDC
                 </span>
               </div>
             </div>

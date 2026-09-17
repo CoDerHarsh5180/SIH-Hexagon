@@ -31,6 +31,11 @@ const sanitizeUser = (user) => {
     department: user.department,
     employeeId: user.employeeId,
     isVerified: user.isVerified,
+    profileStatus: user.profileStatus || 'INCOMPLETE',
+    profileCompletion: user.profileCompletion || 20,
+    ownershipType: user.ownershipType || 'REGISTERED_COMPANY',
+    verifiedDocuments: user.verifiedDocuments || [],
+    factoryDetails: user.factoryDetails || {},
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -189,7 +194,11 @@ export const register = async (req, res) => {
       authorityBody: authorityBody || '',
       department: authorityBody || '',
       employeeId: employeeId || '',
-      isVerified: true,
+      ownershipType: req.body.ownershipType || (role.toUpperCase() === 'USER' ? 'REGISTERED_COMPANY' : 'INDIVIDUAL'),
+      profileStatus: role.toUpperCase() === 'USER' ? 'INCOMPLETE' : 'COMPLETED',
+      profileCompletion: role.toUpperCase() === 'USER' ? 20 : 100,
+      verifiedDocuments: [],
+      isVerified: role.toUpperCase() !== 'USER',
     });
 
     // If registered as LOCAL_AUTH, also maintain LocalAuthority registry
@@ -507,6 +516,64 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+// Helper to build full enterprise profile structure from User document without mock fallbacks
+const formatEnterpriseProfile = (user) => {
+  const districtName = user.district || '';
+  const idSuffix = user._id ? user._id.toString().slice(-6).toUpperCase() : 'NEW';
+  const regDate = user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Recently Registered';
+
+  const isCompleted = user.profileStatus === 'COMPLETED';
+
+  return {
+    businessId: `ENT-MH-${idSuffix}`,
+    factoryName: user.companyName || user.name || 'Industrial Enterprise',
+    businessType: user.industryType || 'Pending Classification',
+    category: user.industryType ? `${user.industryType} Enterprise` : 'Unclassified',
+    currentStage: isCompleted ? 'Operational / Verified' : 'Incomplete Registration',
+    profileStatus: user.profileStatus || 'INCOMPLETE',
+    profileCompletion: user.profileCompletion || 20,
+    ownershipType: user.ownershipType || 'REGISTERED_COMPANY',
+    verifiedDocuments: user.verifiedDocuments || [],
+    udyamNumber: user.udyogAadhaar || '',
+    gstNumber: user.gstin || '',
+    panNumber: user.panNumber || '',
+    startDate: regDate,
+    location: {
+      plotNumber: user.address?.street || '',
+      area: user.address?.city || (districtName ? `MIDC ${districtName} Industrial Corridor` : ''),
+      district: districtName,
+      taluka: districtName,
+      state: user.state || 'Maharashtra',
+      pincode: user.address?.pincode || '',
+    },
+    factoryDetails: {
+      plotArea: user.factoryDetails?.plotArea || '',
+      builtArea: user.factoryDetails?.builtArea || '',
+      electricityLoad: user.factoryDetails?.electricityLoad || '',
+      dailyWaterUse: user.factoryDetails?.dailyWaterUse || '',
+      wasteWaterSetup: user.factoryDetails?.wasteWaterSetup || '',
+      machineCost: user.factoryDetails?.machineCost || '',
+      totalProjectCost: user.factoryDetails?.totalProjectCost || '',
+      enterpriseDescription: user.factoryDetails?.enterpriseDescription || '',
+    },
+    ownerDetails: {
+      fullName: user.fullName || user.name || '',
+      post: user.designation || (user.role === 'USER' ? 'Authorized Signatory / Owner' : 'Official'),
+      email: user.email,
+      mobileNumber: user.phone || '',
+      idNumber: user.panNumber || '',
+    },
+    licenses: {
+      fssaiNumber: '',
+      mpcbNumber: '',
+      fireNocNumber: '',
+      factoryLicenseStatus: isCompleted ? 'Approved & In Vault' : 'Not Applied',
+    },
+  };
+};
+
 /**
  * @desc    Get Current Logged-in User Profile
  * @route   GET /api/auth/profile
@@ -522,10 +589,18 @@ export const getProfile = async (req, res) => {
       });
     }
 
+    const sanitized = sanitizeUser(user);
+    const enterprise = formatEnterpriseProfile(user);
+
     return res.status(200).json({
       success: true,
-      data: sanitizeUser(user),
-      user: sanitizeUser(user),
+      data: {
+        ...sanitized,
+        enterprise,
+        profile: enterprise,
+      },
+      user: sanitized,
+      enterprise,
     });
   } catch (error) {
     console.error('[authController:getProfile] Error:', error);
@@ -556,16 +631,22 @@ export const updateProfile = async (req, res) => {
       name,
       fullName,
       companyName,
+      factoryName,
       phone,
       industryType,
+      businessType,
       district,
       state,
       panNumber,
+      gstNumber,
       gstin,
       cin,
+      udyamNumber,
       udyogAadhaar,
       enterpriseScale,
       address,
+      location,
+      ownerDetails,
       avatar,
       designation,
       authorityBody,
@@ -575,17 +656,39 @@ export const updateProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (fullName) user.fullName = fullName;
-    if (companyName) user.companyName = companyName;
+    if (companyName || factoryName) user.companyName = companyName || factoryName;
     if (phone) user.phone = phone;
-    if (industryType) user.industryType = industryType;
+    if (industryType || businessType) user.industryType = industryType || businessType;
     if (district) user.district = district;
     if (state) user.state = state;
     if (panNumber) user.panNumber = panNumber;
-    if (gstin) user.gstin = gstin;
+    if (gstin || gstNumber) user.gstin = gstin || gstNumber;
     if (cin) user.cin = cin;
-    if (udyogAadhaar) user.udyogAadhaar = udyogAadhaar;
+    if (udyogAadhaar || udyamNumber) user.udyogAadhaar = udyogAadhaar || udyamNumber;
     if (enterpriseScale) user.enterpriseScale = enterpriseScale;
-    if (address) user.address = address;
+
+    // Handle nested address or location
+    if (location) {
+      user.address = {
+        street: location.plotNumber || location.area || user.address?.street,
+        city: location.taluka || location.area || user.address?.city,
+        district: location.district || user.district,
+        state: location.state || user.state || 'Maharashtra',
+        pincode: location.pincode || user.address?.pincode,
+      };
+      if (location.district) user.district = location.district;
+    } else if (address) {
+      user.address = address;
+    }
+
+    // Handle nested owner details
+    if (ownerDetails) {
+      if (ownerDetails.fullName) user.fullName = ownerDetails.fullName;
+      if (ownerDetails.mobileNumber) user.phone = ownerDetails.mobileNumber;
+      if (ownerDetails.post) user.designation = ownerDetails.post;
+      if (ownerDetails.idNumber) user.panNumber = ownerDetails.idNumber;
+    }
+
     if (avatar) user.avatar = avatar;
     if (designation) user.designation = designation;
     if (authorityBody) {
@@ -596,12 +699,19 @@ export const updateProfile = async (req, res) => {
     if (officeContact) user.officeContact = officeContact;
 
     const updatedUser = await user.save();
+    const sanitized = sanitizeUser(updatedUser);
+    const enterprise = formatEnterpriseProfile(updatedUser);
 
     return res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
-      data: sanitizeUser(updatedUser),
-      user: sanitizeUser(updatedUser),
+      data: {
+        ...sanitized,
+        enterprise,
+        profile: enterprise,
+      },
+      user: sanitized,
+      enterprise,
     });
   } catch (error) {
     console.error('[authController:updateProfile] Error:', error);

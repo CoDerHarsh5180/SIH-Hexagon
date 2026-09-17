@@ -35,6 +35,32 @@ const resolveUserId = async (req) => {
   return demoUser._id;
 };
 
+// Helper to determine whether an application goes to Central, State, or Local Authority
+export const determineAuthorityLevel = (authStr = '', titleStr = '') => {
+  const text = `${authStr} ${titleStr}`.toLowerCase();
+  if (
+    text.includes('fssai') ||
+    text.includes('central') ||
+    text.includes('peso') ||
+    text.includes('cgwa') ||
+    text.includes('dgft') ||
+    text.includes('ministry')
+  ) {
+    return 'CENTRAL';
+  }
+  if (
+    text.includes('mpcb') ||
+    text.includes('pollution') ||
+    text.includes('steam boiler') ||
+    text.includes('directorate of industries') ||
+    text.includes('apex') ||
+    text.includes('state')
+  ) {
+    return 'STATE';
+  }
+  return 'LOCAL';
+};
+
 /**
  * @desc    Submit a new statutory clearance application
  * @route   POST /api/applications
@@ -81,6 +107,7 @@ export const submitApplication = async (req, res) => {
     deadline.setDate(deadline.getDate() + slaDays);
 
     const isPaid = Number(feePaid) > 0;
+    const authorityLevel = determineAuthorityLevel(resolvedAuthority, resolvedTitle);
 
     const newApp = await Application.create({
       applicationId,
@@ -92,6 +119,7 @@ export const submitApplication = async (req, res) => {
       authority: resolvedAuthority,
       department: department || resolvedAuthority,
       district: resolvedDistrict,
+      authorityLevel,
       isCustomApplication: false,
       status: isPaid ? 'FEE_PAID' : 'SUBMITTED',
       currentStage: isPaid ? 'DOCUMENT_SCRUTINY' : 'APPLICATION_SUBMITTED',
@@ -174,6 +202,8 @@ export const submitCustomApplication = async (req, res) => {
     const deadline = new Date();
     deadline.setDate(deadline.getDate() + slaDays);
 
+    const authorityLevel = determineAuthorityLevel(authority, title);
+
     const newApp = await Application.create({
       applicationId,
       verificationCode,
@@ -184,6 +214,7 @@ export const submitCustomApplication = async (req, res) => {
       authority,
       department: authority,
       district,
+      authorityLevel,
       isCustomApplication: true,
       status: 'SUBMITTED',
       currentStage: 'APPLICATION_SUBMITTED',

@@ -69,12 +69,19 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
     setIsSubmitting(true);
     try {
-      await authService.sendOtp(formData.email, role);
-      alert(`A 6-digit verification code has been dispatched to ${formData.email}. Please check your email.`);
+      const res = await authService.sendOtp(formData.email, role);
+      const devOtp = res?.otp || res?.data?.otp;
+      if (devOtp) {
+        setFormData((prev) => ({ ...prev, otp: devOtp }));
+        alert(`Verification code dispatched to ${formData.email}!\n\nYour OTP Code is: ${devOtp}`);
+      } else {
+        alert(`A 6-digit verification code has been dispatched to ${formData.email}. Please check your email (or use demo code 123456).`);
+      }
       setStep(2);
     } catch (err) {
       console.warn('[RegisterPage] sendOtp notice:', err.message);
       alert(`Notice: ${err.message}. You can use demo code 123456 to continue verification.`);
+      setFormData((prev) => ({ ...prev, otp: '123456' }));
       setStep(2);
     } finally {
       setIsSubmitting(false);

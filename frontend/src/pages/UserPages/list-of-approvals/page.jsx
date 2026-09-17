@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { PageHeader, AIAdvisorPanel } from '../../../components/ui';
 import { ApprovalRow } from './ApprovalRow';
 import { ApplyPaymentModal } from './ApplyPaymentModal';
-import { initialApprovalsList, userSystemVault } from './mockApprovalsData';
-import { approvalsService, applicationsService } from '../../../services';
+import { approvalsService, applicationsService, vaultService } from '../../../services';
 import { useAuth } from '../../../context/AuthContext';
 
 const MAX_HISTORY = 3;
@@ -12,14 +11,14 @@ const MAX_HISTORY = 3;
 export const ListOfApprovalsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [approvals, setApprovals] = useState([]);
   const [activeInsight, setActiveInsight] = useState(null);
   const [insightHistory, setInsightHistory] = useState([]);
   const [restoredBanner, setRestoredBanner] = useState(false);
   
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-  const [globalUploadedDocs, setGlobalUploadedDocs] = useState({ ...userSystemVault }); 
+  const [globalUploadedDocs, setGlobalUploadedDocs] = useState({}); 
 
   // Strict Guard & Ingestion: List of Approvals should ONLY be opened through Ask For Approvals page
   useEffect(() => {
@@ -74,17 +73,50 @@ export const ListOfApprovalsPage = () => {
           `Statutory Act: ${item.statutoryAct || 'State Industrial Act'}`,
           `SLA Days: ${item.maxSlaDays || 30} days`,
         ],
-        requiredDocs: ['Site Plan', 'EIA Report', 'Land Allotment Letter'],
+        requiredDocs: (Array.isArray(item.requiredDocs) && item.requiredDocs.length > 0) ? item.requiredDocs : ['Site Plan', 'EIA Report', 'Land Allotment Letter'],
         checkedForApply: true,
         alreadyHave: false,
         uploadedFile: null,
       }));
       setApprovals(mapped);
     } else {
-      // Fallback heuristic if evaluation returned generic response from Ask For Approvals
-      setApprovals(initialApprovalsList);
+      // If evaluation returned empty or invalid data, navigate back to questionnaire
+      const targetApprovalRoute = location.pathname.startsWith('/user') ? '/user/approvals' : '/approvals';
+      navigate(targetApprovalRoute, { replace: true, state: { needQuestionnaire: true } });
     }
   }, [location.state, location.pathname, isAuthenticated, navigate]);
+
+  // Load user's real uploaded documents from Cloudinary vault to automatically attach to approvals
+  useEffect(() => {
+    vaultService.getVaultDocuments()
+      .then((res) => {
+        const docs = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        const vaultMap = {};
+        docs.forEach((d) => {
+          if (d.category === 'PAN_CARD' || d.category === 'AADHAAR_CARD') {
+            vaultMap['Identity Proof (Aadhaar/PAN)'] = d.fileName || 'Verified_ID.pdf';
+          }
+          if (d.category === 'LAND_RECORD') {
+            vaultMap['7/12 Land Extract'] = d.fileName || 'Land_Record_7_12.pdf';
+            vaultMap['Site Plan / Layout'] = d.fileName || 'Site_Plan.pdf';
+          }
+          if (d.category === 'UDYAM_REGISTRATION') {
+            vaultMap['Udyam Registration'] = d.fileName || 'Udyam_Registration.pdf';
+          }
+          if (d.category === 'GSTIN_CERTIFICATE') {
+            vaultMap['GSTIN Certificate'] = d.fileName || 'GST_Certificate.pdf';
+          }
+          if (d.category === 'SITE_PLAN_BLUEPRINT') {
+            vaultMap['Site Plan / Layout'] = d.fileName || 'Blueprint_Layout.pdf';
+          }
+          if (d.documentName) {
+            vaultMap[d.documentName] = d.fileName || `${d.documentName}.pdf`;
+          }
+        });
+        setGlobalUploadedDocs(vaultMap);
+      })
+      .catch((err) => console.warn('Could not load user vault documents:', err.message));
+  }, []);
 
   const toggleField = (id, field) =>
     setApprovals((prev) =>
@@ -140,13 +172,15 @@ export const ListOfApprovalsPage = () => {
         await applicationsService.submitApplication({
           approvalId: item.id,
           approvalTitle: item.docName,
+          authority: item.authority,
+          department: item.authority,
+          district: user?.district || user?.location?.district || 'Pune',
           feePaid: item.fee,
           submissionDate: new Date().toISOString(),
         }).catch((err) => console.warn('[ApplyApproval] Item submit notice:', err.message));
       }
     } finally {
       setIsApplyModalOpen(false);
-      setGlobalUploadedDocs({ ...userSystemVault });
     }
   };
 
@@ -184,7 +218,7 @@ export const ListOfApprovalsPage = () => {
         <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
           <span className="flex items-center gap-1.5 font-medium">
             <span>✨</span>
-            <span>Your previously selected clearances checklist has been automatically restored.</span>
+            <span>Your saved approvals list has been restored.</span>
           </span>
           <button 
             onClick={() => setRestoredBanner(false)} 
@@ -196,8 +230,8 @@ export const ListOfApprovalsPage = () => {
       )}
 
       <PageHeader
-        title="Required Approvals & Clearances"
-        subtitle="Click any row to get AI explanation of why it's required. Check items to apply, or submit PDFs if already obtained."
+        title="Required Government Approvals & Licenses"
+        subtitle="Click any approval to see why it is needed. Select the ones you want to apply for today, or attach existing certificates if you already have them."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -218,9 +252,9 @@ export const ListOfApprovalsPage = () => {
 
           <div className="border border-border rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
-              <span className="text-xs text-foreground/50 block">Selected for Application</span>
+              <span className="text-xs text-foreground/50 block">Selected to Apply Now</span>
               <p className="text-sm font-bold text-foreground mt-0.5">
-                {applyItems.length} papers &bull; Total:{' '}
+                {applyItems.length} Approvals &bull; Total Govt Fee:{' '}
                 <strong className="text-india-blue font-mono text-base">
                   ₹{totalAmount.toLocaleString('en-IN')}
                 </strong>
@@ -231,7 +265,7 @@ export const ListOfApprovalsPage = () => {
               onClick={handleApplyNowClick}
               className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-india-blue text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              Apply Now ({applyItems.length})
+              Apply & Pay Online ({applyItems.length})
             </button>
           </div>
         </div>
@@ -240,9 +274,9 @@ export const ListOfApprovalsPage = () => {
           <AIAdvisorPanel
             insight={activeInsight}
             history={insightHistory}
-            subtitle="Click any document row"
-            idleTitle="Select a document"
-            idleBody="Click any row in the list to get an AI explanation of why that clearance is required for your enterprise."
+            subtitle="Click any approval to read"
+            idleTitle="Select an approval"
+            idleBody="Click on any permission or license in the list, and the AI will explain why your factory needs it in simple terms."
           />
         </div>
       </div>

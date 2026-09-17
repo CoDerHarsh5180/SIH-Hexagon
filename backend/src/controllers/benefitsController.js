@@ -101,8 +101,10 @@ export const applyScheme = async (req, res) => {
     const resolvedTitle = schemeTitle || scheme?.schemeTitle || 'PSI 2019 Capital Subsidy';
     const costNum = Number(machineryCostCrores) || 4.85;
     const estimatedSubsidy = Math.min((costNum * 10000000 * 35) / 100, 25000000);
+    const generatedClaimId = `CLM-SCH-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const application = await SchemeApplication.create({
+      claimId: generatedClaimId,
       schemeId: id || scheme?.id || 'SCHEME-1024',
       schemeObjectId: scheme?._id,
       userId: user._id,
@@ -155,28 +157,139 @@ export const getSchemes = async (req, res) => {
 
     let schemes = await BenefitScheme.find(query).sort({ createdAt: -1 });
 
-    // Fallback if no schemes in DB yet
+    const defaultSchemes = [
+      {
+        id: 'SCH-MH-01',
+        schemeTitle: 'Package Scheme of Incentives (PSI 2024) - Capital Subsidy',
+        title: 'Package Scheme of Incentives (PSI 2024) - Capital Subsidy',
+        category: 'Capital Subsidy',
+        sector: 'Manufacturing & Food Processing',
+        targetSectors: ['Manufacturing', 'Food Processing', 'Textiles', 'Engineering'],
+        disbursingAuthority: 'Directorate of Industries, Maharashtra',
+        maxCeilingAmount: '₹3.50 Crores',
+        maxCeilingAmountNumber: 35000000,
+        subsidyPercentage: '35%',
+        subsidyPercentageNumber: 35,
+        benefits: 'Up to 35% capital investment subsidy spread across 7 fiscal years.',
+        eligibility: 'New MSME and Large units investing > Rs 25 Lakhs in machinery with Udyam Registration.',
+        eligibilityCriteria: ['New MSME or Large unit investing > Rs 25 Lakhs in machinery', 'Valid Udyam MSME Registration', 'MIDC or Collector NA Land'],
+        validTill: '31 March 2029',
+        validUntil: new Date('2029-03-31'),
+        status: 'PUBLISHED',
+        datePublished: '2024-04-01',
+      },
+      {
+        id: 'SCH-MH-02',
+        schemeTitle: 'Industrial Electricity Duty Exemption Scheme',
+        title: 'Industrial Electricity Duty Exemption Scheme',
+        category: 'Utility Exemption',
+        sector: 'All Industrial Sectors',
+        targetSectors: ['All Industrial Sectors', 'Manufacturing', 'Utility Exemption'],
+        disbursingAuthority: 'Energy Department & MSEDCL',
+        maxCeilingAmount: '100% Exemption',
+        maxCeilingAmountNumber: 5000000,
+        subsidyPercentage: '100% Waiver',
+        subsidyPercentageNumber: 100,
+        benefits: '100% waiver of electricity duty for first 5 years of commercial production.',
+        eligibility: 'Manufacturing units located in MIDC / industrial zones outside Mumbai urban corridor.',
+        eligibilityCriteria: ['Units located in Maharashtra outside Mumbai urban corridor', 'Valid MSEDCL power connection'],
+        validTill: 'Open-ended',
+        status: 'PUBLISHED',
+        datePublished: '2024-01-01',
+      },
+      {
+        id: 'SCH-MH-03',
+        schemeTitle: 'Interest Subvention on Working Capital & Term Loans',
+        title: 'Interest Subvention on Working Capital & Term Loans',
+        category: 'Financial Assistance',
+        sector: 'Agro & Food Processing',
+        targetSectors: ['Agro', 'Food Processing', 'MSME'],
+        disbursingAuthority: 'Maharashtra State Financial Corporation (MSFC)',
+        maxCeilingAmount: '₹1.00 Crore',
+        maxCeilingAmountNumber: 10000000,
+        subsidyPercentage: '5% Interest Subvention',
+        subsidyPercentageNumber: 5,
+        benefits: '5% interest subvention per annum on eligible term loans up to Rs 1 Crore.',
+        eligibility: 'Food processing facilities and agri-enterprises procuring produce from local farmer groups.',
+        eligibilityCriteria: ['Food processing & agro units', 'Active bank term loan for plant and machinery'],
+        validTill: '31 December 2027',
+        validUntil: new Date('2027-12-31'),
+        status: 'PUBLISHED',
+        datePublished: '2024-01-15',
+      },
+      {
+        id: 'SCH-MH-04',
+        schemeTitle: 'Green Industrial ETP Setup Incentive',
+        title: 'Green Industrial ETP Setup Incentive',
+        category: 'Sustainability',
+        sector: 'Chemical, Pharma & Food',
+        targetSectors: ['Sustainability', 'Chemical', 'Pharma', 'Food Processing'],
+        disbursingAuthority: 'Maharashtra Pollution Control Board (MPCB)',
+        maxCeilingAmount: '₹50 Lakhs',
+        maxCeilingAmountNumber: 5000000,
+        subsidyPercentage: '50% Subsidy',
+        subsidyPercentageNumber: 50,
+        benefits: '50% one-time subsidy on capital cost of ETP / ZLD equipment up to Rs 50 Lakhs.',
+        eligibility: 'Zero Liquid Discharge (ZLD) effluent treatment plants certified by MPCB.',
+        eligibilityCriteria: ['Zero Liquid Discharge (ZLD) effluent treatment plants', 'Certified by MPCB'],
+        validTill: '31 March 2028',
+        validUntil: new Date('2028-03-31'),
+        status: 'PUBLISHED',
+        datePublished: '2024-02-01',
+      },
+      {
+        id: 'SCH-MH-05',
+        schemeTitle: 'Stamp Duty & Registration Fee 100% Exemption',
+        title: 'Stamp Duty & Registration Fee 100% Exemption',
+        category: 'Land & Infrastructure',
+        sector: 'All Industrial Sectors',
+        targetSectors: ['Manufacturing', 'All Industrial Sectors', 'Engineering'],
+        disbursingAuthority: 'Revenue and Forest Department, Maharashtra',
+        maxCeilingAmount: '100% Exemption',
+        maxCeilingAmountNumber: 2500000,
+        subsidyPercentage: '100% Waiver',
+        subsidyPercentageNumber: 100,
+        benefits: '100% stamp duty waiver on land lease or purchase for establishing new industrial units.',
+        eligibility: 'Industrial plot purchased in MIDC or authorized cooperative industrial estates.',
+        eligibilityCriteria: ['Plot located in MIDC or designated industrial area', 'Valid registered agreement'],
+        validTill: 'Open-ended',
+        status: 'PUBLISHED',
+        datePublished: '2024-01-01',
+      },
+    ];
+
+    // Auto-seed into MongoDB if empty, otherwise normalize retrieved records
     if (!schemes || schemes.length === 0) {
-      schemes = [
-        {
-          id: 'SCHEME-1024',
-          schemeTitle: 'PSI 2019 Capital Subsidy',
-          category: 'Capital Incentive',
-          disbursingAuthority: 'Directorate of Industries',
-          maxCeilingAmount: '₹2.50 Crores',
-          subsidyPercentage: '35%',
-          targetSectors: ['Food Processing', 'Textiles', 'Electronics'],
-          eligibilityCriteria: ['MSME Registration', 'Minimum 3 years operational intent', 'MIDC or NA Land'],
-          status: 'PUBLISHED',
-          datePublished: '2026-09-12',
-        },
-      ];
+      try {
+        await BenefitScheme.insertMany(defaultSchemes);
+        schemes = await BenefitScheme.find(query).sort({ createdAt: -1 });
+      } catch {
+        schemes = defaultSchemes;
+      }
     }
+
+    // Normalize each scheme to ensure title, sector, benefits, and eligibility exist
+    const normalized = schemes.map((s) => {
+      const obj = s.toObject ? s.toObject() : { ...s };
+      return {
+        ...obj,
+        id: obj.id || obj._id,
+        title: obj.title || obj.schemeTitle || 'Government Incentive Scheme',
+        schemeTitle: obj.schemeTitle || obj.title || 'Government Incentive Scheme',
+        category: obj.category || 'Capital Subsidy',
+        sector: obj.sector || (Array.isArray(obj.targetSectors) ? obj.targetSectors.join(', ') : obj.targetSectors) || 'All Industrial Sectors',
+        targetSectors: obj.targetSectors || (obj.sector ? [obj.sector] : ['All Industrial Sectors']),
+        benefits: obj.benefits || (obj.subsidyPercentage ? `${obj.subsidyPercentage} capital subsidy up to ${obj.maxCeilingAmount || '₹2.5 Cr'}` : obj.description) || 'Capital subsidy and tariff exemptions',
+        eligibility: obj.eligibility || (Array.isArray(obj.eligibilityCriteria) ? obj.eligibilityCriteria.join('; ') : obj.eligibilityCriteria) || 'Valid Udyam MSME and factory setup in Maharashtra',
+        validTill: obj.validTill || (obj.validUntil ? new Date(obj.validUntil).toLocaleDateString('en-IN') : (obj.datePublished ? `Valid from ${obj.datePublished}` : 'Open-ended')),
+        status: obj.status || 'PUBLISHED',
+      };
+    });
 
     return res.status(200).json({
       success: true,
-      count: schemes.length,
-      data: schemes,
+      count: normalized.length,
+      data: normalized,
     });
   } catch (error) {
     return res.status(500).json({
@@ -196,15 +309,47 @@ export const getSchemeById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const scheme = await BenefitScheme.findOne({
+    let scheme = await BenefitScheme.findOne({
       $or: [{ id }, { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }],
     });
 
     if (!scheme) {
-      return res.status(404).json({
-        success: false,
-        message: 'Scheme not found',
-      });
+      // Check known schemes fallback
+      const knownSchemes = {
+        'SCHEME-1024': {
+          id: 'SCHEME-1024',
+          schemeTitle: 'PSI 2019 Capital Subsidy',
+          category: 'Capital Incentive',
+          disbursingAuthority: 'Directorate of Industries',
+          maxCeilingAmount: '₹2.50 Crores',
+          subsidyPercentage: '35%',
+          targetSectors: ['Food Processing', 'Textiles', 'Electronics'],
+          eligibilityCriteria: ['MSME Registration', 'Minimum 3 years operational intent', 'MIDC or NA Land'],
+          status: 'PUBLISHED',
+          datePublished: '2026-09-12',
+        },
+        'SCH-MH-01': {
+          id: 'SCH-MH-01',
+          schemeTitle: 'Package Scheme of Incentives (PSI) 2024 - Capital Subsidy',
+          category: 'Capital Subsidy',
+          disbursingAuthority: 'Directorate of Industries',
+          maxCeilingAmount: '₹3.50 Crores',
+          subsidyPercentage: '35%',
+          targetSectors: ['Manufacturing & Food Processing'],
+          eligibilityCriteria: ['New MSME and Large units investing > Rs 2.5 Crore in machinery.'],
+          status: 'PUBLISHED',
+          datePublished: '2026-01-15',
+        },
+      };
+
+      if (knownSchemes[id]) {
+        scheme = knownSchemes[id];
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: 'Scheme not found',
+        });
+      }
     }
 
     return res.status(200).json({
