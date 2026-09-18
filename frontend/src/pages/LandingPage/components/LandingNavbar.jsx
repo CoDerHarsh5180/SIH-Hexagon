@@ -3,8 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, User, LogOut, Menu, X } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import logoLight from '../../../assets/logo-light.png';
-import logoDark from '../../../assets/logo-dark.png';
+import SaralLogo from '../../../components/common/SaralLogo';
 
 const navLinks = [
   { id: 'home', label: 'Home', path: '/' },
@@ -41,23 +40,14 @@ export const LandingNavbar = () => {
     <header className="bg-background border-b border-border sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Brand Logo - Official SARAL Logo */}
+          {/* Brand Logo - Crisp Official SARAL Logo */}
           <div className="flex items-center space-x-3">
             <Link
               to="/"
               className="hover:opacity-90 transition-opacity flex items-center cursor-pointer py-1"
               title="SARAL — Streamlined Applications, Record and Approvals Link"
             >
-              <img
-                src={logoLight}
-                alt="SARAL"
-                className="h-9 sm:h-10 w-auto object-contain dark:hidden block"
-              />
-              <img
-                src={logoDark}
-                alt="SARAL"
-                className="h-9 sm:h-10 w-auto object-contain hidden dark:block"
-              />
+              <SaralLogo />
             </Link>
           </div>
 
