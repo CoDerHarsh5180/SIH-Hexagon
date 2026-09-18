@@ -15,7 +15,8 @@ import {
   Building2
 } from 'lucide-react';
 import { POPULAR_DISTRICTS, POPULAR_CLEARANCES } from '../data/landingData';
-import hero3dImage from '../../../assets/hero-3d.jpg';
+import heroLightWebp from '../../../assets/light.webp';
+import heroDarkWebp from '../../../assets/dark.webp';
 
 const ROTATING_TARGETS = [
   'New Factories',
@@ -366,23 +367,44 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
             </div>
           </div>
 
-          {/* Hero Right: Clean 3D Visual Frame (No gradients, matching app style) */}
+          {/* Hero Right: Clean Visual Frame with Light/Dark Mode Switching */}
           <div className="lg:col-span-5 relative z-10 flex items-center justify-center">
             <div className="relative w-full max-w-[460px]">
               
-              {/* Main Card Container */}
-              <div className="relative rounded-2xl border border-border bg-background shadow-md p-3 sm:p-4 overflow-visible">
+              {/* Ambient Glow Aura */}
+              <div 
+                className="absolute -inset-2 rounded-3xl opacity-30 dark:opacity-45 blur-2xl transition-all duration-500 pointer-events-none bg-gradient-to-tr from-india-orange/20 via-india-blue/15 to-india-orange/20" 
+                aria-hidden="true" 
+              />
+
+              {/* Main Card Container with subtle float */}
+              <motion.div 
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative rounded-2xl border border-border bg-background shadow-md p-3 sm:p-4 overflow-visible"
+              >
                 
-                {/* 3D Visual Frame */}
+                {/* Visual Frame */}
                 <div className="relative rounded-xl overflow-hidden border border-border aspect-square flex items-center justify-center bg-background">
+                  {/* Light Mode Animation */}
                   <img 
-                    src={hero3dImage} 
-                    alt="SARAL Maharashtra Digital Industrial Clearance Portal" 
-                    className="w-full h-full object-cover object-center"
+                    src={heroLightWebp} 
+                    alt="SARAL Maharashtra Digital Industrial Clearance Portal (Light)" 
+                    className="w-full h-full object-cover object-center dark:hidden block"
+                    loading="eager"
+                    decoding="async"
+                  />
+                  {/* Dark Mode Animation */}
+                  <img 
+                    src={heroDarkWebp} 
+                    alt="SARAL Maharashtra Digital Industrial Clearance Portal (Dark)" 
+                    className="w-full h-full object-cover object-center hidden dark:block"
+                    loading="eager"
+                    decoding="async"
                   />
                   
                   {/* System Status HUD Pill at Bottom of Image */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-2 rounded-lg bg-background/95 border border-border text-foreground text-[11px] shadow-sm">
+                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between px-3 py-2 rounded-lg bg-background/90 dark:bg-background/85 backdrop-blur-md border border-border text-foreground text-[11px] shadow-sm">
                     <div className="flex items-center gap-2 font-medium">
                       <span className="w-2 h-2 rounded-full bg-india-orange animate-pulse"></span>
                       <span className="font-semibold">Maharashtra Single Window</span>
@@ -394,7 +416,11 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                 </div>
 
                 {/* Floating Badge 1: Top-Right */}
-                <div className="absolute -top-3 -right-2 sm:-top-3 sm:-right-3 bg-background border border-border shadow-md rounded-xl p-2.5 flex items-center gap-2.5">
+                <motion.div 
+                  animate={{ y: [0, 3, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                  className="absolute -top-3 -right-2 sm:-top-3 sm:-right-3 bg-background border border-border shadow-md rounded-xl p-2.5 flex items-center gap-2.5 z-20"
+                >
                   <div className="w-7 h-7 rounded-lg bg-india-blue/10 text-india-blue flex items-center justify-center font-bold shrink-0 border border-india-blue/30">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
@@ -402,10 +428,14 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                     <p className="text-[10px] uppercase font-bold text-foreground/50 leading-tight">Direct Approvals</p>
                     <p className="text-xs font-bold text-foreground leading-tight">No Office Visits</p>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Floating Badge 2: Bottom-Left */}
-                <div className="absolute -bottom-3 -left-2 sm:-bottom-3 sm:-left-3 bg-background border border-border shadow-md rounded-xl p-2.5 flex items-center gap-2.5">
+                <motion.div 
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+                  className="absolute -bottom-3 -left-2 sm:-bottom-3 sm:-left-3 bg-background border border-border shadow-md rounded-xl p-2.5 flex items-center gap-2.5 z-20"
+                >
                   <div className="w-7 h-7 rounded-lg bg-india-orange/10 text-india-orange flex items-center justify-center font-bold shrink-0 border border-india-orange/30">
                     <ShieldCheck className="w-4 h-4" />
                   </div>
@@ -413,8 +443,8 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                     <p className="text-[10px] uppercase font-bold text-foreground/50 leading-tight">Verified Documents</p>
                     <p className="text-xs font-bold text-foreground leading-tight">QR Code Protected</p>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </div>
           </div>
         </div>
