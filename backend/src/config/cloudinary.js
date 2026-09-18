@@ -9,9 +9,9 @@ const apiKey = (process.env.CLOUDINARY_API_KEY || '').trim();
 const apiSecret = (process.env.CLOUDINARY_API_SECRET || '').trim();
 
 cloudinary.config({
-  cloud_name: cloudName || 'dvmzb0tzl',
-  api_key: apiKey || '628646917816726',
-  api_secret: apiSecret || 'BztC7pqPTRwlQxdoKOG9QXWvTyI',
+  cloud_name: cloudName ,
+  api_key: apiKey,
+  api_secret: apiSecret,
   secure: true,
 });
 
