@@ -385,7 +385,7 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
               >
                 
                 {/* Visual Frame */}
-                <div className="relative rounded-xl overflow-hidden border border-border aspect-square flex items-center justify-center bg-background">
+                <div className="relative rounded-xl overflow-hidden border border-border aspect-square flex items-center justify-center bg-background dark:bg-[#070d18]">
                   {/* Light Mode Animation */}
                   <img 
                     src={heroLightWebp} 
@@ -394,11 +394,11 @@ export const HeroSection = ({ onSelectClearanceSearch }) => {
                     loading="eager"
                     decoding="async"
                   />
-                  {/* Dark Mode Animation */}
+                  {/* Dark Mode Animation (scaled to remove letterbox bars and fill 1:1 frame smoothly) */}
                   <img 
                     src={heroDarkWebp} 
                     alt="SARAL Maharashtra Digital Industrial Clearance Portal (Dark)" 
-                    className="w-full h-full object-cover object-center hidden dark:block"
+                    className="w-full h-full object-cover object-center hidden dark:block scale-[1.15] -translate-y-1 transform"
                     loading="eager"
                     decoding="async"
                   />
