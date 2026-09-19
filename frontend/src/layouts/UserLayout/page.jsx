@@ -10,13 +10,12 @@ import { useAuth } from '../../context/AuthContext';
 const primaryNavLinks = [
   { id: 'dashboard', label: 'Dashboard', path: '/user/dashboard' },
   { id: 'approvals', label: 'Know Your Approvals', path: '/user/approvals' },
-  { id: 'pending-docs', label: 'Action Needed', path: '/user/pending-docs' },
+  { id: 'pending-docs', label: 'Pending Documents', path: '/user/pending-docs' },
   { id: 'your-docs', label: 'Document Locker', path: '/user/your-docs' }
 ];
 
 // Secondary links grouped under 'More' dropdown
 const moreNavLinks = [
-  { id: 'track', label: 'Track Applications', path: '/user/track' },
   { id: 'custom-docs-apply', label: 'Apply for Specific NOC', path: '/user/custom-docs-apply' },
   { id: 'Government Benefits', label: 'Government Subsidies', path: '/user/gov-benefits' },
   { id: 'query', label: 'Ask Question / Helpdesk', path: '/user/query' },
