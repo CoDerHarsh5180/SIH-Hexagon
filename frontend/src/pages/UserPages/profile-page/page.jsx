@@ -146,6 +146,55 @@ export const EnterpriseProfilePage = () => {
 
         setProfile(cleanProfile);
         setFormData(cleanProfile);
+      } else if (authUser) {
+        const userObj = authUser;
+        const fallbackProfile = {
+          businessId: userObj?._id ? `ENT-MH-${userObj._id.slice(-6).toUpperCase()}` : 'ENT-MH-USER',
+          factoryName: userObj?.companyName || userObj?.name || 'Industrial Enterprise',
+          businessType: userObj?.industryType || 'MSME Enterprise',
+          category: 'General Industrial',
+          currentStage: userObj?.profileStatus === 'COMPLETED' ? 'Operational / Verified' : 'Incomplete Registration',
+          profileStatus: userObj?.profileStatus || 'INCOMPLETE',
+          profileCompletion: userObj?.profileCompletion || 20,
+          ownershipType: userObj?.ownershipType || 'REGISTERED_COMPANY',
+          udyamNumber: userObj?.udyogAadhaar || '',
+          gstNumber: userObj?.gstin || '',
+          panNumber: userObj?.panNumber || '',
+          startDate: 'Recently Registered',
+          location: {
+            plotNumber: userObj?.address?.street || '',
+            area: userObj?.address?.city || '',
+            district: userObj?.district || 'Pune',
+            taluka: userObj?.district || 'Pune',
+            state: userObj?.state || 'Maharashtra',
+            pincode: userObj?.address?.pincode || '',
+          },
+          factoryDetails: {
+            plotArea: userObj?.factoryDetails?.plotArea || '',
+            builtArea: userObj?.factoryDetails?.builtArea || '',
+            electricityLoad: userObj?.factoryDetails?.electricityLoad || '',
+            dailyWaterUse: userObj?.factoryDetails?.dailyWaterUse || '',
+            wasteWaterSetup: userObj?.factoryDetails?.wasteWaterSetup || '',
+            machineCost: userObj?.factoryDetails?.machineCost || '',
+            totalProjectCost: userObj?.factoryDetails?.totalProjectCost || '',
+            enterpriseDescription: userObj?.factoryDetails?.enterpriseDescription || '',
+          },
+          ownerDetails: {
+            fullName: userObj?.fullName || userObj?.name || 'Enterprise Owner',
+            post: userObj?.designation || 'Authorized Representative',
+            email: userObj?.email || '',
+            mobileNumber: userObj?.phone || '',
+            idNumber: userObj?.panNumber || '',
+          },
+          licenses: {
+            fssaiNumber: '',
+            mpcbNumber: '',
+            fireNocNumber: '',
+            factoryLicenseStatus: 'Not Applied',
+          },
+        };
+        setProfile(fallbackProfile);
+        setFormData(fallbackProfile);
       }
 
       if (docsRes.status === 'fulfilled') {
@@ -255,11 +304,29 @@ export const EnterpriseProfilePage = () => {
     await loadProfileData();
   };
 
-  if (loading || !profile) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-3">
         <Loader2 className="w-8 h-8 animate-spin text-india-blue" />
         <p className="text-xs text-foreground/60 font-semibold">Loading Factory Profile...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4 text-center">
+        <AlertCircle className="w-10 h-10 text-india-orange" />
+        <div>
+          <h3 className="text-sm font-bold text-foreground">Unable to load Factory Profile</h3>
+          <p className="text-xs text-foreground/60 mt-1">Please ensure the backend server is running and try again.</p>
+        </div>
+        <button
+          onClick={loadProfileData}
+          className="px-4 py-2 rounded-xl bg-india-blue text-white text-xs font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+        >
+          Retry Loading
+        </button>
       </div>
     );
   }
