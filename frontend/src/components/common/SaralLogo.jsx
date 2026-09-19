@@ -24,7 +24,7 @@ export const SaralLogo = ({
   }[size] || 'text-xl sm:text-2xl';
 
   return (
-    <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
+    <div className={`inline-flex items-center gap-2.5 select-none shrink-0 whitespace-nowrap ${className}`}>
       {/* High-Resolution Emblem */}
       <img
         src={emblemImg}
@@ -33,18 +33,18 @@ export const SaralLogo = ({
       />
 
       {/* Brand Typography (Razor-Sharp in Light and Dark Mode) */}
-      <div className="flex flex-col justify-center leading-none">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <span className={`font-extrabold ${titleSizeClass} tracking-tight text-foreground`}>
+      <div className="flex flex-col justify-center leading-none shrink-0 whitespace-nowrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 whitespace-nowrap">
+          <span className={`font-extrabold ${titleSizeClass} tracking-tight text-foreground whitespace-nowrap`}>
             SAR<span className="text-india-orange">AL</span>
           </span>
-          <span className="px-2 py-0.5 rounded-full bg-india-orange text-white text-[9.5px] sm:text-[10.5px] font-extrabold uppercase tracking-wider shadow-xs leading-normal">
+          <span className="px-2 py-0.5 rounded-full bg-india-orange text-white text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider shadow-xs leading-normal whitespace-nowrap shrink-0">
             Single Window
           </span>
         </div>
 
         {showSubtext && (
-          <span className="text-[8px] sm:text-[9px] font-bold tracking-[0.16em] uppercase text-foreground/75 dark:text-foreground/70 mt-1 whitespace-nowrap">
+          <span className="text-[8px] sm:text-[9px] font-bold tracking-[0.16em] uppercase text-foreground/75 dark:text-foreground/70 mt-1 whitespace-nowrap shrink-0">
             Government of Maharashtra
           </span>
         )}

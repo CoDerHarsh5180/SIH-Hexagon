@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Outlet } from 'react-router-dom';
-import { Navbar, MobileDrawer } from '../../components/navbar';
+import { Navbar, NavLinks, MobileDrawer } from '../../components/navbar';
 import { useAuth } from '../../context/AuthContext';
 import { notificationsService } from '../../services/notificationsService';
 
@@ -54,7 +54,14 @@ export const LocalAuthLayout = ({ children }) => {
             onNavClick={handleNavClick}
           />
         )}
-      />
+      >
+        <NavLinks
+          links={localAuthNavLinks}
+          currentPath={currentPath}
+          onNavClick={handleNavClick}
+          layoutId="activeLocalAuthNav"
+        />
+      </Navbar>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         {children || <Outlet />}
