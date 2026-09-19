@@ -8,26 +8,27 @@ import {
   getUserApplications,
   getApplicationById,
 } from '../controllers/applicationsController.js';
+import { protect, optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // 1. Submit Standard / List of Approvals Application
-router.post('/', submitApplication);
+router.post('/', optionalAuth, submitApplication);
 
 // 2. Custom Clearances Application
-router.post('/custom-apply', submitCustomApplication);
+router.post('/custom-apply', optionalAuth, submitCustomApplication);
 
 // 3. Discrepancy Clarification Response
-router.post('/:id/discrepancy-response', respondDiscrepancy);
+router.post('/:id/discrepancy-response', optionalAuth, respondDiscrepancy);
 
 // 4. Fee Payment with UTR
-router.post('/:id/fee-payment', submitFeePayment);
+router.post('/:id/fee-payment', optionalAuth, submitFeePayment);
 
 // 5. Withdraw Application
-router.post('/:id/withdraw', withdrawApplication);
+router.post('/:id/withdraw', optionalAuth, withdrawApplication);
 
 // 6. List & Detail
-router.get('/', getUserApplications);
-router.get('/:id', getApplicationById);
+router.get('/', optionalAuth, getUserApplications);
+router.get('/:id', optionalAuth, getApplicationById);
 
 export default router;

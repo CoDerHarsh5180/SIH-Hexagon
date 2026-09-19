@@ -1,6 +1,7 @@
 import Application from '../models/Application.js';
 import ApprovalCatalog from '../models/ApprovalCatalog.js';
 import User from '../models/User.js';
+import { resolveUser } from '../utils/resolveUser.js';
 
 // Helper to generate application ID and verification code
 const generateAppMeta = () => {
@@ -12,28 +13,7 @@ const generateAppMeta = () => {
 };
 
 // Helper to resolve fallback user if unauthenticated in preview
-const resolveUserId = async (req) => {
-  if (req.user && req.user._id) {
-    return req.user._id;
-  }
-  // Lookup or create a default demo enterprise user
-  let demoUser = await User.findOne({ email: 'applicant@saral.gov.in' });
-  if (!demoUser) {
-    demoUser = await User.create({
-      name: 'Sahyadri Agro Enterprises',
-      fullName: 'Sahyadri Agro Enterprises',
-      companyName: 'Sahyadri Agro Enterprises',
-      email: 'applicant@saral.gov.in',
-      phone: '+91 9822012345',
-      password: 'password123',
-      role: 'USER',
-      industryType: 'Food Factory',
-      district: 'Pune',
-      isVerified: true,
-    });
-  }
-  return demoUser._id;
-};
+const resolveUserId = async (req) => resolveUser(req, false);
 
 // Helper to determine whether an application goes to Central, State, or Local Authority
 export const determineAuthorityLevel = (authStr = '', titleStr = '') => {

@@ -1,6 +1,14 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
+const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('FATAL: JWT_SECRET environment variable is not set.');
+  }
+  return secret;
+};
+
 export const protect = async (req, res, next) => {
   let token;
 
@@ -20,10 +28,10 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const secret = process.env.JWT_SECRET || 'saral_jwt_secret_key_2026_super_secure_key';
-    const decoded = jwt.verify(token, secret);
+    const decoded = jwt.verify(token, getJwtSecret());
 
-    const user = await User.findById(decoded.id).select('-password');
+    // No need for .select('-password') since password has select: false in schema
+    const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -70,9 +78,8 @@ export const optionalAuth = async (req, res, next) => {
   }
   if (!token) return next();
   try {
-    const secret = process.env.JWT_SECRET || 'saral_jwt_secret_key_2026_super_secure_key';
-    const decoded = jwt.verify(token, secret);
-    const user = await User.findById(decoded.id).select('-password');
+    const decoded = jwt.verify(token, getJwtSecret());
+    const user = await User.findById(decoded.id);
     if (user && user.isActive) {
       req.user = user;
     }

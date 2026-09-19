@@ -2,22 +2,10 @@ import Query from '../models/Query.js';
 import Complaint from '../models/Complaint.js';
 import Feedback from '../models/Feedback.js';
 import User from '../models/User.js';
+import { resolveUser as resolveUserShared } from '../utils/resolveUser.js';
 
-// Helper to resolve user
-const resolveUser = async (req) => {
-  if (req.user && req.user._id) return req.user;
-  let demoUser = await User.findOne({ email: 'applicant@saral.gov.in' });
-  if (!demoUser) {
-    demoUser = await User.create({
-      name: 'Sahyadri Agro Enterprises',
-      email: 'applicant@saral.gov.in',
-      password: 'password123',
-      role: 'USER',
-      district: 'Pune',
-    });
-  }
-  return demoUser;
-};
+// Helper to resolve user (returns full document)
+const resolveUser = async (req) => resolveUserShared(req, true);
 
 // ── 1. QUERIES ──
 export const submitQuery = async (req, res) => {

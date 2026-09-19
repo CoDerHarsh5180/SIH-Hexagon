@@ -9,14 +9,20 @@ import { authService } from '../../services/authService';
 
 // --- REUSABLE UI COMPONENTS ---
 const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
-  <div>
-    <label className="block text-[11px] font-semibold text-foreground/70 uppercase tracking-wider mb-1">
-      {label} {required && <span className="text-india-blue">*</span>}
+  <div className="w-full">
+    <label className="flex items-center text-[11px] font-semibold text-foreground/70 uppercase tracking-wide mb-1 truncate">
+      <span className="truncate">{label}</span>
+      {required && <span className="text-india-blue ml-1 shrink-0">*</span>}
     </label>
     <div className="relative">
       <input
         required={required}
-        className={`w-full bg-background border border-border rounded-lg ${Icon ? 'pl-9' : 'p-2.5'} pr-3 py-2.5 text-foreground focus:outline-none focus:border-india-blue transition-colors`}
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck="false"
+        data-lpignore="true"
+        data-form-type="other"
+        className={`w-full bg-background border border-border rounded-lg ${Icon ? 'pl-9' : 'p-2.5'} pr-3 py-2.5 text-foreground text-xs focus:outline-none focus:border-india-blue transition-colors`}
         {...props}
       />
       {Icon && <Icon className="w-4 h-4 text-foreground/40 absolute left-3 top-3" />}
@@ -48,7 +54,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
   // Single State Object for all form fields
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '', mobileNumber: '', otp: '',
-    enterpriseName: '', enterpriseType: '', district: districtsInState[0],
+    enterpriseName: '', ownerName: '', ownerDesignation: 'Managing Director', enterpriseType: 'Food Factory', district: districtsInState[0],
     officerName: '', officerDesignation: '', authorityBody: authorityBodies[0], officerGovId: ''
   });
 
@@ -94,9 +100,10 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
     setIsSubmitting(true);
     const payload = role === 'USER' ? {
-      name: formData.enterpriseName,
-      fullName: formData.enterpriseName,
-      companyName: formData.enterpriseName,
+      name: formData.ownerName.trim() || formData.enterpriseName.trim(),
+      fullName: formData.ownerName.trim() || formData.enterpriseName.trim(),
+      companyName: formData.enterpriseName.trim(),
+      designation: formData.ownerDesignation || 'Managing Director / Owner',
       email: formData.email,
       phone: formData.mobileNumber,
       password: formData.password,
@@ -119,9 +126,15 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
     };
 
     try {
-      await register(payload);
-      alert('Account verified and registered successfully! Redirecting to login.');
-      handleGoToLogin();
+      const res = await register(payload);
+      const userRole = res?.data?.user?.role || res?.user?.role || payload.role;
+      if (userRole === 'LOCAL_AUTH') {
+        navigate('/local-auth/requests');
+      } else if (userRole === 'MAIN_AUTH') {
+        navigate('/main-auth/dashboard');
+      } else {
+        navigate('/user/dashboard');
+      }
     } catch (err) {
       console.error('[RegisterPage] Registration error:', err);
       alert(err.message || 'Registration failed. Please verify your details.');
@@ -154,19 +167,40 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
       {/* STEP 1: Details */}
       {step === 1 && (
-        <form onSubmit={handleInitiateRegistration} className="space-y-3.5 text-xs">
+        <form onSubmit={handleInitiateRegistration} autoComplete="off" className="space-y-3.5 text-xs">
           <AnimatePresence mode="wait">
             {role === 'USER' ? (
               <motion.div key="user" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="space-y-3">
-                <InputGroup label="Enterprise Legal Name" required placeholder="e.g. Sahyadri Agro Foods" value={formData.enterpriseName} onChange={updateForm('enterpriseName')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <InputGroup 
+                    label="Enterprise / Company Name" 
+                    required 
+                    placeholder="e.g. Sahyadri Agro Foods" 
+                    value={formData.enterpriseName} 
+                    onChange={updateForm('enterpriseName')} 
+                  />
+                  <InputGroup 
+                    label="Owner / Representative Name" 
+                    required 
+                    placeholder="e.g. Ramesh Patil" 
+                    value={formData.ownerName} 
+                    onChange={updateForm('ownerName')} 
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <InputGroup 
+                    label="Role / Designation" 
+                    placeholder="e.g. Managing Director / Proprietor" 
+                    value={formData.ownerDesignation} 
+                    onChange={updateForm('ownerDesignation')} 
+                  />
                   <SelectGroup label="Business Sector" options={['Food Factory', 'Chemical & Pharma', 'Engineering & Auto', 'Cold Storage', 'Commercial']} value={formData.enterpriseType} onChange={updateForm('enterpriseType')} />
                   <SelectGroup label="Target District" options={districtsInState} value={formData.district} onChange={updateForm('district')} />
                 </div>
               </motion.div>
             ) : (
               <motion.div key="auth" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="space-y-3">
-                <InputGroup label="Officer Full Name" required placeholder="e.g. S. K. Kulkarni" value={formData.officerName} onChange={updateForm('officerName')} />
+                <InputGroup label="Officer Full Name" required placeholder="Enter officer full name" value={formData.officerName} onChange={updateForm('officerName')} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <SelectGroup label="Department Body" options={authorityBodies} value={formData.authorityBody} onChange={updateForm('authorityBody')} />
                   <SelectGroup label="Assigned District" options={districtsInState} value={formData.district} onChange={updateForm('district')} />

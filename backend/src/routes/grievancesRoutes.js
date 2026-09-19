@@ -9,8 +9,12 @@ import {
   submitFeedback,
   getFeedbackStats,
 } from '../controllers/grievancesController.js';
+import { optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// All grievance routes use optionalAuth for user-scoped filtering
+router.use(optionalAuth);
 
 // 1. Queries
 router.post('/queries', submitQuery);

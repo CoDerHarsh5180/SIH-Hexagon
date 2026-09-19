@@ -3,24 +3,10 @@ import User from '../models/User.js';
 import ApprovalCatalog from '../models/ApprovalCatalog.js';
 import { uploadPdfToCloudinary } from '../config/cloudinary.js';
 import { scanAndExtractDocument } from '../services/aiDocumentService.js';
+import { resolveUser as resolveUserShared } from '../utils/resolveUser.js';
 
-// Helper to resolve user
-const resolveUser = async (req) => {
-  if (req.user && req.user._id) return req.user._id;
-  let demoUser = await User.findOne({ email: 'applicant@saral.gov.in' });
-  if (!demoUser) {
-    demoUser = await User.create({
-      name: 'Industrial Enterprise',
-      email: 'applicant@saral.gov.in',
-      password: 'password123',
-      role: 'USER',
-      district: 'Pune',
-      profileStatus: 'INCOMPLETE',
-      profileCompletion: 20,
-    });
-  }
-  return demoUser._id;
-};
+// Helper to resolve user (returns user _id)
+const resolveUser = async (req) => resolveUserShared(req, false);
 
 /**
  * @desc    Upload PDF to Cloudinary & Run AI Extraction

@@ -26,6 +26,11 @@ const EditableField = ({ label, value, editValue, isEditing, onChange, placehold
     {isEditing ? (
       <input
         type="text"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck="false"
+        data-lpignore="true"
+        data-form-type="other"
         value={editValue || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -67,7 +72,7 @@ const SectionHeading = ({ title, subtitle, rightElement = null }) => (
 
 export const EnterpriseProfilePage = () => {
   const navigate = useNavigate();
-  const { user: authUser, logout } = useAuth();
+  const { user: authUser, logout, updateUser } = useAuth();
   
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState(null);
@@ -166,27 +171,73 @@ export const EnterpriseProfilePage = () => {
   };
 
   const handleChange = (section, key, value) => {
-    setFormData((prev) =>
-      section
-        ? { ...prev, [section]: { ...prev[section], [key]: value } }
-        : { ...prev, [key]: value }
-    );
+    setFormData((prev) => {
+      if (!prev) return prev;
+      if (!section) {
+        return { ...prev, [key]: value };
+      }
+      return {
+        ...prev,
+        [section]: {
+          ...(prev[section] || {}),
+          [key]: value,
+        },
+      };
+    });
   };
 
+  const handleFieldChange = (section, key, value) => handleChange(section, key, value);
+
   const handleSave = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await authService.updateProfile(formData);
-      const updated = res?.data?.enterprise || res?.data || formData;
-      setProfile((prev) => ({ ...prev, ...updated }));
+      const ownerName = (formData?.ownerDetails?.fullName || '').trim();
+      const companyName = (formData?.factoryName || '').trim();
+      const payload = {
+        ...formData,
+        name: ownerName || companyName,
+        fullName: ownerName || companyName,
+        companyName: companyName,
+        factoryName: companyName,
+        phone: formData?.ownerDetails?.mobileNumber || formData?.phone,
+        designation: formData?.ownerDetails?.post || formData?.designation,
+        panNumber: formData?.panNumber || formData?.ownerDetails?.idNumber,
+        ownerDetails: {
+          ...(formData?.ownerDetails || {}),
+          fullName: ownerName,
+          post: formData?.ownerDetails?.post || 'Authorized Representative',
+          mobileNumber: formData?.ownerDetails?.mobileNumber || '',
+          idNumber: formData?.panNumber || formData?.ownerDetails?.idNumber || '',
+        },
+      };
+      const res = await authService.updateProfile(payload);
+      const updated = res?.data?.enterprise || res?.data?.profile || res?.enterprise || formData;
+      const updatedUser = res?.data?.user || res?.user;
+      if (updatedUser && updateUser) {
+        updateUser(updatedUser);
+      }
+      const newProfileState = {
+        ...profile,
+        ...updated,
+        factoryName: companyName || updated.factoryName || profile?.factoryName,
+        ownerDetails: {
+          ...(profile?.ownerDetails || {}),
+          ...(updated.ownerDetails || {}),
+          fullName: ownerName || updated?.ownerDetails?.fullName || profile?.ownerDetails?.fullName,
+          post: formData?.ownerDetails?.post || updated?.ownerDetails?.post || profile?.ownerDetails?.post,
+          mobileNumber: formData?.ownerDetails?.mobileNumber || updated?.ownerDetails?.mobileNumber || profile?.ownerDetails?.mobileNumber,
+        },
+      };
+      setProfile(newProfileState);
+      setFormData(newProfileState);
       setShowSavedMsg(true);
-      setTimeout(() => setShowSavedMsg(false), 3000);
+      setTimeout(() => setShowSavedMsg(false), 3500);
     } catch (err) {
       console.warn('Backend update failed:', err.message);
       setProfile(formData);
       setShowSavedMsg(true);
-      setTimeout(() => setShowSavedMsg(false), 3000);
+      setTimeout(() => setShowSavedMsg(false), 3500);
     } finally {
       setIsSaving(false);
       setIsEditing(false);
@@ -316,7 +367,22 @@ export const EnterpriseProfilePage = () => {
                   {profile.currentStage}
                 </span>
               </div>
-              <h1 className="text-lg sm:text-xl font-bold text-foreground break-words">{profile.factoryName}</h1>
+              {isEditing ? (
+                <div className="mt-1 space-y-1 w-full max-w-md">
+                  <label className="text-[10px] uppercase font-bold text-foreground/50 tracking-wider block">
+                    Enterprise / Factory Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData?.factoryName || ''}
+                    onChange={(e) => handleChange(null, 'factoryName', e.target.value)}
+                    placeholder="Enter enterprise legal name"
+                    className="w-full bg-background border border-border rounded-lg p-2 text-foreground font-bold text-base focus:outline-none focus:border-india-blue"
+                  />
+                </div>
+              ) : (
+                <h1 className="text-lg sm:text-xl font-bold text-foreground break-words">{profile.factoryName}</h1>
+              )}
               <p className="text-xs text-foreground/50 mt-0.5">
                 {profile.location.area ? `${profile.location.area}, ` : ''}
                 {profile.location.district ? `${profile.location.district} (Maharashtra)` : 'Maharashtra'}
@@ -488,9 +554,81 @@ export const EnterpriseProfilePage = () => {
         </div>
       </div>
 
-      {/* Main Grid: Location & Capacity */}
+      {/* Main Grid: Identity, Location & Capacity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-5">
+          {/* Enterprise & Owner Identity */}
+          <div className="border border-border rounded-2xl p-5 sm:p-6 space-y-4 bg-background shadow-xs">
+            <div className="flex items-center justify-between">
+              <SectionHeading
+                title="Enterprise & Authorized Representative Identity"
+                subtitle="Person and enterprise entity legally responsible for operations, permits, and compliance."
+              />
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="px-3 py-1.5 rounded-xl bg-india-blue/10 text-india-blue border border-india-blue/20 hover:bg-india-blue/20 text-xs font-bold flex items-center space-x-1.5 cursor-pointer transition-colors shrink-0"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  <span>Edit Identity</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <EditableField
+                label="Owner / Representative Full Name *"
+                value={profile.ownerDetails.fullName}
+                editValue={formData?.ownerDetails?.fullName}
+                isEditing={isEditing}
+                onChange={(v) => handleChange('ownerDetails', 'fullName', v)}
+                placeholder="e.g. Ramesh Patil"
+              />
+              <EditableField
+                label="Official Designation / Role"
+                value={profile.ownerDetails.post}
+                editValue={formData?.ownerDetails?.post}
+                isEditing={isEditing}
+                onChange={(v) => handleChange('ownerDetails', 'post', v)}
+                placeholder="e.g. Managing Director / Proprietor"
+              />
+              <EditableField
+                label="Enterprise / Company Legal Name *"
+                value={profile.factoryName}
+                editValue={formData?.factoryName}
+                isEditing={isEditing}
+                onChange={(v) => handleChange(null, 'factoryName', v)}
+                placeholder="e.g. Sahyadri Agro Foods"
+              />
+              <EditableField
+                label="Authorized Mobile Number"
+                value={profile.ownerDetails.mobileNumber}
+                editValue={formData?.ownerDetails?.mobileNumber}
+                isEditing={isEditing}
+                onChange={(v) => handleChange('ownerDetails', 'mobileNumber', v)}
+                placeholder="+91 98000 00000"
+              />
+              <div>
+                <label className="block text-[11px] font-semibold text-foreground/50 mb-1">Official Registered Email</label>
+                <div className="py-2 px-3 rounded-lg bg-card/40 border border-border/50 text-foreground font-mono font-medium text-xs break-all">
+                  {profile.ownerDetails.email || authUser?.email || 'N/A'}
+                </div>
+              </div>
+              <EditableField
+                label="Owner PAN / Identity Number"
+                value={profile.panNumber || profile.ownerDetails.idNumber}
+                editValue={formData?.panNumber}
+                isEditing={isEditing}
+                onChange={(v) => {
+                  const upper = v.toUpperCase();
+                  handleChange(null, 'panNumber', upper);
+                  handleChange('ownerDetails', 'idNumber', upper);
+                }}
+                placeholder="ABCDE1234F"
+              />
+            </div>
+          </div>
           {/* Address & Location */}
           <div className="border border-border rounded-2xl p-5 sm:p-6 space-y-4 bg-background shadow-xs">
             <SectionHeading
@@ -592,33 +730,113 @@ export const EnterpriseProfilePage = () => {
         {/* Right Column: Authorized Signatory */}
         <div className="space-y-5">
           <div className="border border-border rounded-2xl p-5 sm:p-6 space-y-4 bg-background shadow-xs">
-            <SectionHeading
-              title="Factory Owner / Main Representative"
-              subtitle="Person responsible for legal notices and government communications."
-            />
+            <div className="flex items-center justify-between">
+              <SectionHeading
+                title="Factory Owner / Main Representative"
+                subtitle="Person responsible for legal notices and government communications."
+              />
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="px-2.5 py-1 rounded-lg border border-border text-[11px] font-semibold text-foreground hover:bg-border/50 cursor-pointer shrink-0"
+                >
+                  Edit Details
+                </button>
+              )}
+            </div>
             <div className="space-y-3 text-xs">
               <div>
-                <span className="text-foreground/40 block text-[11px]">Full Name</span>
-                <p className="font-bold text-foreground text-sm mt-0.5">
-                  {profile.ownerDetails.fullName || 'Factory Owner / Representative'}
-                </p>
-                <p className="text-foreground/50 text-xs">{profile.ownerDetails.post}</p>
+                <span className="text-foreground/40 block text-[11px] font-medium">Owner Full Name</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-form-type="other"
+                    value={formData?.ownerDetails?.fullName || ''}
+                    onChange={(e) => handleFieldChange('ownerDetails', 'fullName', e.target.value)}
+                    placeholder="e.g. Ramesh Patil"
+                    className="w-full mt-1 bg-background border border-border rounded-lg p-2 text-foreground font-semibold text-xs focus:outline-none focus:border-india-blue"
+                  />
+                ) : (
+                  <p className="font-bold text-foreground text-sm mt-0.5">
+                    {profile.ownerDetails.fullName || 'Factory Owner / Representative'}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <span className="text-foreground/40 block text-[11px] font-medium">Official Designation / Post</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData?.ownerDetails?.post || ''}
+                    onChange={(e) => handleFieldChange('ownerDetails', 'post', e.target.value)}
+                    placeholder="e.g. Managing Director / Proprietor"
+                    className="w-full mt-1 bg-background border border-border rounded-lg p-2 text-foreground text-xs focus:outline-none focus:border-india-blue"
+                  />
+                ) : (
+                  <p className="text-foreground/60 text-xs mt-0.5">{profile.ownerDetails.post}</p>
+                )}
               </div>
               
               <div className="border-t border-border pt-2.5">
-                <span className="text-foreground/40 block text-[11px]">Official Email</span>
+                <span className="text-foreground/40 block text-[11px] font-medium">Official Email</span>
                 <p className="text-foreground mt-0.5 break-all font-mono font-bold text-xs">{profile.ownerDetails.email}</p>
               </div>
 
               <div className="border-t border-border pt-2.5">
-                <span className="text-foreground/40 block text-[11px]">Mobile Number</span>
-                <p className="text-foreground mt-0.5 font-mono font-bold text-xs">{profile.ownerDetails.mobileNumber || 'Not Linked'}</p>
+                <span className="text-foreground/40 block text-[11px] font-medium">Mobile Number</span>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={formData?.ownerDetails?.mobileNumber || ''}
+                    onChange={(e) => handleFieldChange('ownerDetails', 'mobileNumber', e.target.value)}
+                    placeholder="+91 98000 00000"
+                    className="w-full mt-1 bg-background border border-border rounded-lg p-2 text-foreground font-mono text-xs focus:outline-none focus:border-india-blue"
+                  />
+                ) : (
+                  <p className="text-foreground mt-0.5 font-mono font-bold text-xs">{profile.ownerDetails.mobileNumber || 'Not Linked'}</p>
+                )}
               </div>
 
               <div className="border-t border-border pt-2.5">
-                <span className="text-foreground/40 block text-[11px]">Owner PAN / ID Number</span>
-                <p className="text-foreground mt-0.5 font-mono font-bold text-xs">{profile.panNumber || 'Not Uploaded'}</p>
+                <span className="text-foreground/40 block text-[11px] font-medium">Owner PAN / ID Number</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData?.panNumber || ''}
+                    onChange={(e) => handleFieldChange(null, 'panNumber', e.target.value.toUpperCase())}
+                    placeholder="ABCDE1234F"
+                    className="w-full mt-1 bg-background border border-border rounded-lg p-2 text-foreground font-mono uppercase text-xs focus:outline-none focus:border-india-blue"
+                  />
+                ) : (
+                  <p className="text-foreground mt-0.5 font-mono font-bold text-xs">{profile.panNumber || 'Not Uploaded'}</p>
+                )}
               </div>
+
+              {isEditing && (
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setFormData(profile); setIsEditing(false); }}
+                    className="w-1/2 py-2 rounded-lg border border-border text-xs font-semibold text-foreground hover:bg-border/40 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="w-1/2 py-2 rounded-lg bg-india-blue text-white text-xs font-bold hover:opacity-90 cursor-pointer disabled:opacity-50 shadow-xs"
+                  >
+                    {isSaving ? 'Saving...' : 'Save Details'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

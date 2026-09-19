@@ -14,8 +14,12 @@ import {
   getMasterDocById,
   getAnalytics,
 } from '../controllers/mainAuthController.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// All main-auth routes require authentication and MAIN_AUTH/ADMIN role
+router.use(protect, authorizeRoles('MAIN_AUTH', 'ADMIN'));
 
 // 1. Analytics & Master Catalog
 router.get('/analytics', getAnalytics);

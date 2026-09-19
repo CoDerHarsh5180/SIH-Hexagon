@@ -8,8 +8,12 @@ import {
   getRequestDossier,
   getHistory,
 } from '../controllers/localAuthController.js';
+import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// All local-auth routes require authentication and LOCAL_AUTH/MAIN_AUTH/ADMIN role
+router.use(protect, authorizeRoles('LOCAL_AUTH', 'MAIN_AUTH', 'ADMIN'));
 
 // 1. Inward Requests & History
 router.get('/requests', getInwardRequests);

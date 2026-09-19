@@ -6,8 +6,12 @@ import {
   markAllAsRead,
   deleteNotification,
 } from '../controllers/notificationsController.js';
+import { optionalAuth } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// All notification routes use optionalAuth for role/user-based filtering
+router.use(optionalAuth);
 
 router.get('/', getNotifications);
 router.get('/unread-count', getUnreadCount);

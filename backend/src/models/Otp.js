@@ -27,11 +27,6 @@ const otpSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      expires: 600, // Document automatically removed after 10 minutes (600 seconds)
-    },
   },
   {
     timestamps: true,
@@ -39,5 +34,9 @@ const otpSchema = new mongoose.Schema(
 );
 
 const Otp = mongoose.model('Otp', otpSchema);
+
+// TTL index: auto-delete OTP documents 10 minutes after creation
+otpSchema.index({ createdAt: 1 }, { expireAfterSeconds: 600 });
+
 export default Otp;
 export { Otp };

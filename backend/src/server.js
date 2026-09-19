@@ -4,11 +4,13 @@ dotenv.config();
 import app from './app.js';
 import connectDB from './config/db.js';
 import { seedApprovalsCatalog } from './utils/seedApprovals.js';
+import { dropStaleIndexes } from './utils/dropStaleIndexes.js';
 
 const PORT = process.env.PORT || 5000;
 
-// Initialize Database Connection & Seed Master Catalogs
-connectDB().then(() => {
+// Initialize Database Connection, Clean Stale Indexes & Seed Master Catalogs
+connectDB().then(async () => {
+  await dropStaleIndexes();
   seedApprovalsCatalog();
 });
 

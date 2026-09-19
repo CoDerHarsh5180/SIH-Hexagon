@@ -9,6 +9,7 @@ import border from './assets/border.png'
 // Auth Pages
 import { LoginPage } from './pages/Authentication/LoginPage';
 import { RegisterPage } from './pages/Authentication/RegisterPage';
+import { ResetPasswordPage } from './pages/Authentication/ResetPasswordPage';
 
 // User Portal Pages
 import UserDashboardPage from './pages/UserPages/dashboard/page';
@@ -65,6 +66,8 @@ function App() {
         <Route path="/dashboard" element={<PublicDashboardPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
         {/* Public Discovery Services (Navbars + Footers via PublicLayout) */}
         <Route element={<PublicLayout />}>

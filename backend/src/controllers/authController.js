@@ -58,7 +58,10 @@ export const login = async (req, res) => {
     }
 
     const emailClean = email.trim().toLowerCase();
-    const user = await User.findOne({ email: emailClean });
+    // Explicitly select password since it has select: false in schema
+    const user = await User.findOne({ email: emailClean }).select('+password');
+
+    console.log(`[authController:login] Attempt for email: "${emailClean}" | User found: ${Boolean(user)} | Role: ${user?.role}`);
 
     if (!user) {
       return res.status(401).json({
@@ -68,6 +71,7 @@ export const login = async (req, res) => {
     }
 
     const isMatch = await user.matchPassword(password);
+    console.log(`[authController:login] Password match result: ${isMatch}`);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -146,18 +150,9 @@ export const register = async (req, res) => {
 
     const emailClean = email.trim().toLowerCase();
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: emailClean });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'An account with this email address already exists. Please log in.',
-      });
-    }
-
-    // OTP Verification Check (Accepts valid OTP record or standard demo code 123456)
+    // OTP Verification Check (Accepts valid OTP record or demo code 123456 in dev only)
     if (otp) {
-      const isDemoOtp = otp.trim() === '123456';
+      const isDemoOtp = process.env.NODE_ENV === 'development' && otp.trim() === '123456';
       if (!isDemoOtp) {
         const otpRecord = await Otp.findOne({
           email: emailClean,
@@ -176,13 +171,63 @@ export const register = async (req, res) => {
       }
     }
 
-    const displayName = name || fullName || companyName || emailClean.split('@')[0];
+    const ownerFullName = fullName || name || (role === 'USER' ? 'Enterprise Owner' : emailClean.split('@')[0]);
+    const enterpriseLegalName = companyName || (role === 'USER' ? (name || 'My Enterprise') : undefined);
+    const displayName = ownerFullName;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: emailClean });
+    if (existingUser) {
+      // In development mode, allow re-registration/updating to avoid duplicate email lockouts
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[authController:register] Updating existing user "${emailClean}" with new credentials in dev mode`);
+        existingUser.name = ownerFullName;
+        existingUser.fullName = ownerFullName;
+        if (enterpriseLegalName) {
+          existingUser.companyName = enterpriseLegalName;
+        }
+        existingUser.password = password; // Triggers pre-save bcrypt hash
+        existingUser.role = role.toUpperCase();
+        existingUser.portalType = portalType || role.toUpperCase();
+        if (phone) existingUser.phone = phone;
+        if (industryType) existingUser.industryType = industryType;
+        if (district) existingUser.district = district;
+        if (designation) existingUser.designation = designation;
+        if (authorityBody) {
+          existingUser.authorityBody = authorityBody;
+          existingUser.department = authorityBody;
+        }
+        if (employeeId) existingUser.employeeId = employeeId;
+        existingUser.isActive = true;
+        await existingUser.save();
+
+        const token = generateToken(existingUser._id, existingUser.role, existingUser.email);
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.status(200).json({
+          success: true,
+          message: 'Account updated and registered successfully',
+          token,
+          user: sanitizeUser(existingUser),
+        });
+      }
+
+      return res.status(409).json({
+        success: false,
+        message: 'An account with this email address already exists. Please log in.',
+      });
+    }
 
     // Create new User
     const newUser = await User.create({
-      name: displayName,
-      fullName: fullName || displayName,
-      companyName: companyName || (role === 'USER' ? displayName : undefined),
+      name: ownerFullName,
+      fullName: ownerFullName,
+      companyName: enterpriseLegalName,
       email: emailClean,
       phone: phone || '',
       password, // Password hashed automatically by User model pre-save hook
@@ -353,8 +398,8 @@ export const verifyOtp = async (req, res) => {
     const emailClean = email.trim().toLowerCase();
     const otpClean = otp.trim();
 
-    // Support standard demo OTP 123456
-    if (otpClean === '123456') {
+    // Support demo OTP 123456 only in development
+    if (process.env.NODE_ENV === 'development' && otpClean === '123456') {
       return res.status(200).json({
         success: true,
         message: 'OTP verified successfully (Demo code)',
@@ -416,30 +461,53 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    // Generate random reset token
+    // Generate random 32-byte reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.resetPasswordExpiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await user.save({ validateBeforeSave: false });
 
-    // Send email
+    // Build absolute URL for password reset
+    const clientBaseUrl = process.env.CLIENT_URL || req.headers.origin || 'http://localhost:5173';
+    const resetLink = `${clientBaseUrl}/reset-password/${resetToken}`;
+
+    // Send formatted email with clickable link
     await sendEmail({
       to: emailClean,
-      subject: 'SARAL Single-Window - Password Reset Instructions',
-      text: `You requested a password reset. Use this token to reset your password: ${resetToken}\nThis token expires in 1 hour.`,
+      subject: 'SARAL Single-Window - Reset Your Account Password',
+      text: `Hello,\n\nYou requested a password reset for your SARAL portal account (${emailClean}).\n\nClick the link below to set a new password:\n${resetLink}\n\nThis link is valid for 1 hour. If you did not request this, please disregard this email and your password will remain unchanged.`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; rounded: 8px;">
-          <h2 style="color: #0d47a1;">SARAL Password Reset</h2>
-          <p>You recently requested to reset your password for your SARAL platform account.</p>
-          <p><strong>Reset Token:</strong> <code>${resetToken}</code></p>
-          <p style="color: #888; font-size: 12px;">This link/token will expire in 1 hour. If you did not request this, please ignore this email.</p>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; color: #1e293b;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="color: #0d47a1; margin: 0 0 6px 0; font-size: 22px; font-weight: 700;">SARAL Single-Window Portal</h2>
+            <p style="color: #64748b; font-size: 13px; margin: 0;">Government of Maharashtra • Industrial Clearances & Regulatory Approvals</p>
+          </div>
+          <div style="padding: 24px; background-color: #f8fafc; border-radius: 8px; border-left: 4px solid #0d47a1;">
+            <p style="color: #1e293b; font-size: 15px; margin: 0 0 12px 0; font-weight: 600;">Password Reset Request</p>
+            <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+              We received a request to reset the password for your account associated with <strong>${emailClean}</strong>.
+            </p>
+            <div style="text-align: center; margin: 28px 0;">
+              <a href="${resetLink}" target="_blank" rel="noopener noreferrer" style="background-color: #0d47a1; color: #ffffff; padding: 12px 28px; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; display: inline-block; box-shadow: 0 2px 4px rgba(13, 71, 161, 0.2);">
+                Reset My Password &rarr;
+              </a>
+            </div>
+            <p style="color: #64748b; font-size: 12px; margin: 0 0 6px 0;">If the button above does not work, copy and paste this link into your browser:</p>
+            <p style="color: #0d47a1; font-size: 12px; word-break: break-all; margin: 0; font-family: monospace;">
+              <a href="${resetLink}" style="color: #0d47a1;">${resetLink}</a>
+            </p>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 20px; line-height: 1.5;">
+            ⏱️ This password reset link will expire in <strong>1 hour</strong>. If you did not make this request, you can safely ignore this email.
+          </p>
         </div>
       `,
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Password reset instructions dispatched to your email',
+      message: 'Password reset instructions with link dispatched to your email',
+      resetLink: process.env.NODE_ENV === 'development' ? resetLink : undefined,
       token: process.env.NODE_ENV === 'development' ? resetToken : undefined,
     });
   } catch (error) {
@@ -482,7 +550,7 @@ export const resetPassword = async (req, res) => {
       });
     }
 
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const hashedToken = crypto.createHash('sha256').update(token.trim()).digest('hex');
 
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
@@ -492,19 +560,39 @@ export const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Password reset token is invalid or has expired.',
+        message: 'Password reset link is invalid or has expired. Please request a new one.',
       });
     }
 
-    // Set new password (auto-hashed by pre-save hook)
+    // Ensure name and fullName exist for legacy documents
+    if (!user.name) {
+      user.name = user.fullName || user.get('full_name') || user.email.split('@')[0] || 'User';
+    }
+    if (!user.fullName) {
+      user.fullName = user.name;
+    }
+
+    // Set new password (auto-hashed by User model pre-save hook)
     user.password = newPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpiresAt = undefined;
-    await user.save();
+    await user.save({ validateBeforeSave: false });
+
+    // Generate JWT token so user can optionally be logged in immediately
+    const jwtToken = generateToken(user._id, user.role, user.email);
+
+    res.cookie('token', jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({
       success: true,
-      message: 'Password reset successful! You can now log in with your new password.',
+      message: 'Password reset successfully! You can now log in with your new password.',
+      token: jwtToken,
+      user: sanitizeUser(user),
     });
   } catch (error) {
     console.error('[authController:resetPassword] Error:', error);
@@ -654,17 +742,23 @@ export const updateProfile = async (req, res) => {
       officeContact,
     } = req.body;
 
-    if (name) user.name = name;
-    if (fullName) user.fullName = fullName;
-    if (companyName || factoryName) user.companyName = companyName || factoryName;
-    if (phone) user.phone = phone;
-    if (industryType || businessType) user.industryType = industryType || businessType;
-    if (district) user.district = district;
-    if (state) user.state = state;
-    if (panNumber) user.panNumber = panNumber;
-    if (gstin || gstNumber) user.gstin = gstin || gstNumber;
-    if (cin) user.cin = cin;
-    if (udyogAadhaar || udyamNumber) user.udyogAadhaar = udyogAadhaar || udyamNumber;
+    if (name) {
+      user.name = name.trim();
+      if (!user.fullName) user.fullName = name.trim();
+    }
+    if (fullName) {
+      user.fullName = fullName.trim();
+      user.name = fullName.trim();
+    }
+    if (companyName || factoryName) user.companyName = (companyName || factoryName).trim();
+    if (phone) user.phone = phone.trim();
+    if (industryType || businessType) user.industryType = (industryType || businessType).trim();
+    if (district) user.district = district.trim();
+    if (state) user.state = state.trim();
+    if (panNumber) user.panNumber = panNumber.trim().toUpperCase();
+    if (gstin || gstNumber) user.gstin = (gstin || gstNumber).trim().toUpperCase();
+    if (cin) user.cin = cin.trim().toUpperCase();
+    if (udyogAadhaar || udyamNumber) user.udyogAadhaar = (udyogAadhaar || udyamNumber).trim().toUpperCase();
     if (enterpriseScale) user.enterpriseScale = enterpriseScale;
 
     // Handle nested address or location
@@ -683,10 +777,13 @@ export const updateProfile = async (req, res) => {
 
     // Handle nested owner details
     if (ownerDetails) {
-      if (ownerDetails.fullName) user.fullName = ownerDetails.fullName;
-      if (ownerDetails.mobileNumber) user.phone = ownerDetails.mobileNumber;
-      if (ownerDetails.post) user.designation = ownerDetails.post;
-      if (ownerDetails.idNumber) user.panNumber = ownerDetails.idNumber;
+      if (ownerDetails.fullName) {
+        user.fullName = ownerDetails.fullName.trim();
+        user.name = ownerDetails.fullName.trim();
+      }
+      if (ownerDetails.mobileNumber) user.phone = ownerDetails.mobileNumber.trim();
+      if (ownerDetails.post) user.designation = ownerDetails.post.trim();
+      if (ownerDetails.idNumber) user.panNumber = ownerDetails.idNumber.trim().toUpperCase();
     }
 
     if (avatar) user.avatar = avatar;
