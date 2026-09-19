@@ -200,25 +200,32 @@ export const SubsidiesSection = () => {
 
       {/* Citizen Charter Modal */}
       {showGazetteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card text-card-foreground border border-border rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95">
+        <div 
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setShowGazetteModal(false)}
+        >
+          <div 
+            className="bg-background text-foreground border border-border rounded-xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
                 <Gavel className="w-5 h-5 text-india-orange" />
-                <h3 className="font-bold text-foreground">Maharashtra Citizen Charter &amp; RTS Act</h3>
+                <h3 className="font-bold text-base text-foreground">Maharashtra Citizen Charter &amp; RTS Act</h3>
               </div>
               <button 
                 onClick={() => setShowGazetteModal(false)}
-                className="text-muted-foreground hover:text-foreground text-lg font-bold cursor-pointer"
+                className="text-foreground/50 hover:text-foreground hover:bg-border p-1.5 rounded-lg text-sm font-bold cursor-pointer transition-colors"
+                aria-label="Close"
               >
                 ✕
               </button>
             </div>
-            <div className="py-4 space-y-3 text-xs text-muted-foreground leading-relaxed">
+            <div className="py-4 space-y-3 text-xs sm:text-sm text-foreground/85 leading-relaxed">
               <p className="text-foreground font-semibold">
                 Under the Maharashtra Right to Public Services Act (RTS Act) &amp; Single Window Policy:
               </p>
-              <ul className="list-disc pl-5 space-y-2">
+              <ul className="list-disc pl-5 space-y-2 text-foreground/80">
                 <li>Every department (MPCB, DISH, MIDC, Fire Services, Town Planning) is required to process online applications without delay.</li>
                 <li>No physical visits to offices or counter files are needed. All queries and reviews happen completely online.</li>
                 <li>You can track the progress of every document and raise a grievance directly if your file is unnecessarily held up.</li>
@@ -227,7 +234,7 @@ export const SubsidiesSection = () => {
             <div className="pt-3 border-t border-border flex justify-end">
               <button
                 onClick={() => setShowGazetteModal(false)}
-                className="px-4 py-2 bg-india-orange text-white font-semibold text-xs rounded-lg hover:bg-india-orange/90 cursor-pointer"
+                className="px-4 py-2 bg-india-orange text-white font-semibold text-xs rounded-lg hover:bg-india-orange/90 transition-opacity cursor-pointer shadow-xs"
               >
                 Close Notice
               </button>

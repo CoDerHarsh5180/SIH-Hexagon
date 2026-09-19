@@ -10,6 +10,10 @@
   --theme-background: #ffffff;
   --theme-foreground: #000000;
   --theme-border: #e5e7eb;
+  --theme-card: #ffffff;
+  --theme-card-foreground: #000000;
+  --theme-muted: #f3f4f6;
+  --theme-muted-foreground: #4b5563;
 }
 
 /* Dark Mode Overrides */
@@ -20,6 +24,10 @@
   --theme-background: #1c1c1c;
   --theme-foreground: #ffffff;
   --theme-border: #3a445a;
+  --theme-card: #222222;
+  --theme-card-foreground: #ffffff;
+  --theme-muted: #2a2a2a;
+  --theme-muted-foreground: #9ca3af;
 }
 
 @theme {
@@ -28,6 +36,10 @@
   --color-foreground: var(--theme-foreground);
   --color-border: var(--theme-border);
   --color-india-orange: var(--theme-india-orange);
+  --color-card: var(--theme-card);
+  --color-card-foreground: var(--theme-card-foreground);
+  --color-muted: var(--theme-muted);
+  --color-muted-foreground: var(--theme-muted-foreground);
 }
 
 @layer base {
