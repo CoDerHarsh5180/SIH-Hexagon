@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../../components/ui';
 import { ShieldAlert, AlertTriangle, CheckCircle2, Clock, ArrowRight, Loader2 } from 'lucide-react';
 import { mainAuthService } from '../../../services/mainAuthService';
+import { useToast } from '../../../context/ToastContext';
 
 export const MainAuthComplaintsPage = () => {
+  const toast = useToast();
   const [escalations, setEscalations] = useState([
     {
       id: 'ESC-2026-019',
@@ -65,7 +67,7 @@ export const MainAuthComplaintsPage = () => {
         e.id === id ? { ...e, status: 'EXPEDITE_NOTICE_SENT' } : e
       )
     );
-    alert(`Statutory Expedite Notice dispatched to designated officer for docket: ${id}`);
+    toast.success(`Statutory Expedite Notice dispatched to designated officer for docket: ${id}`);
   };
 
   return (

@@ -6,6 +6,7 @@ import { Building2, Landmark, Mail, Lock, Eye, EyeOff, KeyRound, ArrowRight, Che
 import { districtsInState, authorityBodies } from './authMockData';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
+import { useToast } from '../../context/ToastContext';
 
 // --- REUSABLE UI COMPONENTS ---
 const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
@@ -46,6 +47,7 @@ const SelectGroup = ({ label, options, required, ...props }) => (
 export const RegisterPage = ({ onNavigateToLogin }) => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const toast = useToast();
   const [role, setRole] = useState('USER');
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -70,8 +72,8 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
   const handleInitiateRegistration = async (e) => {
     e.preventDefault();
-    if (formData.password.length < 8) return alert('Password must be at least 8 characters');
-    if (formData.password !== formData.confirmPassword) return alert('Passwords do not match');
+    if (formData.password.length < 8) return toast.warning('Password must be at least 8 characters');
+    if (formData.password !== formData.confirmPassword) return toast.warning('Passwords do not match');
 
     setIsSubmitting(true);
     try {
@@ -79,14 +81,14 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
       const devOtp = res?.otp || res?.data?.otp;
       if (devOtp) {
         setFormData((prev) => ({ ...prev, otp: devOtp }));
-        alert(`Verification code dispatched to ${formData.email}!\n\nYour OTP Code is: ${devOtp}`);
+        toast.success(`Verification code dispatched to ${formData.email}! Your OTP Code is: ${devOtp}`);
       } else {
-        alert(`A 6-digit verification code has been dispatched to ${formData.email}. Please check your email (or use demo code 123456).`);
+        toast.info(`A 6-digit verification code has been dispatched to ${formData.email}. Please check your email (or use demo code 123456).`);
       }
       setStep(2);
     } catch (err) {
       console.warn('[RegisterPage] sendOtp notice:', err.message);
-      alert(`Notice: ${err.message}. You can use demo code 123456 to continue verification.`);
+      toast.warning(`${err.message}. You can use demo code 123456 to continue verification.`);
       setFormData((prev) => ({ ...prev, otp: '123456' }));
       setStep(2);
     } finally {
@@ -96,7 +98,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
   const handleVerifyOtpAndRegister = async (e) => {
     e.preventDefault();
-    if (formData.otp.trim().length < 6) return alert('Please enter a valid 6-digit OTP');
+    if (formData.otp.trim().length < 6) return toast.warning('Please enter a valid 6-digit OTP');
 
     setIsSubmitting(true);
     const payload = role === 'USER' ? {
@@ -137,7 +139,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
       }
     } catch (err) {
       console.error('[RegisterPage] Registration error:', err);
-      alert(err.message || 'Registration failed. Please verify your details.');
+      toast.error(err.message || 'Registration failed. Please verify your details.');
     } finally {
       setIsSubmitting(false);
     }
@@ -246,7 +248,7 @@ export const RegisterPage = ({ onNavigateToLogin }) => {
 
           <div className="flex items-center justify-between text-[11px] text-foreground/60">
             <span>Did not receive the code?</span>
-            <button type="button" onClick={() => authService.sendOtp(formData.email, role).then(() => alert('OTP resent successfully.')).catch(() => alert('OTP resent successfully.'))} className="text-india-blue font-semibold hover:underline flex items-center space-x-1 cursor-pointer">
+            <button type="button" onClick={() => authService.sendOtp(formData.email, role).then(() => toast.success('OTP resent successfully.')).catch(() => toast.info('OTP resent successfully.'))} className="text-india-blue font-semibold hover:underline flex items-center space-x-1 cursor-pointer">
               <RotateCcw className="w-3 h-3" /> <span>Resend OTP</span>
             </button>
           </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../../../components/ui';
 import { Check, ArrowRight, FileText, Database, RotateCcw, AlertTriangle } from 'lucide-react';
+import { useToast } from '../../../context/ToastContext';
 
 export const RenewDocumentModal = ({
   isOpen,
@@ -9,6 +10,7 @@ export const RenewDocumentModal = ({
   vaultDocs = {},
   onRenewalSuccess
 }) => {
+  const toast = useToast();
   const [modalStep, setModalStep] = useState(1);
   const [uploadedDocs, setUploadedDocs] = useState({});
   const [utrNumber, setUtrNumber] = useState('');
@@ -31,7 +33,7 @@ export const RenewDocumentModal = ({
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
     if (!utrNumber.trim()) {
-      alert('Please enter your Transaction Reference Number (UTR)');
+      toast.warning('Please enter your Transaction Reference Number (UTR)');
       return;
     }
 
@@ -42,7 +44,7 @@ export const RenewDocumentModal = ({
       setUtrNumber('');
       setUploadedDocs({});
       onRenewalSuccess(document.id);
-      alert(`Renewal application for "${document.name}" submitted successfully! File sent to ${document.issuingAuthority}.`);
+      toast.success(`Renewal application for "${document.name}" submitted successfully! File sent to ${document.issuingAuthority}.`);
     }, 1800);
   };
 

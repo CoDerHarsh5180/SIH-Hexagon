@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useToast } from '../../../context/ToastContext';
 
 export const ScheduleInspectionModal = ({ req, onClose, onConfirm }) => {
+  const toast = useToast();
   const [formData, setFormData] = useState({
     inspectionDate: '2026-09-24',
     inspectionTime: '11:00 AM',
@@ -14,7 +16,7 @@ export const ScheduleInspectionModal = ({ req, onClose, onConfirm }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.inspectionDate || !formData.inspectorName) {
-      alert('Please fill in both the inspection date and inspector name.');
+      toast.warning('Please fill in both the inspection date and inspector name.');
       return;
     }
 

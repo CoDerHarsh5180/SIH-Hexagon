@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../../../components/ui';
 import { Check, ArrowRight, FileText, Database } from 'lucide-react';
+import { useToast } from '../../../context/ToastContext';
 
 export const ApplyPaymentModal = ({
   isOpen,
@@ -11,6 +12,7 @@ export const ApplyPaymentModal = ({
   onRequiredDocUpload,
   onPaymentSuccess
 }) => {
+  const toast = useToast();
   const [modalStep, setModalStep] = useState(1);
   const [utrNumber, setUtrNumber] = useState('');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -18,7 +20,7 @@ export const ApplyPaymentModal = ({
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
     if (!utrNumber.trim()) {
-      alert('Please enter your Transaction Reference Number');
+      toast.warning('Please enter your Transaction Reference Number');
       return;
     }
     setPaymentSuccess(true);
@@ -27,7 +29,7 @@ export const ApplyPaymentModal = ({
       setModalStep(1);
       setUtrNumber('');
       onPaymentSuccess(); // Notify parent to close and reset non-vault docs
-      alert('Applications successfully submitted.');
+      toast.success('Applications successfully submitted.');
     }, 2000);
   };
 

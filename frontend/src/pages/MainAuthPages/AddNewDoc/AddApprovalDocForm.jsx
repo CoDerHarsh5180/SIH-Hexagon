@@ -10,8 +10,10 @@ import {
   Search 
 } from 'lucide-react';
 import { approvalCategories, commonRequiredDocSuggestions, mockAiRefineDescription } from './mockNewDocSchemesData';
+import { useToast } from '../../../context/ToastContext';
 
 export const AddApprovalDocForm = ({ onDocCreated }) => {
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState(approvalCategories[0]);
   const [slaDays, setSlaDays] = useState('30');
@@ -55,11 +57,11 @@ export const AddApprovalDocForm = ({ onDocCreated }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('Please provide a document title.');
+      toast.warning('Please provide a document title.');
       return;
     }
     if (requiredDocs.length === 0) {
-      alert('Please specify at least one required prerequisite document.');
+      toast.warning('Please specify at least one required prerequisite document.');
       return;
     }
 

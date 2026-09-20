@@ -5,6 +5,7 @@ import { PageHeader, SearchInput, SelectFilter, Modal } from '../../../component
 import { Info, ChevronRight, Loader2 } from 'lucide-react';
 import { approvalsService } from '../../../services/approvalsService';
 import { applicationsService } from '../../../services/applicationsService';
+import { useToast } from '../../../context/ToastContext';
 
 // Mock Data
 const availableDocsCatalog = [
@@ -88,6 +89,7 @@ const authorityTypes = ['All Authorities', 'Pollution Control', 'Fire Department
 
 export const CustomDocsApplyPage = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [catalog, setCatalog] = useState(availableDocsCatalog);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
@@ -141,11 +143,11 @@ export const CustomDocsApplyPage = () => {
       if (newAppId) {
         navigate(`/user/track/${newAppId}`);
       } else {
-        alert(`Application draft created successfully for ${applyingDoc.title}`);
+        toast.success(`Application draft created successfully for ${applyingDoc.title}`);
       }
     } catch (err) {
       console.warn('Backend custom application failed, using local confirmation:', err.message);
-      alert(`Application initiated for ${applyingDoc.title}`);
+      toast.info(`Application initiated for ${applyingDoc.title}`);
       setApplyingDoc(null);
     } finally {
       setIsSubmitting(false);

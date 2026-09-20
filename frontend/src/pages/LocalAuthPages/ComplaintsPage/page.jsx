@@ -3,8 +3,10 @@ import { PageHeader } from '../../../components/ui';
 import { ShieldAlert, CheckCircle2, Clock, MessageSquare, ArrowRight, Loader2 } from 'lucide-react';
 import { localAuthService } from '../../../services/localAuthService';
 import { grievancesService } from '../../../services/grievancesService';
+import { useToast } from '../../../context/ToastContext';
 
 export const LocalAuthComplaintsPage = () => {
+  const toast = useToast();
   const [complaints, setComplaints] = useState([
     {
       id: 'CMP-2026-081',
@@ -53,7 +55,7 @@ export const LocalAuthComplaintsPage = () => {
           c.id === activeReply.id ? { ...c, status: 'RESOLVED_WITH_INSPECTION' } : c
         )
       );
-      alert('Resolution dispatched to applicant and logged with State HQ.');
+      toast.success('Resolution dispatched to applicant and logged with State HQ.');
       setActiveReply(null);
       setReplyText('');
     }

@@ -7,6 +7,7 @@ import { CentralApprovalModal } from './CentralApprovalModal';
 import { CentralRejectModal } from './CentralRejectModal';
 import { SearchInput, FilterTabs, EmptyState } from '../../../components/ui';
 import { mainAuthService } from '../../../services/mainAuthService';
+import { useToast } from '../../../context/ToastContext';
 
 const FILTER_TABS = [
   { key: 'ALL', label: 'All Inward Requests' },
@@ -16,6 +17,7 @@ const FILTER_TABS = [
 ];
 
 export const MainAuthAllRequestsPage = () => {
+  const toast = useToast();
   const [requests, setRequests] = useState(initialMainAuthRequestsData);
   const [activeReq, setActiveReq] = useState(null);
   const [modalMode, setModalMode] = useState(null); // 'VIEW_DOCS' | 'APPROVE' | 'REJECT'
@@ -66,7 +68,7 @@ export const MainAuthAllRequestsPage = () => {
           : r
       )
     );
-    alert(`Apex statutory clearance successfully issued and cryptographically signed with ID: ${signedDocId}`);
+    toast.success(`Apex statutory clearance successfully issued and cryptographically signed with ID: ${signedDocId}`);
     handleCloseModal();
   };
 
@@ -86,7 +88,7 @@ export const MainAuthAllRequestsPage = () => {
           : r
       )
     );
-    alert('Statutory remittance order issued. Local district and applicant notified.');
+    toast.info('Statutory remittance order issued. Local district and applicant notified.');
     handleCloseModal();
   };
 

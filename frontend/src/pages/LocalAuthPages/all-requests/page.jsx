@@ -7,8 +7,10 @@ import { ApproveDocModal } from './ApprovalDocsModel';
 import { RejectDocModal } from './RejectDocsModal';
 import { ScheduleInspectionModal } from './ScheduleInspectionModal';
 import { localAuthService } from '../../../services/localAuthService';
+import { useToast } from '../../../context/ToastContext';
 
 export const LocalAuthAllRequestsPage = () => {
+  const toast = useToast();
   const [requests, setRequests] = useState(initialRequestsData);
   const [activeReq, setActiveReq] = useState(null);
   const [modalMode, setModalMode] = useState(null); // 'VIEW_DOCS' | 'APPROVE' | 'REJECT' | 'INSPECTION'
@@ -53,7 +55,7 @@ export const LocalAuthAllRequestsPage = () => {
     setRequests((prev) =>
       prev.map((r) => (r.requestId === requestId ? { ...r, status: 'APPROVED', signedDocId } : r))
     );
-    alert(`Document successfully signed and issued with ID: ${signedDocId}`);
+    toast.success(`Document successfully signed and issued with ID: ${signedDocId}`);
     handleCloseModal();
   };
 
@@ -69,7 +71,7 @@ export const LocalAuthAllRequestsPage = () => {
     setRequests((prev) =>
       prev.map((r) => (r.requestId === requestId ? { ...r, status: 'REJECTED', rejectionReason } : r))
     );
-    alert('Application rejected. Feedback notification dispatched to applicant.');
+    toast.info('Application rejected. Feedback notification dispatched to applicant.');
     handleCloseModal();
   };
 
@@ -90,7 +92,7 @@ export const LocalAuthAllRequestsPage = () => {
           : r
       )
     );
-    alert(`On-site field inspection scheduled for ${scheduleData.inspectionDate} with ${scheduleData.inspectorName}. Notification dispatched to applicant.`);
+    toast.success(`On-site field inspection scheduled for ${scheduleData.inspectionDate} with ${scheduleData.inspectorName}. Notification dispatched to applicant.`);
     handleCloseModal();
   };
 

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
+import { useToast } from '../../context/ToastContext';
 
 // Reusable Input Component (Shared with RegisterPage)
 const InputGroup = ({ label, icon: Icon, rightAction, required, ...props }) => (
@@ -29,6 +30,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, devLoginAs } = useAuth();
+  const toast = useToast();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,7 +76,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     if (!formData.email.trim() || !formData.password.trim()) {
-      return alert('Please provide both email and password');
+      return toast.warning('Please provide both email and password');
     }
 
     setIsSubmitting(true);
@@ -103,7 +105,7 @@ export const LoginPage = ({ onNavigateToRegister }) => {
       }
     } catch (err) {
       console.error('[LoginPage] Login failed:', err.message);
-      alert(err.message || 'Login failed. Please verify your credentials.');
+      toast.error(err.message || 'Login failed. Please verify your credentials.');
     } finally {
       setIsSubmitting(false);
     }

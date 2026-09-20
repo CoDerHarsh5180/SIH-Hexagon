@@ -46,6 +46,7 @@ import NotificationsPage from './pages/CommonPages/NotificationsPage';
 import NotFoundPage from './pages/CommonPages/NotFoundPage';
 import BackgroundFlagDecor from './components/common/BackgroundFlagDecor';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import LandingPage from './pages/LandingPage';
 import PublicDashboardPage from './pages/PublicDashboard/PublicDashboardPage';
 import PublicLayout from './layouts/PublicLayout/page';
@@ -55,6 +56,7 @@ import './App.css';
 
 function App() {
   return (
+    <ToastProvider>
     <AuthProvider>
       <BrowserRouter>
         {/* Background Indian Tricolor Corner Ribbons */}
@@ -130,6 +132,7 @@ function App() {
       </Routes>
     </BrowserRouter>
   </AuthProvider>
+  </ToastProvider>
   );
 }
 

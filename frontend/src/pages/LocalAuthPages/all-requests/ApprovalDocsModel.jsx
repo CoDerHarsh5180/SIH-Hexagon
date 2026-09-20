@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useToast } from '../../../context/ToastContext';
 
 export const ApproveDocModal = ({ req, onClose, onConfirm }) => {
+  const toast = useToast();
   const [docIdInput, setDocIdInput] = useState(`AUTH-DOC-${req.requestId.replace('REQ-', '')}-2026`);
   const [officerSignToken] = useState('DSC-TOKEN-AUR-8821');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!docIdInput.trim()) {
-      alert('Please enter an official Document ID');
+      toast.warning('Please enter an official Document ID');
       return;
     }
     onConfirm(req.requestId, docIdInput);

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useToast } from '../../../context/ToastContext';
 
 export const RejectDocModal = ({ req, onClose, onConfirm }) => {
+  const toast = useToast();
   const [rejectCategory, setRejectCategory] = useState('Incomplete Drawings / Maps');
   const [rejectReason, setRejectReason] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!rejectReason.trim()) {
-      alert('Please enter a specific reason for rejection');
+      toast.warning('Please enter a specific reason for rejection');
       return;
     }
     onConfirm(req.requestId, `${rejectCategory}: ${rejectReason}`);

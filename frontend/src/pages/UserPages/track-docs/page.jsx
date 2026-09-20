@@ -5,6 +5,7 @@ import { Modal } from '../../../components/ui';
 import { Check, FileText, Eye, Phone, MapPin, ArrowLeft, ShieldAlert, Clock, FolderOpen, ArrowRight, Loader2 } from 'lucide-react';
 import { trackingService } from '../../../services/trackingService';
 import { applicationsService } from '../../../services/applicationsService';
+import { useToast } from '../../../context/ToastContext';
 
 const STEP_STYLES = {
   COMPLETED:   { node: 'bg-india-blue border-india-blue text-white', badge: 'bg-india-blue/10 text-india-blue border-india-blue/20', label: 'Completed' },
@@ -15,6 +16,7 @@ const STEP_STYLES = {
 export const TrackDocDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const [docData, setDocData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,9 +64,9 @@ export const TrackDocDetailPage = () => {
       await trackingService.escalateSla(docData.applicationId, {
         remarks: 'Clearance duration exceeded statutory SLA timeline.',
       });
-      alert('Application successfully escalated to State Headquarters Oversight Directorate.');
+      toast.success('Application successfully escalated to State Headquarters Oversight Directorate.');
     } catch {
-      alert('Application successfully escalated to State Headquarters Oversight Directorate.');
+      toast.success('Application successfully escalated to State Headquarters Oversight Directorate.');
     } finally {
       setEscalating(false);
     }
