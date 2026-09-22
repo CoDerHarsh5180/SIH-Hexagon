@@ -380,27 +380,111 @@ export const seedApprovalsCatalog = async () => {
     }
     console.log(`[Seed] Benefit schemes catalog verified (${initialBenefitSchemes.length} schemes active).`);
 
-    // 3. Ensure Demo User
-    let demoUser = await User.findOne({ email: 'applicant@saral.gov.in' });
-    if (!demoUser) {
-      demoUser = await User.create({
+    // 3. Ensure Demo Users for All 3 Portals
+    const demoAccounts = [
+      {
+        email: 'applicant@saral.gov.in',
         name: 'Sahyadri Agro Enterprises',
         fullName: 'Rajesh V. Deshmukh',
         companyName: 'Sahyadri Agro Foods Private Limited',
-        email: 'applicant@saral.gov.in',
         phone: '+91 98230 45892',
         password: 'password123',
         role: 'USER',
+        portalType: 'USER',
         district: 'Pune',
         industryType: 'Food Factory',
-      });
-    }
+        isVerified: true,
+      },
+      {
+        email: 'officer.pune@collectorate.gov.in',
+        name: 'Anand Patil',
+        fullName: 'Anand Patil',
+        companyName: 'Maharashtra Fire Services / Collectorate',
+        designation: 'Divisional Fire Officer',
+        authorityBody: 'Maharashtra Fire Services',
+        department: 'Maharashtra Fire Services',
+        phone: '+91 20 2612 7881',
+        password: 'password123',
+        role: 'LOCAL_AUTH',
+        portalType: 'LOCAL_AUTH',
+        district: 'Pune',
+        employeeId: 'MH-GOV-8822',
+        isVerified: true,
+      },
+      {
+        email: 'sk.kulkarni@mpcb.gov.in',
+        name: 'S. K. Kulkarni',
+        fullName: 'S. K. Kulkarni',
+        companyName: 'Maharashtra Pollution Control Board',
+        designation: 'Scrutiny Officer (MPCB)',
+        authorityBody: 'Maharashtra Pollution Control Board (MPCB)',
+        department: 'Maharashtra Pollution Control Board (MPCB)',
+        phone: '+91 240 233 4455',
+        password: 'password123',
+        role: 'LOCAL_AUTH',
+        portalType: 'LOCAL_AUTH',
+        district: 'Chhatrapati Sambhajinagar',
+        employeeId: 'MH-GOV-8821',
+        isVerified: true,
+      },
+      {
+        email: 'director.industries@maharashtra.gov.in',
+        name: 'Dr. Harshwardhan Patil',
+        fullName: 'Dr. Harshwardhan Patil, IAS',
+        companyName: 'Directorate of Industries',
+        designation: 'Principal Secretary & Directorate of Industries',
+        authorityBody: 'Apex State Regulatory Directorate',
+        department: 'Department of Industries, Energy and Labour',
+        phone: '+91 22 2202 5543',
+        password: 'password123',
+        role: 'MAIN_AUTH',
+        portalType: 'MAIN_AUTH',
+        district: 'Mumbai',
+        employeeId: 'MH-IAS-0412',
+        isVerified: true,
+      },
+      {
+        email: 'main.admin@saral.gov.in',
+        name: 'Apex Clearance Administrator',
+        fullName: 'Apex Clearance Administrator',
+        companyName: 'Government of Maharashtra',
+        designation: 'Director General of Statutory Clearances',
+        authorityBody: 'Apex State Regulatory Directorate',
+        department: 'Apex Clearances Directorate',
+        phone: '+91 22 2401 0706',
+        password: 'password123',
+        role: 'MAIN_AUTH',
+        portalType: 'MAIN_AUTH',
+        district: 'Mumbai',
+        employeeId: 'MH-IAS-0101',
+        isVerified: true,
+      },
+    ];
 
-    // 4. Seed Local Authorities Directory
+    let demoUser = null;
+    for (const acc of demoAccounts) {
+      let u = await User.findOne({ email: acc.email });
+      if (!u) {
+        u = await User.create(acc);
+      } else {
+        u.role = acc.role;
+        u.portalType = acc.portalType;
+        u.name = acc.name;
+        u.fullName = acc.fullName;
+        u.password = acc.password;
+        u.isActive = true;
+        await u.save();
+      }
+      if (acc.email === 'applicant@saral.gov.in') demoUser = u;
+    }
+    console.log('[Seed] Core portal users verified (USER, LOCAL_AUTH, MAIN_AUTH).');
+
+    // 4. Seed Local Authorities Directory & Link with Users
     for (const auth of initialLocalAuthorities) {
+      const officerUser = await User.findOne({ email: auth.email });
       await LocalAuthority.findOneAndUpdate(
         { email: auth.email },
-        { $set: auth },
+        { $set: { ...auth, userId: officerUser?._id } },
         { upsert: true, returnDocument: 'after' }
       );
     }

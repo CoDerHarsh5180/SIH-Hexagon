@@ -9,6 +9,8 @@ import {
 const router = express.Router();
 
 // 1. Overall consolidated public statistics & KPIs
+router.get('/', getPublicMetrics);
+router.get('/summary', getPublicMetrics);
 router.get('/public', getPublicMetrics);
 
 // 2. Monthly review velocity & turnaround trend

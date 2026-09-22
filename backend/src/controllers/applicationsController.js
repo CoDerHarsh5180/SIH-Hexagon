@@ -2,6 +2,7 @@ import Application from '../models/Application.js';
 import ApprovalCatalog from '../models/ApprovalCatalog.js';
 import User from '../models/User.js';
 import { resolveUser } from '../utils/resolveUser.js';
+import { sendApplicationSubmittedEmail, sendPaymentConfirmedEmail } from '../utils/sendEmail.js';
 
 // Helper to generate application ID and verification code
 const generateAppMeta = () => {
@@ -142,6 +143,26 @@ export const submitApplication = async (req, res) => {
       ],
     });
 
+    // Dispatch confirmation email to applicant asynchronously
+    try {
+      const applicantUser = req.user || (await User.findById(userId));
+      if (applicantUser?.email) {
+        sendApplicationSubmittedEmail({
+          to: applicantUser.email,
+          applicantName: applicantUser.name || applicantUser.companyName || 'Applicant',
+          applicationId: newApp.applicationId,
+          verificationCode: newApp.verificationCode,
+          title: resolvedTitle,
+          authority: resolvedAuthority,
+          district: resolvedDistrict,
+          feePaid,
+          slaDays,
+        }).catch((err) => console.error('[Email] Submission dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch applicant confirmation email:', emailErr.message);
+    }
+
     return res.status(201).json({
       success: true,
       message: 'Clearance application submitted successfully',
@@ -225,6 +246,26 @@ export const submitCustomApplication = async (req, res) => {
         },
       ],
     });
+
+    // Dispatch confirmation email to applicant asynchronously
+    try {
+      const applicantUser = req.user || (await User.findById(userId));
+      if (applicantUser?.email) {
+        sendApplicationSubmittedEmail({
+          to: applicantUser.email,
+          applicantName: applicantUser.name || applicantUser.companyName || 'Applicant',
+          applicationId: newApp.applicationId,
+          verificationCode: newApp.verificationCode,
+          title,
+          authority,
+          district,
+          feePaid: 0,
+          slaDays,
+        }).catch((err) => console.error('[Email] Custom submission dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch applicant custom confirmation email:', emailErr.message);
+    }
 
     return res.status(201).json({
       success: true,
@@ -380,6 +421,24 @@ export const submitFeePayment = async (req, res) => {
     });
 
     await app.save();
+
+    // Dispatch fee payment receipt email to applicant asynchronously
+    try {
+      const applicantUser = req.user || (await User.findById(app.userId));
+      if (applicantUser?.email) {
+        sendPaymentConfirmedEmail({
+          to: applicantUser.email,
+          applicantName: applicantUser.name || applicantUser.companyName || 'Applicant',
+          applicationId: app.applicationId,
+          title: app.approvalTitle || app.title,
+          utrNumber: utrNumber.trim(),
+          amount: Number(amount),
+          paymentMethod,
+        }).catch((err) => console.error('[Email] Fee receipt dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch fee payment email:', emailErr.message);
+    }
 
     return res.status(200).json({
       success: true,

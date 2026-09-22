@@ -3,6 +3,7 @@ import Complaint from '../models/Complaint.js';
 import Feedback from '../models/Feedback.js';
 import User from '../models/User.js';
 import { resolveUser as resolveUserShared } from '../utils/resolveUser.js';
+import { sendComplaintSubmittedEmail } from '../utils/sendEmail.js';
 
 // Helper to resolve user (returns full document)
 const resolveUser = async (req) => resolveUserShared(req, true);
@@ -123,6 +124,21 @@ export const submitComplaint = async (req, res) => {
       description,
       status: 'OPEN',
     });
+
+    // Send acknowledgment email to citizen
+    try {
+      if (user?.email) {
+        sendComplaintSubmittedEmail({
+          to: user.email,
+          userName: user.name || user.companyName || 'Citizen',
+          complaintId: newComplaint.complaintId,
+          subject,
+          authority,
+        }).catch((err) => console.error('[Email] Grievance dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch grievance email:', emailErr.message);
+    }
 
     return res.status(201).json({
       success: true,

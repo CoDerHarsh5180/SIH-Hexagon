@@ -9,8 +9,10 @@ import {
 const router = express.Router();
 
 // 1. Schemes Catalog
+router.get('/', getSchemes);
 router.get('/schemes', getSchemes);
 router.get('/schemes/:id', getSchemeById);
+router.get('/:id', getSchemeById);
 
 // 2. Eligibility & Application
 router.post('/schemes/:id/check-eligibility', checkEligibility);

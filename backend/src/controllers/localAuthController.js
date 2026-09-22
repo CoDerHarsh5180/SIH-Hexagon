@@ -1,6 +1,8 @@
 import Application from '../models/Application.js';
 import Complaint from '../models/Complaint.js';
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
+import { sendScrutinyDecisionEmail, sendInspectionScheduledEmail } from '../utils/sendEmail.js';
 
 /**
  * @desc    Submit Scrutiny Decision (Approve / Reject / Discrepancy)
@@ -80,7 +82,7 @@ export const submitScrutinyDecision = async (req, res) => {
 
     await app.save();
 
-    // Notify applicant
+    // Notify applicant via in-app notification
     await Notification.create({
       userId: app.userId,
       role: 'USER',
@@ -90,6 +92,26 @@ export const submitScrutinyDecision = async (req, res) => {
       referenceId: app.applicationId,
       link: `/user/track/${app.applicationId}`,
     });
+
+    // Dispatch official scrutiny email to applicant
+    try {
+      const applicant = await User.findById(app.userId);
+      if (applicant?.email) {
+        sendScrutinyDecisionEmail({
+          to: applicant.email,
+          applicantName: applicant.name || applicant.companyName || 'Applicant',
+          applicationId: app.applicationId,
+          title: app.approvalTitle,
+          decision: decisionUpper,
+          remarks,
+          rejectionReason,
+          certificateUrl: app.issuedCertificate?.certificateUrl,
+          signedDocId: app.scrutiny?.signedDocId || app.issuedCertificate?.signedDocId,
+        }).catch((err) => console.error('[Email] Scrutiny dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch scrutiny email:', emailErr.message);
+    }
 
     return res.status(200).json({
       success: true,
@@ -159,7 +181,7 @@ export const scheduleInspection = async (req, res) => {
 
     await app.save();
 
-    // Notify applicant
+    // Notify applicant via in-app notification
     await Notification.create({
       userId: app.userId,
       role: 'USER',
@@ -169,6 +191,26 @@ export const scheduleInspection = async (req, res) => {
       referenceId: app.applicationId,
       link: `/user/track/${app.applicationId}`,
     });
+
+    // Dispatch official inspection email to applicant
+    try {
+      const applicant = await User.findById(app.userId);
+      if (applicant?.email) {
+        sendInspectionScheduledEmail({
+          to: applicant.email,
+          applicantName: applicant.name || applicant.companyName || 'Applicant',
+          applicationId: app.applicationId,
+          title: app.approvalTitle,
+          inspectionDate,
+          inspectionTime: inspectionTime || '11:00 AM',
+          inspectorName,
+          inspectorContact: inspectorContact || '+91 22 2757 4410',
+          instructions,
+        }).catch((err) => console.error('[Email] Inspection dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch inspection email:', emailErr.message);
+    }
 
     return res.status(200).json({
       success: true,

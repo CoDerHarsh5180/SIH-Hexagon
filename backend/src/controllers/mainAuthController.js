@@ -4,6 +4,8 @@ import LocalAuthority from '../models/LocalAuthority.js';
 import Application from '../models/Application.js';
 import Complaint from '../models/Complaint.js';
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
+import { sendCentralSanctionEmail } from '../utils/sendEmail.js';
 
 /**
  * @desc    Create Master Document (Clearance Docket or Government Scheme)
@@ -390,6 +392,36 @@ export const approveCentralRequest = async (req, res) => {
 
     await app.save();
 
+    // In-app notification for applicant
+    await Notification.create({
+      userId: app.userId,
+      role: 'USER',
+      title: `Apex Clearance Sanction Granted: ${app.applicationId}`,
+      message: `Your clearance application for ${app.approvalTitle} has been sanctioned by Apex Directorate with DSC Token: ${signedDocId}.`,
+      type: 'SUCCESS',
+      referenceId: app.applicationId,
+      link: `/user/track/${app.applicationId}`,
+    }).catch(() => {});
+
+    // Email dispatch to applicant
+    try {
+      const applicant = await User.findById(app.userId);
+      if (applicant?.email) {
+        sendCentralSanctionEmail({
+          to: applicant.email,
+          applicantName: applicant.name || applicant.companyName || 'Applicant',
+          applicationId: app.applicationId,
+          title: app.approvalTitle,
+          action: 'APPROVED',
+          sanctionId: app.centralApproval?.sanctionId,
+          signedDocId,
+          remarks,
+        }).catch((err) => console.error('[Email] Central sanction dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch central sanction email:', emailErr.message);
+    }
+
     return res.status(200).json({
       success: true,
       message: `Central sanction approved successfully. Signed Doc ID: ${signedDocId}`,
@@ -454,6 +486,35 @@ export const rejectCentralRequest = async (req, res) => {
     });
 
     await app.save();
+
+    // In-app notification for applicant
+    await Notification.create({
+      userId: app.userId,
+      role: 'USER',
+      title: `Apex Clearance Update: ${app.applicationId}`,
+      message: `Your clearance application for ${app.approvalTitle} was not sanctioned. Grounds: ${grounds}.`,
+      type: 'WARNING',
+      referenceId: app.applicationId,
+      link: `/user/track/${app.applicationId}`,
+    }).catch(() => {});
+
+    // Email dispatch to applicant
+    try {
+      const applicant = await User.findById(app.userId);
+      if (applicant?.email) {
+        sendCentralSanctionEmail({
+          to: applicant.email,
+          applicantName: applicant.name || applicant.companyName || 'Applicant',
+          applicationId: app.applicationId,
+          title: app.approvalTitle,
+          action: 'REJECTED',
+          grounds,
+          rejectionReason,
+        }).catch((err) => console.error('[Email] Central rejection dispatch failed:', err.message));
+      }
+    } catch (emailErr) {
+      console.warn('[Email] Could not dispatch central rejection email:', emailErr.message);
+    }
 
     return res.status(200).json({
       success: true,

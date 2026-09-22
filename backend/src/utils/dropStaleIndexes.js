@@ -22,6 +22,18 @@ export const dropStaleIndexes = async () => {
       await usersCollection.dropIndex('firebase_uid_1');
       console.log('[DB Maintenance] Successfully dropped stale firebase_uid_1 index');
     }
+
+    // Drop stale unique notification_id index from notifications collection
+    const notifCollection = db.collection('notifications');
+    const notifIndexes = await notifCollection.indexes();
+    const staleNotifIndex = notifIndexes.find(
+      (idx) => idx.name === 'notification_id_1' || (idx.key && idx.key.notification_id)
+    );
+    if (staleNotifIndex) {
+      console.log('[DB Maintenance] Dropping stale index: notification_id_1');
+      await notifCollection.dropIndex('notification_id_1');
+      console.log('[DB Maintenance] Successfully dropped stale notification_id_1 index');
+    }
   } catch (error) {
     // Ignore errors — index may not exist or collection may not exist yet
     if (error.codeName !== 'IndexNotFound') {
