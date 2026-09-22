@@ -366,14 +366,14 @@ Open `http://localhost:5173` in your browser.
 
 **Smart India Hackathon 2026** | **Team ID: 131088**
 
-| Member | Focus / Area | Profile |
+| Member | Profile |
 |---|---|---|
 | **Harsh** | Full Stack Development & Team Lead | [@CoDerHarsh5180](https://github.com/CoDerHarsh5180) |
-| **Team Member 2** | Frontend & UI Implementation | [GitHub Profile](#) |
-| **Team Member 3** | Backend & Database Architecture | [GitHub Profile](#) |
-| **Team Member 4** | AI Integration & Document Verification | [GitHub Profile](#) |
-| **Team Member 5** | Frontend Development & Routing | [GitHub Profile](#) |
-| **Team Member 6** | UI/UX & Documentation | [GitHub Profile](#) |
+| **Ritika** | [@ritika-vishwa](https://github.com/ritika-vishwa) |
+| **Yash** | [@yash-sharmaji](https://github.com/yash-sharmaji) |
+| **Satyam** | [@Satyam-Sagar-25](https://github.com/Satyam-Sagar-25) |
+| **Dheeraj** | [@Dheeraj7979](https://github.com/Dheeraj7979) |
+| **Abhijeet** | [@abhijeetmishra15-codes](https://github.com/abhijeetmishra15-codes) |
 
 ---
 
