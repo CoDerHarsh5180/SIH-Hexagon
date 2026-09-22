@@ -367,8 +367,8 @@ Open `http://localhost:5173` in your browser.
 **Smart India Hackathon 2026** | **Team ID: 131088**
 
 | Member | Profile |
-|---|---|---|
-| **Harsh** | Full Stack Development & Team Lead | [@CoDerHarsh5180](https://github.com/CoDerHarsh5180) |
+|---|---|
+| **Harsh** | [@CoDerHarsh5180](https://github.com/CoDerHarsh5180) |
 | **Ritika** | [@ritika-vishwa](https://github.com/ritika-vishwa) |
 | **Yash** | [@yash-sharmaji](https://github.com/yash-sharmaji) |
 | **Satyam** | [@Satyam-Sagar-25](https://github.com/Satyam-Sagar-25) |
