@@ -48,19 +48,19 @@
 <table align="center" width="100%">
   <tr>
     <td align="center" width="25%">
-      <a href="https://your-live-deployment-link.vercel.app">
+      <a href="[https://your-live-deployment-link.vercel.app](https://sih-hexagon-blond.vercel.app/)">
         <img src="https://img.shields.io/badge/🚀%20Live%20Website-Deployed%20Portal-EA580C?style=for-the-badge&logo=vercel&logoColor=white" width="100%"/>
       </a>
       <br/><b>Live Demonstration</b>
     </td>
     <td align="center" width="25%">
-      <a href="https://drive.google.com/drive/folders/YOUR_DRIVE_FOLDER_ID?usp=sharing">
+      <a href="[https://drive.google.com/drive/folders/YOUR_DRIVE_FOLDER_ID?usp=sharing](https://drive.google.com/file/d/1ev43ypzjlZPRSCiJLw7S9g5xt2JqJTtd/view?usp=sharing)">
         <img src="https://img.shields.io/badge/📁%20Drive%20Vault-PPT%20%26%20Docs-16A34A?style=for-the-badge&logo=google-drive&logoColor=white" width="100%"/>
       </a>
-      <br/><b>SIH PPT, SRS & Flowcharts</b>
+      <br/><b>Documentation</b>
     </td>
     <td align="center" width="25%">
-      <a href="https://youtu.be/YOUR_DEMO_VIDEO_ID">
+      <a href="[https://youtu.be/YOUR_DEMO_VIDEO_ID](https://youtu.be/n48lqPw14IY)">
         <img src="https://img.shields.io/badge/🎬%20Demo%20Video-Watch%20Walkthrough-DC2626?style=for-the-badge&logo=youtube&logoColor=white" width="100%"/>
       </a>
       <br/><b>Recorded Video Demo</b>
